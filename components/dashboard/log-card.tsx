@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { Users, Lock, Trash2, Pencil, User } from "lucide-react"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
+import { CommentSection } from "./comment-section"
 
 export interface LogEntry {
   id: string
@@ -24,9 +25,11 @@ interface LogCardProps {
   onEdit: (log: LogEntry) => void
   onClick: (log: LogEntry) => void
   index: number
+  currentUserId: string
+  isCoach: boolean
 }
 
-export function LogCard({ log, onDelete, onEdit, onClick, index }: LogCardProps) {
+export function LogCard({ log, onDelete, onEdit, onClick, index, currentUserId, isCoach }: LogCardProps) {
   const formattedDate = format(new Date(log.timestamp), "MMM d, yyyy")
   const formattedTime = format(new Date(log.timestamp), "h:mm a")
 
@@ -145,6 +148,16 @@ export function LogCard({ log, onDelete, onEdit, onClick, index }: LogCardProps)
           )}
         </div>
       </div>
+
+      {/* Comment / Feedback Section */}
+      {log.isGroup && (
+        <CommentSection
+          logId={log.id}
+          isLogOwner={log.isOwn}
+          isCoach={isCoach}
+          currentUserId={currentUserId}
+        />
+      )}
     </motion.div>
   )
 }

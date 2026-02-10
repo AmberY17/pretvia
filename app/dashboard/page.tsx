@@ -12,6 +12,7 @@ import { TagFilter } from "@/components/dashboard/tag-filter";
 import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
 import { LogForm } from "@/components/dashboard/log-form";
 import { LogDetail } from "@/components/dashboard/log-detail";
+import { AnnouncementBanner } from "@/components/dashboard/announcement-banner";
 import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -41,6 +42,15 @@ export default function DashboardPage() {
   const { data: tagsData, mutate: mutateTags } = useSWR<{
     tags: { id: string; name: string }[];
   }>(user ? "/api/tags" : null, fetcher);
+
+  const { data: announcementData, mutate: mutateAnnouncement } = useSWR<{
+    announcement: {
+      id: string;
+      text: string;
+      coachName: string;
+      createdAt: string;
+    } | null;
+  }>(user?.groupId ? "/api/announcements" : null, fetcher);
 
   // Auth redirect
   useEffect(() => {
@@ -112,7 +122,8 @@ export default function DashboardPage() {
   const handleGroupChanged = useCallback(() => {
     mutateAuth();
     mutateLogs();
-  }, [mutateAuth, mutateLogs]);
+    mutateAnnouncement();
+  }, [mutateAuth, mutateLogs, mutateAnnouncement]);
 
   if (authLoading || !user) {
     return (
@@ -205,6 +216,15 @@ export default function DashboardPage() {
               />
             </div>
 
+            {/* Announcement Banner */}
+            {user.groupId && (
+              <AnnouncementBanner
+                announcement={announcementData?.announcement ?? null}
+                isCoach={user.role === "coach"}
+                onMutate={() => mutateAnnouncement()}
+              />
+            )}
+
             {/* Feed header */}
             <div className="mb-6 flex items-center justify-between">
               <div>
@@ -252,6 +272,8 @@ export default function DashboardPage() {
                       onEdit={handleEditLog}
                       onClick={handleViewLog}
                       index={i}
+                      currentUserId={user.id}
+                      isCoach={user.role === "coach"}
                     />
                   ))
                 )}
