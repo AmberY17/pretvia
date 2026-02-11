@@ -1,11 +1,13 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 
-const authSecret = process.env.AUTH_SECRET
-if (!authSecret) {
-  throw new Error("AUTH_SECRET is required")
+function getSecret() {
+  const authSecret = process.env.AUTH_SECRET
+  if (!authSecret) {
+    throw new Error("AUTH_SECRET is required. Add it to .env.local and restart the dev server.")
+  }
+  return new TextEncoder().encode(authSecret)
 }
-const secret = new TextEncoder().encode(authSecret)
 
 export interface SessionPayload {
   userId: string
@@ -20,7 +22,7 @@ export async function createSession(payload: SessionPayload) {
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .setIssuedAt()
-    .sign(secret)
+    .sign(getSecret())
 
   const cookieStore = await cookies()
   cookieStore.set("session", token, {
@@ -41,7 +43,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!token) return null
 
   try {
-    const { payload } = await jwtVerify(token, secret)
+    const { payload } = await jwtVerify(token, getSecret())
     return payload as unknown as SessionPayload
   } catch {
     return null
