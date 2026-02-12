@@ -3,11 +3,10 @@
 import React from "react"
 import { useState, useCallback, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Loader2, Users, Lock, X } from "lucide-react"
+import { Loader2, Eye, Lock, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { EmojiPicker } from "./emoji-picker"
 import { TagInput } from "./tag-input"
 import { toast } from "sonner"
@@ -18,6 +17,8 @@ interface LogFormProps {
   onClose?: () => void
   editLog?: LogEntry | null
   existingTags?: string[]
+  prefillTimestamp?: string | null
+  checkinId?: string | null
 }
 
 function getLocalTimestamp() {
@@ -34,14 +35,20 @@ function toLocalTimestamp(isoString: string) {
   return local.toISOString().slice(0, 16)
 }
 
-export function LogForm({ onLogCreated, onClose, editLog, existingTags = [] }: LogFormProps) {
+export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], prefillTimestamp, checkinId }: LogFormProps) {
   const isEditing = Boolean(editLog)
 
   const [emoji, setEmoji] = useState(editLog?.emoji || "")
   const [timestamp, setTimestamp] = useState(
-    editLog ? toLocalTimestamp(editLog.timestamp) : getLocalTimestamp()
+    editLog
+      ? toLocalTimestamp(editLog.timestamp)
+      : prefillTimestamp
+        ? toLocalTimestamp(prefillTimestamp)
+        : getLocalTimestamp()
   )
-  const [isGroup, setIsGroup] = useState(editLog?.isGroup || false)
+  const [visibility, setVisibility] = useState<"coach" | "private">(
+    editLog?.visibility || (checkinId ? "coach" : "coach")
+  )
   const [notes, setNotes] = useState(editLog?.notes || "")
   const [tags, setTags] = useState<string[]>(editLog?.tags || [])
   const [loading, setLoading] = useState(false)
@@ -51,23 +58,25 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [] }: L
     if (editLog) {
       setEmoji(editLog.emoji)
       setTimestamp(toLocalTimestamp(editLog.timestamp))
-      setIsGroup(editLog.isGroup)
+      setVisibility(editLog.visibility || "coach")
       setNotes(editLog.notes)
       setTags(editLog.tags)
     } else {
       setEmoji("")
-      setTimestamp(getLocalTimestamp())
-      setIsGroup(false)
+      setTimestamp(
+        prefillTimestamp ? toLocalTimestamp(prefillTimestamp) : getLocalTimestamp()
+      )
+      setVisibility(checkinId ? "coach" : "coach")
       setNotes("")
       setTags([])
     }
-  }, [editLog])
+  }, [editLog, prefillTimestamp, checkinId])
 
   const resetForm = useCallback(() => {
     setEmoji("")
     setNotes("")
     setTags([])
-    setIsGroup(false)
+    setVisibility("coach")
     setTimestamp(getLocalTimestamp())
   }, [])
 
@@ -90,7 +99,7 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [] }: L
               id: editLog.id,
               emoji,
               timestamp: new Date(timestamp).toISOString(),
-              isGroup,
+              visibility,
               notes,
               tags,
             }),
@@ -109,9 +118,10 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [] }: L
             body: JSON.stringify({
               emoji,
               timestamp: new Date(timestamp).toISOString(),
-              isGroup,
+              visibility,
               notes,
               tags,
+              ...(checkinId ? { checkinId } : {}),
             }),
           })
           if (!res.ok) {
@@ -129,7 +139,7 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [] }: L
         setLoading(false)
       }
     },
-    [emoji, timestamp, isGroup, notes, tags, onLogCreated, isEditing, editLog, resetForm]
+    [emoji, timestamp, visibility, notes, tags, checkinId, onLogCreated, isEditing, editLog, resetForm]
   )
 
   return (
@@ -176,23 +186,35 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [] }: L
         />
       </div>
 
-      {/* Group/Private Toggle */}
-      <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/50 px-4 py-3">
-        <div className="flex items-center gap-2">
-          {isGroup ? (
-            <Users className="h-4 w-4 text-primary" />
-          ) : (
-            <Lock className="h-4 w-4 text-muted-foreground" />
-          )}
-          <span className="text-sm font-medium text-foreground">
-            {isGroup ? "Group" : "Private"}
-          </span>
+      {/* Visibility Selector */}
+      <div className="flex flex-col gap-2">
+        <Label className="text-foreground">Visibility</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setVisibility("coach")}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+              visibility === "coach"
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <Eye className="h-4 w-4" />
+            <span>Shared with coach</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setVisibility("private")}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+              visibility === "private"
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <Lock className="h-4 w-4" />
+            <span>Only me</span>
+          </button>
         </div>
-        <Switch
-          checked={isGroup}
-          onCheckedChange={setIsGroup}
-          aria-label="Toggle group or private"
-        />
       </div>
 
       {/* Notes */}

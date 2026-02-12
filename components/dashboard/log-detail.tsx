@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Users, Lock, X, Pencil, Trash2, User, Calendar, Clock } from "lucide-react"
+import { Eye, Lock, X, Pencil, Trash2, User, Calendar, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -63,19 +63,19 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach }: LogDetail
         {/* Visibility Badge */}
         <div className="mt-4 flex justify-center">
           <Badge
-            variant={log.isGroup ? "default" : "secondary"}
+            variant={log.visibility === "coach" ? "default" : "secondary"}
             className={`text-xs ${
-              log.isGroup
+              log.visibility === "coach"
                 ? "bg-primary/10 text-primary border-primary/20"
                 : "bg-secondary text-muted-foreground border-border"
             }`}
           >
-            {log.isGroup ? (
-              <Users className="mr-1.5 h-3 w-3" />
+            {log.visibility === "coach" ? (
+              <Eye className="mr-1.5 h-3 w-3" />
             ) : (
               <Lock className="mr-1.5 h-3 w-3" />
             )}
-            {log.isGroup ? "Visible to Group" : "Private"}
+            {log.visibility === "coach" ? "Shared with coach" : "Private"}
           </Badge>
         </div>
 

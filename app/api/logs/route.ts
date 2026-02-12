@@ -15,6 +15,7 @@ export async function GET(req: Request) {
     const filterUserId = searchParams.get("userId") // Filter by specific athlete
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
+    const filterCheckinId = searchParams.get("checkinId") // Filter by check-in session
 
     const db = await getDb()
 
@@ -37,18 +38,32 @@ export async function GET(req: Request) {
       const memberIds = groupMembers.map((m) => m._id.toString())
 
       if (filterUserId && currentUser?.role === "coach" && memberIds.includes(filterUserId)) {
-        // Coach filtering by specific athlete
+        // Coach filtering by specific athlete: show logs shared with coach
+        // Support both new visibility field and legacy isGroup field
         filter = {
           userId: filterUserId,
-          isGroup: true,
-        }
-      } else {
-        filter = {
           $or: [
-            { userId: session.userId }, // All own logs
-            { userId: { $in: memberIds }, isGroup: true }, // Group members' non-private logs
+            { visibility: "coach" },
+            { visibility: { $exists: false }, isGroup: true },
           ],
         }
+      } else if (currentUser?.role === "coach") {
+        // Coach sees: own logs + group members' coach-shared logs
+        filter = {
+          $or: [
+            { userId: session.userId },
+            {
+              userId: { $in: memberIds },
+              $or: [
+                { visibility: "coach" },
+                { visibility: { $exists: false }, isGroup: true },
+              ],
+            },
+          ],
+        }
+      } else {
+        // Athlete sees only their own logs (all visibilities)
+        filter = { userId: session.userId }
       }
     } else {
       filter = { userId: session.userId }
@@ -56,6 +71,11 @@ export async function GET(req: Request) {
 
     if (tags.length > 0) {
       filter.tags = { $all: tags }
+    }
+
+    // Check-in session filtering
+    if (filterCheckinId) {
+      filter.checkinId = filterCheckinId
     }
 
     // Date filtering
@@ -98,12 +118,14 @@ export async function GET(req: Request) {
         id: log._id.toString(),
         emoji: log.emoji,
         timestamp: log.timestamp,
-        isGroup: log.isGroup,
+        // Normalize: new visibility field, with backward compat for legacy isGroup
+        visibility: log.visibility || (log.isGroup ? "coach" : "private"),
         notes: log.notes,
         tags: log.tags || [],
         userId: log.userId,
         userName: userMap.get(log.userId) || "Unknown",
         isOwn: log.userId === session.userId,
+        checkinId: log.checkinId || null,
         createdAt: log.createdAt,
       })),
     })
@@ -123,7 +145,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { emoji, timestamp, isGroup, notes, tags } = await req.json()
+    const { emoji, timestamp, isGroup, visibility, notes, tags, checkinId } = await req.json()
 
     if (!emoji) {
       return NextResponse.json(
@@ -134,14 +156,22 @@ export async function POST(req: Request) {
 
     const db = await getDb()
 
-    const logEntry = {
+    // Determine visibility: prefer new visibility field, fall back to isGroup for backward compat
+    const resolvedVisibility = visibility || (isGroup ? "coach" : "private")
+
+    const logEntry: Record<string, unknown> = {
       userId: session.userId,
       emoji,
       timestamp: timestamp ? new Date(timestamp) : new Date(),
-      isGroup: Boolean(isGroup),
+      visibility: resolvedVisibility,
       notes: notes || "",
       tags: Array.isArray(tags) ? tags : [],
       createdAt: new Date(),
+    }
+
+    // Link to check-in session if provided
+    if (checkinId) {
+      logEntry.checkinId = checkinId
     }
 
     const result = await db.collection("logs").insertOne(logEntry)
@@ -164,9 +194,16 @@ export async function POST(req: Request) {
       success: true,
       log: {
         id: result.insertedId.toString(),
-        ...logEntry,
+        emoji: logEntry.emoji,
+        timestamp: logEntry.timestamp,
+        visibility: logEntry.visibility,
+        notes: logEntry.notes,
+        tags: logEntry.tags,
+        userId: logEntry.userId,
+        checkinId: logEntry.checkinId || null,
         userName: session.displayName || "Unknown",
         isOwn: true,
+        createdAt: logEntry.createdAt,
       },
     })
   } catch (error) {
@@ -185,7 +222,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id, emoji, timestamp, isGroup, notes, tags } = await req.json()
+    const { id, emoji, timestamp, isGroup, visibility, notes, tags } = await req.json()
 
     if (!id) {
       return NextResponse.json({ error: "Log ID is required" }, { status: 400 })
@@ -209,7 +246,8 @@ export async function PUT(req: Request) {
     const update: Record<string, unknown> = { updatedAt: new Date() }
     if (emoji !== undefined) update.emoji = emoji
     if (timestamp !== undefined) update.timestamp = new Date(timestamp)
-    if (isGroup !== undefined) update.isGroup = Boolean(isGroup)
+    if (visibility !== undefined) update.visibility = visibility
+    else if (isGroup !== undefined) update.visibility = isGroup ? "coach" : "private"
     if (notes !== undefined) update.notes = notes
     if (tags !== undefined) update.tags = Array.isArray(tags) ? tags : []
 

@@ -32,9 +32,9 @@ const features = [
   },
   {
     icon: Users,
-    title: "Shared Motivation & Adherence",
+    title: "Session Check-Ins",
     description:
-      "See your team's activity in a unified feed that celebrates consistency and builds collective momentum, transforming individual effort into shared success.",
+      "Coaches create check-in cards for training sessions. Athletes log their sessions with a single tap, and the whole group sees progress in real time.",
   },
   {
     icon: MessageCircle,
@@ -44,9 +44,9 @@ const features = [
   },
   {
     icon: EyeOff,
-    title: "Shared or Private",
+    title: "Your Privacy, Your Choice",
     description:
-      "Toggle between Group and Private for every log. You decide what stays personal and what gets shared.",
+      "Share logs with your coach for feedback, or keep them completely private. You control who sees your training data.",
   },
   {
     icon: Filter,

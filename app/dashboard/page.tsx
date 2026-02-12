@@ -17,10 +17,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { SidebarProfile } from "@/components/dashboard/sidebar-profile";
 import { TagFilter } from "@/components/dashboard/tag-filter";
+import { SessionFilter } from "@/components/dashboard/session-filter";
 import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
 import { LogForm } from "@/components/dashboard/log-form";
 import { LogDetail } from "@/components/dashboard/log-detail";
 import { AnnouncementBanner } from "@/components/dashboard/announcement-banner";
+import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
 import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -38,12 +40,18 @@ export default function DashboardPage() {
     "all" | "today" | "7d" | "30d" | "custom"
   >("all");
   const [customDate, setCustomDate] = useState<string>("");
+  const [filterSessionId, setFilterSessionId] = useState<string | null>(null);
+  const [checkinPrefill, setCheckinPrefill] = useState<{
+    timestamp: string;
+    checkinId: string;
+  } | null>(null);
 
-  // Build logs URL with tag filters, athlete filter, and date filter
+  // Build logs URL with tag filters, athlete filter, session filter, and date filter
   const logsUrl = (() => {
     const params = new URLSearchParams();
     activeTags.forEach((t) => params.append("tag", t));
     if (filterAthleteId) params.set("userId", filterAthleteId);
+    if (filterSessionId) params.set("checkinId", filterSessionId);
 
     // Date filter
     const now = new Date();
@@ -129,6 +137,21 @@ export default function DashboardPage() {
     (m) => m.role !== "coach",
   );
 
+  // Fetch active check-ins for the group
+  const { data: checkinsData, mutate: mutateCheckins } = useSWR<{
+    checkins: CheckinItem[];
+  }>(user?.groupId ? "/api/checkins" : null, fetcher);
+
+  // Fetch all check-ins for coach session filter (including expired)
+  const { data: allCheckinsData, mutate: mutateAllCheckins } = useSWR<{
+    checkins: CheckinItem[];
+  }>(
+    user?.role === "coach" && user?.groupId
+      ? "/api/checkins?mode=all"
+      : null,
+    fetcher,
+  );
+
   const { data: announcementData, mutate: mutateAnnouncement } = useSWR<{
     announcement: {
       id: string;
@@ -158,9 +181,12 @@ export default function DashboardPage() {
   const handleLogCreated = useCallback(() => {
     mutateLogs();
     mutateTags();
+    mutateCheckins();
+    mutateAllCheckins();
+    setCheckinPrefill(null);
     setPanelMode("new");
     setSelectedLog(null);
-  }, [mutateLogs, mutateTags]);
+  }, [mutateLogs, mutateTags, mutateCheckins, mutateAllCheckins]);
 
   const handleDeleteLog = useCallback(
     async (id: string) => {
@@ -197,12 +223,23 @@ export default function DashboardPage() {
 
   const handleNewLog = useCallback(() => {
     setSelectedLog(null);
+    setCheckinPrefill(null);
     setPanelMode("new");
   }, []);
+
+  const handleCheckinLog = useCallback(
+    (sessionDate: string, checkinId: string) => {
+      setSelectedLog(null);
+      setCheckinPrefill({ timestamp: sessionDate, checkinId });
+      setPanelMode("new");
+    },
+    [],
+  );
 
   const handleClosePanel = useCallback(() => {
     setPanelMode(null);
     setSelectedLog(null);
+    setCheckinPrefill(null);
   }, []);
 
   const handleFilterAthlete = useCallback((athleteId: string | null) => {
@@ -213,8 +250,11 @@ export default function DashboardPage() {
     mutateAuth();
     mutateLogs();
     mutateAnnouncement();
+    mutateCheckins();
+    mutateAllCheckins();
     setFilterAthleteId(null);
-  }, [mutateAuth, mutateLogs, mutateAnnouncement]);
+    setFilterSessionId(null);
+  }, [mutateAuth, mutateLogs, mutateAnnouncement, mutateCheckins, mutateAllCheckins]);
 
   if (authLoading || !user) {
     return (
@@ -293,12 +333,30 @@ export default function DashboardPage() {
             onLogout={() => mutateAuth()}
             onGroupChanged={handleGroupChanged}
           />
-          <TagFilter
-            tags={tags}
-            activeTags={activeTags}
-            onToggle={handleToggleTag}
-            onClear={handleClearTags}
-          />
+          {/* Tag filter for athletes, Session filter for coaches */}
+          {user.role === "coach" ? (
+            <SessionFilter
+              sessions={(allCheckinsData?.checkins ?? []).map((c) => ({
+                id: c.id,
+                title: c.title,
+                sessionDate: c.sessionDate,
+                checkedInCount: c.checkedInCount,
+                totalAthletes: c.totalAthletes,
+              }))}
+              activeSessionId={filterSessionId}
+              onSelect={(id) =>
+                setFilterSessionId((prev) => (prev === id ? null : id))
+              }
+              onClear={() => setFilterSessionId(null)}
+            />
+          ) : (
+            <TagFilter
+              tags={tags}
+              activeTags={activeTags}
+              onToggle={handleToggleTag}
+              onClear={handleClearTags}
+            />
+          )}
           {/* Date Filter */}
           <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
@@ -419,15 +477,17 @@ export default function DashboardPage() {
         {/* Middle Column: Log Feed */}
         <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
           <div className="mx-auto max-w-2xl">
-            {/* Mobile tag filter */}
-            <div className="mb-4 lg:hidden">
-              <TagFilter
-                tags={tags}
-                activeTags={activeTags}
-                onToggle={handleToggleTag}
-                onClear={handleClearTags}
-              />
-            </div>
+            {/* Mobile tag filter (athletes only) */}
+            {user.role !== "coach" && (
+              <div className="mb-4 lg:hidden">
+                <TagFilter
+                  tags={tags}
+                  activeTags={activeTags}
+                  onToggle={handleToggleTag}
+                  onClear={handleClearTags}
+                />
+              </div>
+            )}
 
             {/* Mobile athlete filter (Coach only) */}
             {user.role === "coach" && athletes.length > 0 && (
@@ -511,6 +571,19 @@ export default function DashboardPage() {
               />
             )}
 
+            {/* Check-In Cards */}
+            {user.groupId && (
+              <CheckinCard
+                checkins={checkinsData?.checkins ?? []}
+                isCoach={user.role === "coach"}
+                onCheckinLog={handleCheckinLog}
+                onMutate={() => {
+                  mutateCheckins();
+                  mutateAllCheckins();
+                }}
+              />
+            )}
+
             {/* Feed header */}
             <div className="mb-6 flex items-center justify-between">
               <div>
@@ -519,7 +592,9 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {logs.length} {logs.length === 1 ? "entry" : "entries"}
-                  {(activeTags.length > 0 || dateFilter !== "all") &&
+                  {(activeTags.length > 0 ||
+                    dateFilter !== "all" ||
+                    filterSessionId) &&
                     " (filtered)"}
                   {filterAthleteId &&
                     (() => {
@@ -604,6 +679,8 @@ export default function DashboardPage() {
                         onLogCreated={handleLogCreated}
                         onClose={handleClosePanel}
                         existingTags={tagNames}
+                        prefillTimestamp={checkinPrefill?.timestamp ?? null}
+                        checkinId={checkinPrefill?.checkinId ?? null}
                       />
                     </motion.div>
                   )}
@@ -679,6 +756,8 @@ export default function DashboardPage() {
                     }}
                     onClose={handleClosePanel}
                     existingTags={tagNames}
+                    prefillTimestamp={checkinPrefill?.timestamp ?? null}
+                    checkinId={checkinPrefill?.checkinId ?? null}
                   />
                 )}
                 {panelMode === "view" && selectedLog && (

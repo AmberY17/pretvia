@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Lock, Trash2, Pencil, User } from "lucide-react";
+import { Lock, Trash2, Pencil, User, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { CommentSection } from "./comment-section";
@@ -10,12 +10,13 @@ export interface LogEntry {
   id: string;
   emoji: string;
   timestamp: string;
-  isGroup: boolean;
+  visibility: "coach" | "private";
   notes: string;
   tags: string[];
   userId: string;
   userName: string;
   isOwn: boolean;
+  checkinId?: string | null;
   createdAt: string;
 }
 
@@ -84,19 +85,19 @@ export function LogCard({
             </div>
             <div className="flex items-center gap-2">
               <Badge
-                variant={log.isGroup ? "default" : "secondary"}
+                variant={log.visibility === "coach" ? "default" : "secondary"}
                 className={`text-xs ${
-                  log.isGroup
+                  log.visibility === "coach"
                     ? "bg-primary/10 text-primary border-primary/20"
                     : "bg-secondary text-muted-foreground border-border"
                 }`}
               >
-                {log.isGroup ? (
-                  <Users className="mr-1 h-3 w-3" />
+                {log.visibility === "coach" ? (
+                  <Eye className="mr-1 h-3 w-3" />
                 ) : (
                   <Lock className="mr-1 h-3 w-3" />
                 )}
-                {log.isGroup ? "Group" : "Private"}
+                {log.visibility === "coach" ? "Shared" : "Private"}
               </Badge>
               {log.isOwn && (
                 <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -160,8 +161,8 @@ export function LogCard({
         </div>
       </div>
 
-      {/* Comment / Feedback Section */}
-      {log.isGroup && (
+      {/* Comment / Feedback Section - only for coach-shared logs */}
+      {log.visibility === "coach" && (
         <CommentSection
           logId={log.id}
           isLogOwner={log.isOwn}
