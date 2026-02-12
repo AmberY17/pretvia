@@ -55,12 +55,13 @@ export function CommentSection({
 
   const canParticipate = isLogOwner || isCoach;
 
-  const { data, mutate } = useSWR<{ comments: Comment[] }>(
-    canParticipate && isExpanded ? `/api/comments?logId=${logId}` : null,
+  const { data, mutate } = useSWR<{ comments: Comment[]; unreadCount: number }>(
+    canParticipate ? `/api/comments?logId=${logId}` : null,
     fetcher,
   );
 
   const comments = data?.comments ?? [];
+  const unreadCount = data?.unreadCount ?? 0;
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -138,10 +139,24 @@ export function CommentSection({
     [mutate],
   );
 
+  const markAsRead = useCallback(async () => {
+    try {
+      await fetch("/api/comments/mark-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logId }),
+      });
+      mutate();
+    } catch {
+      // Silently fail - this is not critical
+    }
+  }, [logId, mutate]);
+
   // Don't show comment section if user can't participate
   if (!canParticipate) return null;
 
   const commentCount = comments.length;
+  const hasUnread = unreadCount > 0;
 
   return (
     <div className="mt-4 border-t border-border/50 pt-3">
@@ -150,17 +165,23 @@ export function CommentSection({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          setIsExpanded((prev) => !prev);
+          const willExpand = !isExpanded;
+          setIsExpanded(willExpand);
+          if (willExpand && hasUnread) {
+            markAsRead();
+          }
         }}
         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
       >
-        <MessageCircle className="h-3.5 w-3.5" />
+        <MessageCircle className={`h-3.5 w-3.5 ${hasUnread ? "text-amber-500" : ""}`} />
         <span className="font-medium">
           {isExpanded
             ? "Hide feedback"
-            : commentCount > 0
-              ? `${commentCount} ${commentCount === 1 ? "comment" : "comments"}`
-              : "Feedback"}
+            : hasUnread
+              ? `${unreadCount} new ${unreadCount === 1 ? "comment" : "comments"}`
+              : commentCount > 0
+                ? `${commentCount} ${commentCount === 1 ? "comment" : "comments"}`
+                : "Feedback"}
         </span>
         {isExpanded ? (
           <ChevronUp className="ml-auto h-3.5 w-3.5" />

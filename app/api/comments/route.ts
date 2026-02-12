@@ -89,6 +89,21 @@ export async function GET(req: Request) {
       ])
     )
 
+    // Fetch last read timestamp for the current user on this log
+    const readStatus = await db.collection("comment_reads").findOne({
+      userId: session.userId,
+      logId,
+    })
+
+    const lastReadAt = readStatus?.lastReadAt || new Date(0)
+
+    // Calculate unread count (comments created after lastReadAt, excluding own comments)
+    const unreadCount = comments.filter(
+      (c) => 
+        c.authorId !== session.userId && 
+        new Date(c.createdAt) > new Date(lastReadAt)
+    ).length
+
     return NextResponse.json({
       comments: comments.map((c) => ({
         id: c._id.toString(),
@@ -99,6 +114,7 @@ export async function GET(req: Request) {
         text: c.text,
         createdAt: c.createdAt,
       })),
+      unreadCount,
     })
   } catch (error) {
     console.error("Get comments error:", error)
