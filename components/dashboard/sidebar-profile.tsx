@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LogOut,
   Users,
@@ -13,19 +13,19 @@ import {
   Check,
   Shield,
   ChevronDown,
-} from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import type { User } from "@/hooks/use-auth"
-import { toast } from "sonner"
+} from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import type { User } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 interface SidebarProfileProps {
-  user: User
-  onLogout: () => void
-  onGroupChanged: () => void
+  user: User;
+  onLogout: () => void;
+  onGroupChanged: () => void;
 }
 
 export function SidebarProfile({
@@ -33,50 +33,50 @@ export function SidebarProfile({
   onLogout,
   onGroupChanged,
 }: SidebarProfileProps) {
-  const router = useRouter()
-  const [showGroupAction, setShowGroupAction] = useState(false)
-  const [groupAction, setGroupAction] = useState<"create" | "join">("join")
-  const [groupInput, setGroupInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [showGroupSwitcher, setShowGroupSwitcher] = useState(false)
+  const router = useRouter();
+  const [showGroupAction, setShowGroupAction] = useState(false);
+  const [groupAction, setGroupAction] = useState<"create" | "join">("join");
+  const [groupInput, setGroupInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showGroupSwitcher, setShowGroupSwitcher] = useState(false);
 
-  const userGroups = user.groups ?? []
-  const hasMultipleGroups = userGroups.length > 1
+  const userGroups = user.groups ?? [];
+  const hasMultipleGroups = userGroups.length > 1;
 
   const handleSwitchGroup = async (groupId: string) => {
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "switch", groupId }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to switch group")
-        return
+        toast.error(data.error || "Failed to switch group");
+        return;
       }
-      toast.success(`Switched to "${data.group.name}"`)
-      setShowGroupSwitcher(false)
-      onGroupChanged()
+      toast.success(`Switched to "${data.group.name}"`);
+      setShowGroupSwitcher(false);
+      onGroupChanged();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" })
-    onLogout()
-    router.push("/")
-  }
+    await fetch("/api/auth/logout", { method: "POST" });
+    onLogout();
+    router.push("/");
+  };
 
   const handleGroupAction = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!groupInput.trim()) return
-    setLoading(true)
+    e.preventDefault();
+    if (!groupInput.trim()) return;
+    setLoading(true);
 
     try {
       const res = await fetch("/api/groups", {
@@ -88,56 +88,56 @@ export function SidebarProfile({
             ? { name: groupInput.trim() }
             : { code: groupInput.trim() }),
         }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed")
-        return
+        toast.error(data.error || "Failed");
+        return;
       }
       toast.success(
         groupAction === "create"
           ? `Group "${data.group.name}" created! Code: ${data.group.code}`
-          : `Joined "${data.group.name}"!`
-      )
-      setShowGroupAction(false)
-      setGroupInput("")
-      onGroupChanged()
+          : `Joined "${data.group.name}"!`,
+      );
+      setShowGroupAction(false);
+      setGroupInput("");
+      onGroupChanged();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleLeaveGroup = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "leave" }),
-      })
+      });
       if (!res.ok) {
-        toast.error("Failed to leave group")
-        return
+        toast.error("Failed to leave group");
+        return;
       }
-      toast.success("Left the group")
-      setShowGroupSwitcher(false)
-      onGroupChanged()
+      toast.success("Left the group");
+      setShowGroupSwitcher(false);
+      onGroupChanged();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const copyCode = () => {
     if (user.group?.code) {
-      navigator.clipboard.writeText(user.group.code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      navigator.clipboard.writeText(user.group.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
@@ -244,8 +244,8 @@ export function SidebarProfile({
               variant="ghost"
               size="sm"
               onClick={() => {
-                setShowGroupAction(true)
-                setGroupAction("join")
+                setShowGroupAction(true);
+                setGroupAction("join");
               }}
               disabled={loading}
               className="h-7 flex-1 gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -260,7 +260,6 @@ export function SidebarProfile({
               disabled={loading}
               className="h-7 gap-1 text-xs text-muted-foreground hover:text-destructive"
             >
-              <ArrowRightLeft className="h-3 w-3" />
               Leave
             </Button>
           </div>
@@ -288,8 +287,8 @@ export function SidebarProfile({
                   <button
                     type="button"
                     onClick={() => {
-                      setGroupAction("join")
-                      setGroupInput("")
+                      setGroupAction("join");
+                      setGroupInput("");
                     }}
                     className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
                       groupAction === "join"
@@ -302,8 +301,8 @@ export function SidebarProfile({
                   <button
                     type="button"
                     onClick={() => {
-                      setGroupAction("create")
-                      setGroupInput("")
+                      setGroupAction("create");
+                      setGroupInput("");
                     }}
                     className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
                       groupAction === "create"
@@ -315,7 +314,10 @@ export function SidebarProfile({
                   </button>
                 </div>
               )}
-              <form onSubmit={handleGroupAction} className="flex flex-col gap-2">
+              <form
+                onSubmit={handleGroupAction}
+                className="flex flex-col gap-2"
+              >
                 <Label className="text-xs text-foreground">
                   {groupAction === "create" ? "Group Name" : "Invite Code"}
                 </Label>
@@ -348,8 +350,8 @@ export function SidebarProfile({
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setShowGroupAction(false)
-                      setGroupInput("")
+                      setShowGroupAction(false);
+                      setGroupInput("");
                     }}
                     className="h-7 text-xs text-muted-foreground"
                   >
@@ -372,5 +374,5 @@ export function SidebarProfile({
         Sign Out
       </Button>
     </div>
-  )
+  );
 }

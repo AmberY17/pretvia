@@ -1,7 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Tag, Smile } from "lucide-react";
+import {
+  ArrowRight,
+  EyeOff,
+  Smile,
+  Users,
+  MessageCircle,
+  Filter,
+  Megaphone,
+  ChartNoAxesCombined,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -19,29 +28,47 @@ const features = [
     icon: Smile,
     title: "Visual Emoji Logs",
     description:
-      "Skip boring titles. Each training log is identified by a large emoji and timestamp for instant recognition.",
+      "Log your training sessions in seconds with expressive emoji indicators. No complex forms—just tap an emoji to capture how your workout felt, making adherence tracking intuitive and genuinely enjoyable.",
   },
   {
-    icon: Tag,
-    title: "Custom Tagging",
+    icon: Users,
+    title: "Shared Motivation & Adherence",
     description:
-      "Create your own tags to organize and filter logs. Type, press enter, and your system grows with you.",
+      "See your team's activity in a unified feed that celebrates consistency and builds collective momentum, transforming individual effort into shared success.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Private 1-on-1 Feedback",
+    description:
+      "Receive personalized coaching directly on your logs. Every entry becomes a private conversation between you and your coach.",
   },
   {
     icon: EyeOff,
-    title: "Privacy Controls",
+    title: "Shared or Private",
     description:
       "Toggle between Group and Private for every log. You decide what stays personal and what gets shared.",
+  },
+  {
+    icon: Filter,
+    title: "Smart Filtering",
+    description:
+      "Instantly find what matters with powerful filtering by tags, dates, and athletes. Whether you're tracking specific training modalities or reviewing a single athlete's journey, your data is always just one click away.",
+  },
+  {
+    icon: Megaphone,
+    title: "Coach Announcements",
+    description:
+      "Keep your team informed with pinned announcements that appear at the top of everyone's feed. Share updates, motivation, or important reminders.",
   },
 ];
 
 const floatingEmojis = [
-  "\u{1F3CB}\u{FE0F}",
-  "\u{1F3C3}",
-  "\u{1F6B4}",
-  "\u{1F9D8}",
-  "\u26BD",
-  "\u{1F3CA}",
+  "\u{1F93A}", // Fencing
+  "\u{1F4A6}", // Sweat (Drops)
+  "\u{1F525}", // Fire
+  "\u{1F344}", // Mushroom
+  "\u2B50\uFE0F", // Star
+  "\u2601\uFE0F", // Cloud
 ];
 
 export default function LandingPage() {
@@ -53,7 +80,7 @@ export default function LandingPage() {
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <span className="text-sm font-bold text-primary-foreground">
-                T
+                TL
               </span>
             </div>
             <span className="text-lg font-bold text-foreground">Prets</span>
@@ -113,8 +140,8 @@ export default function LandingPage() {
             className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground"
           >
             Emoji-first training logs that make tracking sessions intuitive.
-            Tag, filter, and keep your data private -- all in one clean
-            dashboard.
+            <br />
+            Tag, filter, and feedback -- all in one clean dashboard.
           </motion.p>
 
           <motion.div variants={fadeUp} custom={3} className="mt-10 flex gap-4">
@@ -228,9 +255,9 @@ export default function LandingPage() {
       <footer className="border-t border-border px-6 py-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
               <span className="text-xs font-bold text-primary-foreground">
-                T
+                TL
               </span>
             </div>
             <span className="text-sm font-medium text-muted-foreground">
@@ -238,9 +265,9 @@ export default function LandingPage() {
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChartNoAxesCombined className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">
-              Your data, your rules.
+              En garde, Prets, Allez!
             </p>
           </div>
         </div>
