@@ -54,13 +54,14 @@ export default function AuthPage() {
             setLoading(false);
             return;
           }
-          console.log("[v0] Login successful, updating session cache");
-          // Update SWR cache and wait for revalidation before redirecting
-          await mutate(
-            "/api/auth/session",
-            { user: { ...data.user, group: null } },
-            { revalidate: true },
-          );
+          console.log("[v0] Login successful, fetching session from server");
+          // Force a fresh fetch from the session endpoint to verify cookie is set
+          const sessionRes = await fetch("/api/auth/session");
+          const sessionData = await sessionRes.json();
+          console.log("[v0] Session fetched:", sessionData);
+          
+          // Update SWR cache with the verified session data
+          await mutate("/api/auth/session", sessionData, { revalidate: false });
           console.log("[v0] Session cache updated, redirecting to dashboard");
           router.push("/dashboard");
         } else {
