@@ -161,7 +161,7 @@ export function LogCard({
       </div>
 
       {/* Comment / Feedback Section */}
-      {!log.isGroup && (
+      {log.isGroup && (
         <CommentSection
           logId={log.id}
           isLogOwner={log.isOwn}
