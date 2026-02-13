@@ -21,7 +21,7 @@ import { LogForm } from "@/components/dashboard/log-form";
 import { LogDetail } from "@/components/dashboard/log-detail";
 import { AnnouncementBanner } from "@/components/dashboard/announcement-banner";
 import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
-import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());

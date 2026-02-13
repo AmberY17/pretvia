@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
@@ -11,6 +12,7 @@ interface EmojiPickerProps {
 }
 
 export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
+  const { resolvedTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -52,7 +54,7 @@ export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
                   onChange(emoji.native);
                   setOpen(false);
                 }}
-                theme="light"
+                theme={resolvedTheme === "dark" ? "dark" : "light"}
                 set="native"
                 skinTonePosition="search"
                 previewPosition="none"
