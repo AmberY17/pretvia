@@ -173,7 +173,7 @@ export function CommentSection({
         }}
         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
       >
-        <MessageCircle className={`h-3.5 w-3.5 ${hasUnread ? "text-amber-500" : ""}`} />
+        <MessageCircle className={`h-3.5 w-3.5 ${hasUnread ? "text-checkin" : ""}`} />
         <span className="font-medium">
           {isExpanded
             ? "Hide feedback"

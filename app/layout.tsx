@@ -2,6 +2,7 @@ import React from "react";
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 import "./globals.css";
 
@@ -18,8 +19,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0e14",
+  themeColor: "#fafafa",
 };
+
+// Inline script to apply saved color theme before paint to prevent flash
+const colorThemeScript = `
+(function() {
+  try {
+    var c = localStorage.getItem('prets-color');
+    if (c && ['green','blue','indigo'].indexOf(c) !== -1) {
+      document.documentElement.setAttribute('data-theme', c);
+    }
+  } catch(e) {}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -27,19 +40,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: colorThemeScript }} />
+      </head>
       <body className="font-sans antialiased min-h-screen">
-        {children}
-        <Toaster
-          theme="dark"
-          toastOptions={{
-            style: {
-              background: "hsl(220, 18%, 7%)",
-              border: "1px solid hsl(220, 14%, 14%)",
-              color: "hsl(210, 20%, 95%)",
-            },
-          }}
-        />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster
+            toastOptions={{
+              style: {
+                background: "hsl(var(--card))",
+                border: "1px solid hsl(var(--border))",
+                color: "hsl(var(--foreground))",
+              },
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
 import {
-  PanelRightOpen,
-  PanelRightClose,
   Plus,
   User,
   X,
@@ -23,6 +21,7 @@ import { LogForm } from "@/components/dashboard/log-form";
 import { LogDetail } from "@/components/dashboard/log-detail";
 import { AnnouncementBanner } from "@/components/dashboard/announcement-banner";
 import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -301,25 +300,7 @@ export default function DashboardPage() {
                 <span className="hidden sm:inline">New Log</span>
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                isPanelOpen
-                  ? handleClosePanel()
-                  : user.role !== "coach"
-                    ? handleNewLog()
-                    : null
-              }
-              className="text-muted-foreground hover:text-foreground"
-              aria-label={isPanelOpen ? "Close panel" : "Open panel"}
-            >
-              {isPanelOpen ? (
-                <PanelRightClose className="h-4 w-4" />
-              ) : (
-                <PanelRightOpen className="h-4 w-4" />
-              )}
-            </Button>
+            <ThemeSwitcher />
           </div>
         </div>
       </header>
@@ -413,7 +394,7 @@ export default function DashboardPage() {
                     if (e.target.value) setDateFilter("custom");
                     else setDateFilter("all");
                   }}
-                  className={`w-full rounded-lg border border-border bg-secondary px-2 py-1 text-xs text-foreground [color-scheme:dark] ${
+                  className={`w-full rounded-lg border border-border bg-secondary px-2 py-1 text-xs text-foreground ${
                     dateFilter === "custom"
                       ? "border-primary/30 ring-1 ring-primary/20"
                       : ""
@@ -554,7 +535,7 @@ export default function DashboardPage() {
                   if (e.target.value) setDateFilter("custom");
                   else setDateFilter("all");
                 }}
-                className={`rounded-full border border-border bg-secondary px-2.5 py-1 text-xs text-foreground [color-scheme:dark] ${
+                className={`rounded-full border border-border bg-secondary px-2.5 py-1 text-xs text-foreground ${
                   dateFilter === "custom"
                     ? "border-primary/30 bg-primary/10 text-primary"
                     : ""

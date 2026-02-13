@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -85,15 +86,18 @@ export default function LandingPage() {
             </div>
             <span className="text-lg font-bold text-foreground">Prets</span>
           </Link>
-          <Link href="/auth">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Sign In
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1">
+            <ThemeSwitcher />
+            <Link href="/auth">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Sign In
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 

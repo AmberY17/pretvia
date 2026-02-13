@@ -121,15 +121,15 @@ export function CheckinCard({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="relative rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4"
+              className="relative rounded-2xl border border-checkin/20 bg-checkin/5 p-4"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-                  <ClipboardCheck className="h-4 w-4 text-amber-600" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-checkin/10">
+                  <ClipboardCheck className="h-4 w-4 text-checkin" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-amber-600">
+                    <span className="text-xs font-semibold text-checkin">
                       Session Check-In
                     </span>
                     {checkin.title && (
@@ -154,12 +154,12 @@ export function CheckinCard({
                   {/* Progress */}
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                       {checkin.checkedInCount}/{checkin.totalAthletes} checked in
                     </div>
                     <div className="h-1.5 flex-1 rounded-full bg-secondary">
                       <div
-                        className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                        className="h-full rounded-full bg-primary transition-all duration-500"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -169,7 +169,7 @@ export function CheckinCard({
                   {!isCoach && (
                     <div className="mt-3">
                       {checkin.hasUserLoggged ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                           <CheckCircle2 className="h-3 w-3" />
                           Logged
                         </span>
@@ -177,7 +177,7 @@ export function CheckinCard({
                         <Button
                           size="sm"
                           onClick={() => onCheckinLog(checkin.sessionDate, checkin.id)}
-                          className="h-7 gap-1.5 bg-amber-600 text-xs text-white hover:bg-amber-700"
+                          className="h-7 gap-1.5 bg-checkin text-xs text-checkin-foreground hover:bg-checkin/90"
                         >
                           <ClipboardCheck className="h-3 w-3" />
                           Log Session
@@ -223,7 +223,7 @@ export function CheckinCard({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsComposing(true)}
-                className="w-full gap-2 border-dashed border-border bg-transparent text-muted-foreground hover:border-amber-500/30 hover:text-foreground"
+                className="w-full gap-2 border-dashed border-border bg-transparent text-muted-foreground hover:border-checkin/30 hover:text-foreground"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Create Session Check-In
@@ -238,7 +238,7 @@ export function CheckinCard({
               className="rounded-2xl border border-border bg-card p-4"
             >
               <div className="mb-3 flex items-center gap-2">
-                <ClipboardCheck className="h-3.5 w-3.5 text-amber-600" />
+                <ClipboardCheck className="h-3.5 w-3.5 text-checkin" />
                 <span className="text-xs font-semibold text-foreground">
                   New Session Check-In
                 </span>
@@ -267,7 +267,7 @@ export function CheckinCard({
                     type="datetime-local"
                     value={sessionDate}
                     onChange={(e) => setSessionDate(e.target.value)}
-                    className="flex h-8 w-full rounded-md border border-border bg-secondary px-3 py-1 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [color-scheme:dark]"
+                    className="flex h-8 w-full rounded-md border border-border bg-secondary px-3 py-1 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
@@ -291,7 +291,7 @@ export function CheckinCard({
                   size="sm"
                   disabled={loading}
                   onClick={handleCreate}
-                  className="h-7 gap-1.5 bg-amber-600 text-xs text-white hover:bg-amber-700"
+                  className="h-7 gap-1.5 bg-checkin text-xs text-checkin-foreground hover:bg-checkin/90"
                 >
                   {loading ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
