@@ -86,6 +86,12 @@ _En garde, Prets, Allez!_
 
 ---
 
+## Acknowledgements
+
+[V0](https://v0.dev) was used to help implement the light/dark theme with multiple colour combination modes and the comments section.
+
+---
+
 ## License
 
 Private project.
