@@ -109,21 +109,11 @@ export async function GET(req: Request) {
     const users = await db
       .collection("users")
       .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
-      .project({ displayName: 0, password: 0 })
-      .toArray()
-
-    // Build a map -- we only need displayName
-    const usersFullData = await db
-      .collection("users")
-      .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
       .project({ password: 0 })
       .toArray()
     const userMap = new Map(
-      usersFullData.map((u) => [u._id.toString(), u.displayName || "Unknown"])
+      users.map((u) => [u._id.toString(), u.displayName || "Unknown"])
     )
-
-    // Suppress unused variable
-    void users
 
     return NextResponse.json({
       logs: logs.map((log) => ({

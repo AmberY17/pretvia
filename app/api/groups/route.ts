@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSession, createSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
+import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
 
 function generateCode() {
@@ -13,8 +14,8 @@ function generateCode() {
 }
 
 // Helper: ensure user's groupIds array is in sync with their groupId
-async function ensureGroupIds(db: ReturnType<typeof Object>, userId: string) {
-  const user = await (db as any).collection("users").findOne({
+async function ensureGroupIds(db: Db, userId: string) {
+  const user = await db.collection("users").findOne({
     _id: new ObjectId(userId),
   })
   if (!user) return user
@@ -22,14 +23,14 @@ async function ensureGroupIds(db: ReturnType<typeof Object>, userId: string) {
   if (user.groupId && (!Array.isArray(user.groupIds) || !user.groupIds.includes(user.groupId))) {
     const groupIds = Array.isArray(user.groupIds) ? [...user.groupIds] : []
     if (!groupIds.includes(user.groupId)) groupIds.push(user.groupId)
-    await (db as any).collection("users").updateOne(
+    await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },
       { $set: { groupIds } }
     )
     user.groupIds = groupIds
   }
   if (!Array.isArray(user.groupIds)) {
-    await (db as any).collection("users").updateOne(
+    await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },
       { $set: { groupIds: [] } }
     )

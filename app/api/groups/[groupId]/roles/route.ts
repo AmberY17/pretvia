@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
+import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
 
-async function canManageGroup(db: ReturnType<typeof Object>, userId: string, groupId: string) {
-  const user = await (db as any).collection("users").findOne({
+async function canManageGroup(db: Db, userId: string, groupId: string) {
+  const user = await db.collection("users").findOne({
     _id: new ObjectId(userId),
   })
   if (!user || user.role !== "coach") return false
-  const group = await (db as any).collection("groups").findOne({
+  const group = await db.collection("groups").findOne({
     _id: new ObjectId(groupId),
   })
   if (!group) return false
