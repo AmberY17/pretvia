@@ -17,6 +17,11 @@ export async function GET(req: Request) {
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
     const filterCheckinId = searchParams.get("checkinId") // Filter by check-in session
+    const filterReviewStatus = searchParams.get("reviewStatus") as
+      | "pending"
+      | "reviewed"
+      | "revisit"
+      | null
 
     const db = await getDb()
 
@@ -98,11 +103,39 @@ export async function GET(req: Request) {
       filter.timestamp = timestampFilter
     }
 
-    const logs = await db
+    let logs = await db
       .collection("logs")
       .find(filter)
       .sort({ timestamp: -1 })
       .toArray()
+
+    // Coach-only: fetch review status and optionally filter by it
+    let reviewMap = new Map<string, string>()
+    if (currentUser?.role === "coach") {
+      const logIds = logs.map((l) => l._id.toString())
+      const reviews = await db
+        .collection("log_reviews")
+        .find({
+          logId: { $in: logIds },
+          coachId: session.userId,
+        })
+        .toArray()
+      for (const r of reviews) {
+        reviewMap.set(r.logId, r.status)
+      }
+
+      // Filter by review status when requested
+      if (
+        filterReviewStatus &&
+        ["pending", "reviewed", "revisit"].includes(filterReviewStatus)
+      ) {
+        logs = logs.filter((log) => {
+          const logId = log._id.toString()
+          const status = reviewMap.get(logId) ?? "pending"
+          return status === filterReviewStatus
+        })
+      }
+    }
 
     // Fetch display names for all user IDs in the results
     const userIds = [...new Set(logs.map((l) => l.userId))]
@@ -116,20 +149,28 @@ export async function GET(req: Request) {
     )
 
     return NextResponse.json({
-      logs: logs.map((log) => ({
-        id: log._id.toString(),
-        emoji: log.emoji,
-        timestamp: log.timestamp,
-        // Normalize: new visibility field, with backward compat for legacy isGroup
-        visibility: log.visibility || (log.isGroup ? "coach" : "private"),
-        notes: log.notes,
-        tags: log.tags || [],
-        userId: log.userId,
-        userName: userMap.get(log.userId) || "Unknown",
-        isOwn: log.userId === session.userId,
-        checkinId: log.checkinId || null,
-        createdAt: log.createdAt,
-      })),
+      logs: logs.map((log) => {
+        const logId = log._id.toString()
+        const reviewStatus =
+          currentUser?.role === "coach"
+            ? (reviewMap.get(logId) ?? "pending")
+            : undefined
+        return {
+          id: logId,
+          emoji: log.emoji,
+          timestamp: log.timestamp,
+          // Normalize: new visibility field, with backward compat for legacy isGroup
+          visibility: log.visibility || (log.isGroup ? "coach" : "private"),
+          notes: log.notes,
+          tags: log.tags || [],
+          userId: log.userId,
+          userName: userMap.get(log.userId) || "Unknown",
+          isOwn: log.userId === session.userId,
+          checkinId: log.checkinId || null,
+          createdAt: log.createdAt,
+          ...(reviewStatus !== undefined && { reviewStatus }),
+        }
+      }),
     })
   } catch (error) {
     console.error("Get logs error:", error)

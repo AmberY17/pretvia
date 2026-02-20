@@ -9,6 +9,7 @@ export interface LogsUrlFilters {
   filterAthleteId: string | null;
   filterSessionId: string | null;
   filterRoleId: string | null;
+  filterReviewStatus: "pending" | "reviewed" | "revisit" | null;
   dateFilter: DateFilterKey;
   customDate: string;
 }
@@ -20,6 +21,8 @@ export function buildLogsUrl(filters: LogsUrlFilters): string {
   if (filters.filterSessionId)
     params.set("checkinId", filters.filterSessionId);
   if (filters.filterRoleId) params.set("roleId", filters.filterRoleId);
+  if (filters.filterReviewStatus)
+    params.set("reviewStatus", filters.filterReviewStatus);
 
   const { dateFrom, dateTo } = getDateRangeParams(
     filters.dateFilter,
@@ -40,6 +43,7 @@ export function useLogsUrl(filters: LogsUrlFilters): string {
       filters.filterAthleteId,
       filters.filterSessionId,
       filters.filterRoleId,
+      filters.filterReviewStatus,
       filters.dateFilter,
       filters.customDate,
     ],

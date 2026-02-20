@@ -158,6 +158,7 @@ export default function DashboardPage() {
             mutateCheckins();
             mutateAllCheckins();
           }}
+          onMutateLogs={() => mutateLogs()}
         />
 
         <DashboardPanel
