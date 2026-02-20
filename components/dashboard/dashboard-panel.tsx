@@ -19,6 +19,7 @@ export interface PanelHandlers {
   handleCloseEditToView?: () => void;
   handleEditLog: (log: LogEntry) => void;
   handleDeleteLog: (id: string) => void;
+  handleMutateLogs: () => void;
 }
 
 interface DashboardPanelProps {
@@ -41,6 +42,7 @@ export function DashboardPanel({
     handleCloseEditToView,
     handleEditLog,
     handleDeleteLog,
+    handleMutateLogs,
   } = panelHandlers;
 
   const formProps = {
@@ -80,6 +82,7 @@ export function DashboardPanel({
               onEdit={handleEditLog}
               onDelete={handleDeleteLog}
               isCoach={user.role === "coach"}
+              onMutateLogs={handleMutateLogs}
             />
           </motion.div>
         )}
@@ -130,6 +133,7 @@ export function DashboardPanel({
           onEdit={handleEditLog}
           onDelete={handleDeleteLog}
           isCoach={user.role === "coach"}
+          onMutateLogs={handleMutateLogs}
         />
       )}
       {panelMode === "edit" && selectedLog && user.role !== "coach" && (

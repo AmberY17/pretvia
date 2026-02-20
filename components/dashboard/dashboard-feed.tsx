@@ -7,6 +7,7 @@ import { TagFilter } from "@/components/dashboard/tag-filter";
 import { DateFilter } from "@/components/dashboard/date-filter";
 import { AthleteFilter } from "@/components/dashboard/athlete-filter";
 import { RoleFilter } from "@/components/dashboard/role-filter";
+import { ReviewStatusFilter } from "@/components/dashboard/review-status-filter";
 import { AnnouncementBanner } from "@/components/dashboard/announcement-banner";
 import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
 import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
@@ -45,6 +46,7 @@ interface DashboardFeedProps {
   checkins: CheckinItem[];
   onMutateAnnouncement: () => void;
   onMutateCheckins: () => void;
+  onMutateLogs?: () => void;
 }
 
 export function DashboardFeed({
@@ -66,6 +68,7 @@ export function DashboardFeed({
   checkins,
   onMutateAnnouncement,
   onMutateCheckins,
+  onMutateLogs,
 }: DashboardFeedProps) {
   const filteredAthlete = filters.filterAthleteId
     ? athletes.find((a) => a.id === filters.filterAthleteId)
@@ -78,7 +81,8 @@ export function DashboardFeed({
     filters.activeTags.length > 0 ||
     filters.dateFilter !== "all" ||
     filters.filterSessionId ||
-    filters.filterRoleId;
+    filters.filterRoleId ||
+    filters.filterReviewStatus;
 
   return (
     <main
@@ -114,6 +118,11 @@ export function DashboardFeed({
               athletes={athletes}
               filterAthleteId={filters.filterAthleteId}
               onFilter={handlers.handleFilterAthlete}
+            />
+            <ReviewStatusFilter
+              variant="mobile"
+              filterReviewStatus={filters.filterReviewStatus}
+              onFilter={handlers.setFilterReviewStatus}
             />
           </>
         )}
@@ -191,6 +200,7 @@ export function DashboardFeed({
                   index={i}
                   currentUserId={user.id}
                   isCoach={user.role === "coach"}
+                  onMutateLogs={onMutateLogs}
                 />
               ))
             )}

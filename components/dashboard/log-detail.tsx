@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Eye, Lock, X, Pencil, Trash2, User, Calendar, Clock } from "lucide-react"
 import { format } from "date-fns"
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import type { LogEntry } from "./log-card"
+import { ReviewStatusBadge } from "./review-status-badge"
 
 interface LogDetailProps {
   log: LogEntry
@@ -24,10 +25,42 @@ interface LogDetailProps {
   onEdit: (log: LogEntry) => void
   onDelete: (id: string) => void
   isCoach?: boolean
+  onMutateLogs?: () => void
 }
 
-export function LogDetail({ log, onClose, onEdit, onDelete, isCoach }: LogDetailProps) {
+export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLogs }: LogDetailProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [localReviewStatus, setLocalReviewStatus] = useState<"pending" | "reviewed" | "revisit">(log.reviewStatus ?? "pending")
+  useEffect(() => {
+    setLocalReviewStatus(log.reviewStatus ?? "pending")
+  }, [log.id, log.reviewStatus])
+
+  // Auto-set to reviewed when coach opens a log that is not already reviewed
+  useEffect(() => {
+    if (
+      !isCoach ||
+      log.visibility !== "coach" ||
+      (log.reviewStatus ?? "pending") === "reviewed"
+    ) {
+      return
+    }
+    const run = async () => {
+      try {
+        const res = await fetch(`/api/logs/${log.id}/review`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "reviewed" }),
+        })
+        if (res.ok) {
+          setLocalReviewStatus("reviewed")
+          onMutateLogs?.()
+        }
+      } catch {
+        // Ignore
+      }
+    }
+    run()
+  }, [log.id, log.visibility, log.reviewStatus, isCoach, onMutateLogs])
   const formattedDate = format(new Date(log.timestamp), "EEEE, MMMM d, yyyy")
   const formattedTime = format(new Date(log.timestamp), "h:mm a")
 
@@ -72,6 +105,17 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach }: LogDetail
           </div>
         </div>
 
+        {/* Review status badge (coach only) */}
+        {isCoach && log.visibility === "coach" && (
+          <div className="mt-4 flex justify-center">
+            <ReviewStatusBadge
+              logId={log.id}
+              status={localReviewStatus}
+              onChange={setLocalReviewStatus}
+              onMutate={onMutateLogs}
+            />
+          </div>
+        )}
         {/* Visibility Badge (hidden for coaches - they only see shared logs) */}
         {!isCoach && (
           <div className="mt-4 flex justify-center">

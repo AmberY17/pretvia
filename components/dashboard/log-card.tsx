@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CommentSection } from "./comment-section";
+import { ReviewStatusBadge } from "./review-status-badge";
 
 export interface LogEntry {
   id: string;
@@ -29,6 +30,7 @@ export interface LogEntry {
   isOwn: boolean;
   checkinId?: string | null;
   createdAt: string;
+  reviewStatus?: "pending" | "reviewed" | "revisit";
 }
 
 interface LogCardProps {
@@ -39,6 +41,7 @@ interface LogCardProps {
   index: number;
   currentUserId: string;
   isCoach: boolean;
+  onMutateLogs?: () => void;
 }
 
 export function LogCard({
@@ -49,6 +52,7 @@ export function LogCard({
   index,
   currentUserId,
   isCoach,
+  onMutateLogs,
 }: LogCardProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const formattedDate = format(new Date(log.timestamp), "MMM d, yyyy");
@@ -99,6 +103,13 @@ export function LogCard({
               </span>
             </div>
             <div className="flex items-center gap-2">
+              {isCoach && log.visibility === "coach" && (
+                <ReviewStatusBadge
+                  logId={log.id}
+                  status={log.reviewStatus ?? "pending"}
+                  onMutate={onMutateLogs}
+                />
+              )}
               {!isCoach && (
                 <Badge
                   variant={log.visibility === "coach" ? "default" : "secondary"}

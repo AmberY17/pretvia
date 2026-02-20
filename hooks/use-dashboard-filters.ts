@@ -7,6 +7,12 @@ import {
   type LogsUrlFilters,
 } from "@/hooks/use-logs-url";
 
+export type ReviewStatusFilterValue =
+  | "pending"
+  | "reviewed"
+  | "revisit"
+  | null;
+
 export interface DashboardFiltersState {
   activeTags: string[];
   dateFilter: DateFilterKey;
@@ -14,6 +20,7 @@ export interface DashboardFiltersState {
   filterAthleteId: string | null;
   filterSessionId: string | null;
   filterRoleId: string | null;
+  filterReviewStatus: ReviewStatusFilterValue;
 }
 
 export interface DashboardFiltersHandlers {
@@ -24,6 +31,7 @@ export interface DashboardFiltersHandlers {
   handleFilterAthlete: (athleteId: string | null) => void;
   setFilterSessionId: (id: string | null | ((prev: string | null) => string | null)) => void;
   setFilterRoleId: (id: string | null | ((prev: string | null) => string | null)) => void;
+  setFilterReviewStatus: (value: ReviewStatusFilterValue) => void;
   clearDateFilter: () => void;
   clearAllOnGroupChange: () => void;
 }
@@ -35,12 +43,15 @@ export function useDashboardFilters() {
   const [filterAthleteId, setFilterAthleteId] = useState<string | null>(null);
   const [filterSessionId, setFilterSessionId] = useState<string | null>(null);
   const [filterRoleId, setFilterRoleId] = useState<string | null>(null);
+  const [filterReviewStatus, setFilterReviewStatus] =
+    useState<ReviewStatusFilterValue>(null);
 
   const filters: LogsUrlFilters = {
     activeTags,
     filterAthleteId,
     filterSessionId,
     filterRoleId,
+    filterReviewStatus,
     dateFilter,
     customDate,
   };
@@ -69,6 +80,7 @@ export function useDashboardFilters() {
   const clearAllOnGroupChange = useCallback(() => {
     setFilterAthleteId(null);
     setFilterSessionId(null);
+    setFilterReviewStatus(null);
   }, []);
 
   const filtersState: DashboardFiltersState = {
@@ -78,6 +90,7 @@ export function useDashboardFilters() {
     filterAthleteId,
     filterSessionId,
     filterRoleId,
+    filterReviewStatus,
   };
 
   const handlers: DashboardFiltersHandlers = {
@@ -88,6 +101,7 @@ export function useDashboardFilters() {
     handleFilterAthlete,
     setFilterSessionId,
     setFilterRoleId,
+    setFilterReviewStatus,
     clearDateFilter,
     clearAllOnGroupChange,
   };

@@ -113,6 +113,7 @@ export function useDashboardPanel({
       handleCheckinLog,
       handleLogCreated,
       handleDeleteLog,
+      handleMutateLogs: mutateLogs,
     },
   };
 }

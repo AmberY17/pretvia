@@ -6,6 +6,7 @@ import { SessionFilter } from "@/components/dashboard/session-filter";
 import { DateFilter } from "@/components/dashboard/date-filter";
 import { AthleteFilter } from "@/components/dashboard/athlete-filter";
 import { RoleFilter } from "@/components/dashboard/role-filter";
+import { ReviewStatusFilter } from "@/components/dashboard/review-status-filter";
 import type { User } from "@/hooks/use-auth";
 import type { DashboardFiltersState, DashboardFiltersHandlers } from "@/hooks/use-dashboard-filters";
 
@@ -93,6 +94,11 @@ export function DashboardSidebar({
             roles={groupRoles}
             filterRoleId={filters.filterRoleId}
             onFilter={handlers.setFilterRoleId}
+          />
+          <ReviewStatusFilter
+            variant="sidebar"
+            filterReviewStatus={filters.filterReviewStatus}
+            onFilter={handlers.setFilterReviewStatus}
           />
         </>
       )}
