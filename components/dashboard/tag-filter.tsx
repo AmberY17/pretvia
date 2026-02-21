@@ -8,6 +8,7 @@ interface TagFilterProps {
   activeTags: string[]
   onToggle: (tag: string) => void
   onClear: () => void
+  hideHeader?: boolean
 }
 
 export function TagFilter({
@@ -15,29 +16,9 @@ export function TagFilter({
   activeTags,
   onToggle,
   onClear,
+  hideHeader = false,
 }: TagFilterProps) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Tag className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">
-            Filter by Tags
-          </h3>
-        </div>
-        {activeTags.length > 0 && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <X className="h-3 w-3" />
-            Clear
-          </button>
-        )}
-      </div>
-
-      {tags.length === 0 ? (
+  const content = tags.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No tags yet. Create logs with tags to see them here.
         </p>
@@ -58,12 +39,37 @@ export function TagFilter({
                 }`}
               >
                 {tag.name}
-                {isActive && <X className="ml-1.5 h-3 w-3" />}
               </motion.button>
             )
           })}
         </div>
-      )}
+      );
+
+  if (hideHeader) {
+    return <div className="min-w-0">{content}</div>
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Tag className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">
+            Filter by Tags
+          </h3>
+        </div>
+        {activeTags.length > 0 && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <X className="h-3 w-3" />
+            Clear
+          </button>
+        )}
+      </div>
+      {content}
     </div>
   )
 }

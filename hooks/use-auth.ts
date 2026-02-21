@@ -22,6 +22,7 @@ export interface User {
   }[]
   groupIds: string[]
   profileComplete: boolean
+  profileEmoji: string | null
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())

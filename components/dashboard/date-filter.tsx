@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, CalendarDays, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { DateFilterKey } from "@/lib/date-utils";
 
 const DATE_OPTIONS = [
@@ -17,6 +17,7 @@ interface DateFilterProps {
   onCustomDateChange: (value: string) => void;
   onClear: () => void;
   variant?: "sidebar" | "mobile";
+  hideHeader?: boolean;
 }
 
 export function DateFilter({
@@ -26,6 +27,7 @@ export function DateFilter({
   onCustomDateChange,
   onClear,
   variant = "sidebar",
+  hideHeader = false,
 }: DateFilterProps) {
   const isSidebar = variant === "sidebar";
 
@@ -45,7 +47,46 @@ export function DateFilter({
     ? "text-muted-foreground hover:bg-secondary hover:text-foreground"
     : "bg-secondary text-muted-foreground hover:text-foreground";
 
+  const sidebarContent = (
+    <div className="flex flex-col gap-0.5">
+      {options.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => {
+                onDateFilterChange(opt.key);
+                onCustomDateChange("");
+              }}
+              className={`${buttonBase} ${
+                dateFilter === opt.key ? buttonActive : buttonInactive
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => {
+                onCustomDateChange(e.target.value);
+                if (e.target.value) onDateFilterChange("custom");
+                else onDateFilterChange("all");
+              }}
+              className={`w-full rounded-lg border border-border bg-secondary px-2 py-1 text-xs text-foreground ${
+                dateFilter === "custom"
+                  ? "border-primary/30 ring-1 ring-primary/20"
+                  : ""
+              }`}
+            />
+          </div>
+        </div>
+  );
+
   if (isSidebar) {
+    if (hideHeader) {
+      return <div className="min-w-0">{sidebarContent}</div>;
+    }
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center justify-between">
@@ -63,41 +104,7 @@ export function DateFilter({
             </button>
           )}
         </div>
-        <div className="flex flex-col gap-0.5">
-          {options.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => {
-                onDateFilterChange(opt.key);
-                onCustomDateChange("");
-              }}
-              className={`${buttonBase} ${
-                dateFilter === opt.key ? buttonActive : buttonInactive
-              }`}
-            >
-              <CalendarDays className="h-3 w-3" />
-              {opt.label}
-            </button>
-          ))}
-          <div className="mt-1 flex items-center gap-2">
-            <Calendar className="h-3 w-3 shrink-0 text-muted-foreground" />
-            <input
-              type="date"
-              value={customDate}
-              onChange={(e) => {
-                onCustomDateChange(e.target.value);
-                if (e.target.value) onDateFilterChange("custom");
-                else onDateFilterChange("all");
-              }}
-              className={`w-full rounded-lg border border-border bg-secondary px-2 py-1 text-xs text-foreground ${
-                dateFilter === "custom"
-                  ? "border-primary/30 ring-1 ring-primary/20"
-                  : ""
-              }`}
-            />
-          </div>
-        </div>
+        {sidebarContent}
       </div>
     );
   }

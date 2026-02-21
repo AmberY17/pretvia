@@ -4,6 +4,7 @@ import React from "react";
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
+import { urlFetcher } from "@/lib/swr-utils";
 import {
   MessageCircle,
   Send,
@@ -27,6 +28,7 @@ interface Comment {
   authorId: string;
   authorName: string;
   authorRole: string;
+  authorEmoji?: string | null;
   text: string;
   createdAt: string;
 }
@@ -36,15 +38,15 @@ interface CommentSectionProps {
   isLogOwner: boolean;
   isCoach: boolean;
   currentUserId: string;
+  groupId: string | null;
 }
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function CommentSection({
   logId,
   isLogOwner,
   isCoach,
   currentUserId,
+  groupId,
 }: CommentSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -56,8 +58,10 @@ export function CommentSection({
   const canParticipate = isLogOwner || isCoach;
 
   const { data, mutate } = useSWR<{ comments: Comment[]; unreadCount: number }>(
-    canParticipate ? `/api/comments?logId=${logId}` : null,
-    fetcher,
+    canParticipate
+      ? [`/api/comments?logId=${logId}`, currentUserId, groupId ?? ""]
+      : null,
+    urlFetcher,
   );
 
   const comments = data?.comments ?? [];
@@ -218,13 +222,18 @@ export function CommentSection({
                       >
                         <Avatar className="h-7 w-7 shrink-0 shadow-sm">
                           <AvatarFallback
-                            className={`text-[11px] font-semibold ${
+                            className={`font-semibold ${
+                              comment.authorEmoji
+                                ? "text-sm"
+                                : "text-[11px]"
+                            } ${
                               isCoachComment
                                 ? "bg-primary/15 text-primary"
                                 : "bg-secondary text-foreground"
                             }`}
                           >
-                            {comment.authorName?.charAt(0)?.toUpperCase() ||
+                            {comment.authorEmoji ||
+                              comment.authorName?.charAt(0)?.toUpperCase() ||
                               "?"}
                           </AvatarFallback>
                         </Avatar>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import useSWR from "swr";
 import { useAuth } from "@/hooks/use-auth";
+import { urlFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPanel } from "@/hooks/use-dashboard-panel";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -14,41 +15,41 @@ import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
 import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
 import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
   const { data: logsData, mutate: mutateLogs } = useSWR<{ logs: LogEntry[] }>(
-    user ? logsUrl : null,
-    fetcher,
+    user ? [logsUrl, user.id, user.groupId ?? ""] : null,
+    urlFetcher,
   );
 
   const { data: tagsData, mutate: mutateTags } = useSWR<{
     tags: { id: string; name: string }[];
-  }>(user ? "/api/tags" : null, fetcher);
+  }>(user ? ["/api/tags", user.id] : null, urlFetcher);
 
   const { data: membersData } = useSWR<{
     members: { id: string; displayName: string; email: string; role: string }[];
     roles: { id: string; name: string }[];
   }>(
     user?.role === "coach" && user?.groupId
-      ? `/api/groups?groupId=${user.groupId}`
+      ? [`/api/groups?groupId=${user.groupId}`, user.id]
       : null,
-    fetcher,
+    urlFetcher,
   );
 
   const { data: checkinsData, mutate: mutateCheckins } = useSWR<{
     checkins: CheckinItem[];
-  }>(user?.groupId ? "/api/checkins" : null, fetcher);
+  }>(user?.groupId ? ["/api/checkins", user.id, user.groupId] : null, urlFetcher);
 
   const { data: allCheckinsData, mutate: mutateAllCheckins } = useSWR<{
     checkins: CheckinItem[];
   }>(
-    user?.role === "coach" && user?.groupId ? "/api/checkins?mode=all" : null,
-    fetcher,
+    user?.role === "coach" && user?.groupId
+      ? ["/api/checkins?mode=all", user.id, user.groupId]
+      : null,
+    urlFetcher,
   );
 
   const { data: announcementData, mutate: mutateAnnouncement } = useSWR<{
@@ -58,7 +59,10 @@ export default function DashboardPage() {
       coachName: string;
       createdAt: string;
     } | null;
-  }>(user?.groupId ? "/api/announcements" : null, fetcher);
+  }>(
+    user?.groupId ? ["/api/announcements", user.id, user.groupId] : null,
+    urlFetcher,
+  );
 
   const { panelState, panelHandlers } = useDashboardPanel({
     mutateLogs,

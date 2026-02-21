@@ -3,6 +3,7 @@
 import React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   LogOut,
   Users,
@@ -13,6 +14,7 @@ import {
   Check,
   Shield,
   ChevronDown,
+  User,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -163,7 +165,7 @@ export function SidebarProfile({
       <div className="flex items-center gap-3">
         <Avatar className="h-11 w-11 text-lg">
           <AvatarFallback className="bg-secondary text-foreground">
-            {user.displayName?.charAt(0)?.toUpperCase() || "?"}
+            {user.profileEmoji || user.displayName?.charAt(0)?.toUpperCase() || "?"}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
@@ -429,6 +431,12 @@ export function SidebarProfile({
         </div>
       )}
 
+      <Button variant="ghost-secondary" size="sm" asChild className="w-full gap-2">
+        <Link href="/dashboard/account">
+          <User className="h-4 w-4" />
+          Account Settings
+        </Link>
+      </Button>
       <Button
         variant="ghost-secondary"
         size="sm"

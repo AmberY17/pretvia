@@ -1,6 +1,6 @@
 "use client";
 
-import { User, X } from "lucide-react";
+import { X } from "lucide-react";
 
 type Athlete = {
   id: string;
@@ -13,6 +13,7 @@ interface AthleteFilterProps {
   filterAthleteId: string | null;
   onFilter: (athleteId: string | null) => void;
   variant?: "sidebar" | "mobile";
+  hideHeader?: boolean;
 }
 
 export function AthleteFilter({
@@ -20,6 +21,7 @@ export function AthleteFilter({
   filterAthleteId,
   onFilter,
   variant = "sidebar",
+  hideHeader = false,
 }: AthleteFilterProps) {
   if (athletes.length === 0) return null;
 
@@ -36,25 +38,8 @@ export function AthleteFilter({
     ? "text-muted-foreground hover:bg-secondary hover:text-foreground"
     : "bg-secondary text-muted-foreground hover:text-foreground";
 
-  if (isSidebar) {
-    return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Filter by Athlete
-          </h3>
-          {filterAthleteId && (
-            <button
-              type="button"
-              onClick={() => onFilter(null)}
-              className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Clear athlete filter"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col gap-0.5">
+  const sidebarContent = (
+    <div className="flex flex-col gap-0.5">
           <button
             type="button"
             onClick={() => onFilter(null)}
@@ -62,7 +47,6 @@ export function AthleteFilter({
               !filterAthleteId ? buttonActive : buttonInactive
             }`}
           >
-            <User className="h-3 w-3" />
             All Athletes
           </button>
           <div
@@ -81,12 +65,35 @@ export function AthleteFilter({
                   filterAthleteId === athlete.id ? buttonActive : buttonInactive
                 }`}
               >
-                <User className="h-3 w-3" />
                 {athlete.displayName || athlete.email}
               </button>
             ))}
           </div>
         </div>
+  );
+
+  if (isSidebar) {
+    if (hideHeader) {
+      return <div className="min-w-0">{sidebarContent}</div>;
+    }
+    return (
+      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Filter by Athlete
+          </h3>
+          {filterAthleteId && (
+            <button
+              type="button"
+              onClick={() => onFilter(null)}
+              className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Clear athlete filter"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        {sidebarContent}
       </div>
     );
   }

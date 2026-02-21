@@ -34,6 +34,7 @@ export interface DashboardFiltersHandlers {
   setFilterReviewStatus: (value: ReviewStatusFilterValue) => void;
   clearDateFilter: () => void;
   clearAllOnGroupChange: () => void;
+  clearAllFilters: () => void;
 }
 
 export function useDashboardFilters() {
@@ -80,6 +81,17 @@ export function useDashboardFilters() {
   const clearAllOnGroupChange = useCallback(() => {
     setFilterAthleteId(null);
     setFilterSessionId(null);
+    setFilterRoleId(null);
+    setFilterReviewStatus(null);
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setActiveTags([]);
+    setDateFilter("all");
+    setCustomDate("");
+    setFilterAthleteId(null);
+    setFilterSessionId(null);
+    setFilterRoleId(null);
     setFilterReviewStatus(null);
   }, []);
 
@@ -104,6 +116,7 @@ export function useDashboardFilters() {
     setFilterReviewStatus,
     clearDateFilter,
     clearAllOnGroupChange,
+    clearAllFilters,
   };
 
   return {

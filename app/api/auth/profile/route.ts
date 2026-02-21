@@ -3,6 +3,13 @@ import { getSession, createSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 
+// Allow single emoji (complex emojis like 👨‍👩‍👧‍👦 can be many code units)
+function isValidEmoji(val: unknown): boolean {
+  if (val === null || val === "") return true
+  if (typeof val !== "string") return false
+  return val.length >= 1 && val.length <= 20
+}
+
 export async function PUT(req: Request) {
   try {
     const session = await getSession()
@@ -10,31 +17,54 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { displayName } = await req.json()
+    const body = await req.json()
+    const { displayName, profileEmoji } = body
 
-    if (!displayName || displayName.trim().length < 2) {
+    const db = await getDb()
+    const updates: Record<string, unknown> = { updatedAt: new Date() }
+
+    if (displayName !== undefined) {
+      if (!displayName || displayName.trim().length < 2) {
+        return NextResponse.json(
+          { error: "Display name must be at least 2 characters" },
+          { status: 400 }
+        )
+      }
+      updates.displayName = displayName.trim()
+      updates.profileComplete = true
+    }
+
+    if (profileEmoji !== undefined) {
+      if (!isValidEmoji(profileEmoji)) {
+        return NextResponse.json(
+          { error: "Invalid profile emoji" },
+          { status: 400 }
+        )
+      }
+      updates.profileEmoji = profileEmoji === "" ? null : profileEmoji
+    }
+
+    if (Object.keys(updates).length <= 1) {
       return NextResponse.json(
-        { error: "Display name must be at least 2 characters" },
+        { error: "No valid fields to update" },
         { status: 400 }
       )
     }
 
-    const db = await getDb()
-    await db.collection("users").updateOne(
+    const user = await db.collection("users").findOneAndUpdate(
       { _id: new ObjectId(session.userId) },
-      {
-        $set: {
-          displayName: displayName.trim(),
-          profileComplete: true,
-          updatedAt: new Date(),
-        },
-      }
+      { $set: updates },
+      { returnDocument: "after" }
     )
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
 
     await createSession({
       userId: session.userId,
       email: session.email,
-      displayName: displayName.trim(),
+      displayName: user.displayName ?? session.displayName,
       role: session.role,
       groupId: session.groupId,
     })
@@ -42,8 +72,9 @@ export async function PUT(req: Request) {
     return NextResponse.json({
       success: true,
       user: {
-        displayName: displayName.trim(),
-        profileComplete: true,
+        displayName: user.displayName,
+        profileComplete: user.profileComplete,
+        profileEmoji: user.profileEmoji || null,
       },
     })
   } catch (error) {

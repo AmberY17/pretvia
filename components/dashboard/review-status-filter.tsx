@@ -8,6 +8,7 @@ interface ReviewStatusFilterProps {
   filterReviewStatus: ReviewStatusFilterValue;
   onFilter: (value: ReviewStatusFilterValue) => void;
   variant?: "sidebar" | "mobile";
+  hideHeader?: boolean;
 }
 
 const OPTIONS: { value: ReviewStatusFilterValue; label: string }[] = [
@@ -21,6 +22,7 @@ export function ReviewStatusFilter({
   filterReviewStatus,
   onFilter,
   variant = "sidebar",
+  hideHeader = false,
 }: ReviewStatusFilterProps) {
   const isSidebar = variant === "sidebar";
 
@@ -35,7 +37,27 @@ export function ReviewStatusFilter({
     ? "text-muted-foreground hover:bg-secondary hover:text-foreground"
     : "bg-secondary text-muted-foreground hover:text-foreground";
 
+  const sidebarContent = (
+    <div className="flex flex-col gap-0.5">
+          {OPTIONS.map((opt) => (
+            <button
+              key={opt.value ?? "all"}
+              type="button"
+              onClick={() => onFilter(opt.value)}
+              className={`${buttonBase} ${
+                filterReviewStatus === opt.value ? buttonActive : buttonInactive
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+  );
+
   if (isSidebar) {
+    if (hideHeader) {
+      return <div className="min-w-0">{sidebarContent}</div>;
+    }
     return (
       <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center justify-between">
@@ -53,20 +75,7 @@ export function ReviewStatusFilter({
             </button>
           )}
         </div>
-        <div className="flex flex-col gap-0.5">
-          {OPTIONS.map((opt) => (
-            <button
-              key={opt.value ?? "all"}
-              type="button"
-              onClick={() => onFilter(opt.value)}
-              className={`${buttonBase} ${
-                filterReviewStatus === opt.value ? buttonActive : buttonInactive
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {sidebarContent}
       </div>
     );
   }

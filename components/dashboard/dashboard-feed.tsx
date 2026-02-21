@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TagFilter } from "@/components/dashboard/tag-filter";
 import { DateFilter } from "@/components/dashboard/date-filter";
@@ -95,12 +95,28 @@ export function DashboardFeed({
     >
       <div className="mx-auto max-w-2xl">
         {user.role !== "coach" && (
-          <div className="mb-4 lg:hidden">
+          <div className="mb-4 flex flex-col gap-2 lg:hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Filter by
+              </span>
+              {(filters.activeTags.length > 0 || filters.dateFilter !== "all") && (
+                <button
+                  type="button"
+                  onClick={handlers.clearAllFilters}
+                  className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Reset all filters"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
             <TagFilter
               tags={tags}
               activeTags={filters.activeTags}
               onToggle={handlers.handleToggleTag}
               onClear={handlers.handleClearTags}
+              hideHeader
             />
           </div>
         )}
@@ -200,6 +216,7 @@ export function DashboardFeed({
                   index={i}
                   currentUserId={user.id}
                   isCoach={user.role === "coach"}
+                  groupId={user.groupId}
                   onMutateLogs={onMutateLogs}
                 />
               ))

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import useSWR from "swr";
+import { urlFetcher } from "@/lib/swr-utils";
 import {
   ArrowLeft,
   ClipboardCheck,
@@ -22,8 +23,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type AttendanceStatus = "present" | "absent" | "excused" | null;
 
@@ -68,15 +67,22 @@ export default function AttendancePage() {
 
   const { data: checkinsData } = useSWR<{
     checkins: { id: string; title: string | null; sessionDate: string }[];
-  }>(user?.groupId ? "/api/checkins?mode=all" : null, fetcher);
+  }>(
+    user?.groupId
+      ? ["/api/checkins?mode=all", user.id, user.groupId]
+      : null,
+    urlFetcher,
+  );
 
   const attendanceUrl =
     user && selectedCheckinId
       ? `/api/attendance?checkinId=${selectedCheckinId}`
       : null;
   const { data: attendanceData, mutate: mutateAttendance } = useSWR(
-    attendanceUrl,
-    fetcher,
+    attendanceUrl && user
+      ? [attendanceUrl, user.id, user.groupId]
+      : null,
+    urlFetcher,
   );
 
   useEffect(() => {

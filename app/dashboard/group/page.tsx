@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import useSWR from "swr";
+import { urlFetcher } from "@/lib/swr-utils";
 import {
   ArrowLeft,
   Settings,
@@ -31,8 +32,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type Member = {
   id: string;
@@ -97,7 +96,10 @@ export default function GroupManagementPage() {
     user?.role === "coach" ? "/api/groups?mode=coach-groups" : null;
   const { data: coachGroupsData } = useSWR<{
     groups: { id: string; name: string }[];
-  }>(groupsUrl, fetcher);
+  }>(
+    groupsUrl && user ? [groupsUrl, user.id] : null,
+    urlFetcher,
+  );
 
   const membersUrl = user?.groupId
     ? `/api/groups?groupId=${user.groupId}`
@@ -105,7 +107,10 @@ export default function GroupManagementPage() {
   const { data: membersData, mutate: mutateMembers } = useSWR<{
     members: Member[];
     roles: Role[];
-  }>(membersUrl, fetcher);
+  }>(
+    membersUrl && user ? [membersUrl, user.id, user.groupId] : null,
+    urlFetcher,
+  );
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "coach")) {

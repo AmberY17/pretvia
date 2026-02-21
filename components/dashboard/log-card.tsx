@@ -41,6 +41,7 @@ interface LogCardProps {
   index: number;
   currentUserId: string;
   isCoach: boolean;
+  groupId: string | null;
   onMutateLogs?: () => void;
 }
 
@@ -52,6 +53,7 @@ export function LogCard({
   index,
   currentUserId,
   isCoach,
+  groupId,
   onMutateLogs,
 }: LogCardProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -218,6 +220,7 @@ export function LogCard({
           isLogOwner={log.isOwn}
           isCoach={isCoach}
           currentUserId={currentUserId}
+          groupId={groupId}
         />
       )}
     </motion.div>

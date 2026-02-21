@@ -85,7 +85,11 @@ export async function GET(req: Request) {
     const authorMap = new Map(
       authors.map((a) => [
         a._id.toString(),
-        { displayName: a.displayName || "Unknown", role: a.role || "athlete" },
+        {
+          displayName: a.displayName || "Unknown",
+          role: a.role || "athlete",
+          profileEmoji: a.profileEmoji || null,
+        },
       ])
     )
 
@@ -111,6 +115,7 @@ export async function GET(req: Request) {
         authorId: c.authorId,
         authorName: authorMap.get(c.authorId)?.displayName || "Unknown",
         authorRole: authorMap.get(c.authorId)?.role || "athlete",
+        authorEmoji: authorMap.get(c.authorId)?.profileEmoji || null,
         text: c.text,
         createdAt: c.createdAt,
       })),

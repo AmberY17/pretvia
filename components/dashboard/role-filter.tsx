@@ -9,6 +9,7 @@ interface RoleFilterProps {
   filterRoleId: string | null;
   onFilter: (roleId: string | null) => void;
   variant?: "sidebar" | "mobile";
+  hideHeader?: boolean;
 }
 
 export function RoleFilter({
@@ -16,6 +17,7 @@ export function RoleFilter({
   filterRoleId,
   onFilter,
   variant = "sidebar",
+  hideHeader = false,
 }: RoleFilterProps) {
   if (roles.length === 0) return null;
 
@@ -36,25 +38,8 @@ export function RoleFilter({
     onFilter(filterRoleId === roleId ? null : roleId);
   };
 
-  if (isSidebar) {
-    return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Filter by Role
-          </h3>
-          {filterRoleId && (
-            <button
-              type="button"
-              onClick={() => onFilter(null)}
-              className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Clear role filter"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="flex flex-col gap-0.5">
+  const sidebarContent = (
+    <div className="flex flex-col gap-0.5">
           <button
             type="button"
             onClick={() => onFilter(null)}
@@ -85,6 +70,30 @@ export function RoleFilter({
             ))}
           </div>
         </div>
+  );
+
+  if (isSidebar) {
+    if (hideHeader) {
+      return <div className="min-w-0">{sidebarContent}</div>;
+    }
+    return (
+      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Filter by Role
+          </h3>
+          {filterRoleId && (
+            <button
+              type="button"
+              onClick={() => onFilter(null)}
+              className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Clear role filter"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        {sidebarContent}
       </div>
     );
   }

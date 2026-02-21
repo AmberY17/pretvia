@@ -72,6 +72,7 @@ export async function GET() {
         groups,
         groupIds,
         profileComplete: user.profileComplete,
+        profileEmoji: user.profileEmoji || null,
       },
     })
   } catch {
