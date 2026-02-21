@@ -11,6 +11,7 @@ import { ReviewStatusFilter } from "@/components/dashboard/review-status-filter"
 import { AnnouncementBanner } from "@/components/dashboard/announcement-banner";
 import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
 import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
+import { DashboardFeedSkeleton } from "@/components/dashboard/dashboard-skeletons";
 import type { User } from "@/hooks/use-auth";
 import type { DashboardFiltersState, DashboardFiltersHandlers } from "@/hooks/use-dashboard-filters";
 
@@ -47,6 +48,7 @@ interface DashboardFeedProps {
   onMutateAnnouncement: () => void;
   onMutateCheckins: () => void;
   onMutateLogs?: () => void;
+  isLoading?: boolean;
 }
 
 export function DashboardFeed({
@@ -69,7 +71,12 @@ export function DashboardFeed({
   onMutateAnnouncement,
   onMutateCheckins,
   onMutateLogs,
+  isLoading = false,
 }: DashboardFeedProps) {
+  if (isLoading) {
+    return <DashboardFeedSkeleton user={user} />;
+  }
+
   const filteredAthlete = filters.filterAthleteId
     ? athletes.find((a) => a.id === filters.filterAthleteId)
     : null;

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
+import { randomUUID } from "crypto"
 import { getDb } from "@/lib/mongodb"
 import { createSession } from "@/lib/auth"
+import { isTestAccount } from "@/lib/auth-config"
+import { sendVerificationEmail } from "@/lib/resend"
 
 export async function POST(req: Request) {
   try {
@@ -29,9 +32,10 @@ export async function POST(req: Request) {
     }
 
     const db = await getDb()
+    const normalizedEmail = email.toLowerCase()
     const existingUser = await db
       .collection("users")
-      .findOne({ email: email.toLowerCase() })
+      .findOne({ email: normalizedEmail })
 
     if (existingUser) {
       return NextResponse.json(
@@ -40,37 +44,73 @@ export async function POST(req: Request) {
       )
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12)
     const userRole = role === "coach" ? "coach" : "athlete"
 
-    const result = await db.collection("users").insertOne({
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      displayName: displayName.trim(),
-      role: userRole,
-      groupId: null,
-      profileComplete: true,
-      createdAt: new Date(),
-    })
-
-    await createSession({
-      userId: result.insertedId.toString(),
-      email: email.toLowerCase(),
-      displayName: displayName.trim(),
-      role: userRole,
-      groupId: undefined,
-    })
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: result.insertedId.toString(),
-        email: email.toLowerCase(),
+    // Test accounts: create user immediately, skip verification
+    if (isTestAccount(normalizedEmail)) {
+      const hashedPassword = await bcrypt.hash(password, 12)
+      const result = await db.collection("users").insertOne({
+        email: normalizedEmail,
+        password: hashedPassword,
         displayName: displayName.trim(),
         role: userRole,
         groupId: null,
         profileComplete: true,
-      },
+        authProvider: "email",
+        emailVerified: true,
+        createdAt: new Date(),
+      })
+
+      await createSession({
+        userId: result.insertedId.toString(),
+        email: normalizedEmail,
+        displayName: displayName.trim(),
+        role: userRole,
+        groupId: undefined,
+      })
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: result.insertedId.toString(),
+          email: normalizedEmail,
+          displayName: displayName.trim(),
+          role: userRole,
+          groupId: null,
+          profileComplete: true,
+        },
+      })
+    }
+
+    // Regular accounts: save to pending_signups and send magic link
+    const hashedPassword = await bcrypt.hash(password, 12)
+    const token = randomUUID()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+    // Replace any existing pending signup for this email
+    await db.collection("pending_signups").deleteMany({ email: normalizedEmail })
+
+    await db.collection("pending_signups").insertOne({
+      email: normalizedEmail,
+      password: hashedPassword,
+      displayName: displayName.trim(),
+      role: userRole,
+      token,
+      expiresAt,
+    })
+
+    const sendResult = await sendVerificationEmail(normalizedEmail, token)
+    if (!sendResult.ok) {
+      return NextResponse.json(
+        { error: sendResult.error ?? "Failed to send verification email" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Check your email to verify your account.",
+      requiresVerification: true,
     })
   } catch (error) {
     console.error("Signup error:", error)

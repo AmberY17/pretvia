@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { getDb } from "@/lib/mongodb"
 import { createSession } from "@/lib/auth"
+import { isTestAccount } from "@/lib/auth-config"
 
 export async function POST(req: Request) {
   try {
@@ -23,6 +24,24 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
+      )
+    }
+
+    // Google-only users have no password; they must use Google sign-in
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "This account uses Google sign-in. Please sign in with Google." },
+        { status: 401 }
+      )
+    }
+
+    // Require email verification unless test account
+    const canSkipVerification = isTestAccount(user.email)
+    const isVerified = user.emailVerified === true
+    if (!canSkipVerification && !isVerified) {
+      return NextResponse.json(
+        { error: "Please verify your email first. Check your inbox for the verification link." },
+        { status: 403 }
       )
     }
 
