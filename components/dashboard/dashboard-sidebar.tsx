@@ -11,6 +11,7 @@ import { AthleteFilter } from "@/components/dashboard/athlete-filter";
 import { RoleFilter } from "@/components/dashboard/role-filter";
 import { ReviewStatusFilter } from "@/components/dashboard/review-status-filter";
 import { SidebarFilterSkeleton } from "@/components/dashboard/dashboard-skeletons";
+import { SidebarStatsCard } from "@/components/dashboard/sidebar-stats-card";
 import type { User } from "@/hooks/use-auth";
 import type {
   DashboardFiltersState,
@@ -55,6 +56,14 @@ interface DashboardSidebarProps {
   athletes: Athlete[];
   groupRoles: Role[];
   isLoading?: boolean;
+  stats?: {
+    totalLogs: number;
+    streak: number;
+    hasTrainingSlots: boolean;
+    canSkipToday: boolean;
+    skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null;
+  };
+  onMutateStats?: () => void;
 }
 
 export function DashboardSidebar({
@@ -68,6 +77,8 @@ export function DashboardSidebar({
   athletes,
   groupRoles,
   isLoading = false,
+  stats,
+  onMutateStats = () => {},
 }: DashboardSidebarProps) {
   const [coachFilterOrder, setCoachFilterOrder] = useState<CoachFilterId[]>(
     () => DEFAULT_COACH_ORDER,
@@ -195,6 +206,17 @@ export function DashboardSidebar({
         onLogout={onLogout}
         onGroupChanged={onGroupChanged}
       />
+
+      {user.role === "athlete" && stats && (
+        <SidebarStatsCard
+          totalLogs={stats.totalLogs}
+          streak={stats.streak}
+          hasTrainingSlots={stats.hasTrainingSlots}
+          canSkipToday={stats.canSkipToday}
+          skipDisabledReason={stats.skipDisabledReason}
+          onMutateStats={onMutateStats}
+        />
+      )}
 
       {isLoading ? (
         <SidebarFilterSkeleton />

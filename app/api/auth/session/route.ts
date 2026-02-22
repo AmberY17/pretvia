@@ -73,9 +73,10 @@ export async function GET() {
         groupIds,
         profileComplete: user.profileComplete,
         profileEmoji: user.profileEmoji || null,
+        trainingSlots: user.trainingSlots ?? [],
       },
     })
-  } catch {
+  } catch (err) {
     return NextResponse.json({ user: null })
   }
 }

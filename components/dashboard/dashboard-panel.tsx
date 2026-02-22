@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { LogForm } from "@/components/dashboard/log-form";
 import { LogDetail } from "@/components/dashboard/log-detail";
+import { ConfettiCelebration } from "@/components/dashboard/confetti-celebration";
 import type { User } from "@/hooks/use-auth";
 import type { LogEntry } from "@/components/dashboard/log-card";
 
@@ -10,11 +11,13 @@ export interface PanelState {
   panelMode: "new" | "view" | "edit" | null;
   selectedLog: LogEntry | null;
   checkinPrefill: { timestamp: string; checkinId: string } | null;
+  celebrationCount: number | null;
   isPanelOpen: boolean;
 }
 
 export interface PanelHandlers {
-  handleLogCreated: () => void;
+  handleLogCreated: (totalCount?: number) => void;
+  handleCelebrationDismiss: () => void;
   handleClosePanel: () => void;
   handleCloseEditToView?: () => void;
   handleEditLog: (log: LogEntry) => void;
@@ -35,9 +38,10 @@ export function DashboardPanel({
   panelHandlers,
   tagNames,
 }: DashboardPanelProps) {
-  const { panelMode, selectedLog, checkinPrefill, isPanelOpen } = panelState;
+  const { panelMode, selectedLog, checkinPrefill, celebrationCount, isPanelOpen } = panelState;
   const {
     handleLogCreated,
+    handleCelebrationDismiss,
     handleClosePanel,
     handleCloseEditToView,
     handleEditLog,
@@ -108,8 +112,8 @@ export function DashboardPanel({
 
   const mobileFormProps = {
     ...formProps,
-    onLogCreated: () => {
-      handleLogCreated();
+    onLogCreated: (totalCount?: number) => {
+      handleLogCreated(totalCount);
       handleClosePanel();
     },
     onClose: handleClosePanel,
@@ -148,6 +152,15 @@ export function DashboardPanel({
 
   return (
     <>
+      <AnimatePresence>
+        {celebrationCount !== null && (
+          <ConfettiCelebration
+            key={celebrationCount}
+            totalCount={celebrationCount}
+            onDismiss={handleCelebrationDismiss}
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {isPanelOpen && (
           <motion.aside

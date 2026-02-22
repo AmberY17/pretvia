@@ -52,6 +52,17 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
+  const { data: statsData, mutate: mutateStats } = useSWR<{
+    totalLogs: number;
+    streak: number;
+    hasTrainingSlots: boolean;
+    canSkipToday: boolean;
+    skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null;
+  }>(
+    user?.role === "athlete" ? ["/api/stats", user.id] : null,
+    urlFetcher,
+  );
+
   const { data: announcementData, mutate: mutateAnnouncement } = useSWR<{
     announcement: {
       id: string;
@@ -69,6 +80,7 @@ export default function DashboardPage() {
     mutateTags,
     mutateCheckins,
     mutateAllCheckins,
+    mutateStats: user?.role === "athlete" ? mutateStats : undefined,
   });
 
   const handleGroupChanged = useCallback(() => {
@@ -141,6 +153,18 @@ export default function DashboardPage() {
           athletes={athletes}
           groupRoles={groupRoles}
           isLoading={isDataLoading}
+          stats={
+            user.role === "athlete"
+              ? {
+                  totalLogs: statsData?.totalLogs ?? 0,
+                  streak: statsData?.streak ?? 0,
+                  hasTrainingSlots: statsData?.hasTrainingSlots ?? false,
+                  canSkipToday: statsData?.canSkipToday ?? false,
+                  skipDisabledReason: statsData?.skipDisabledReason ?? null,
+                }
+              : undefined
+          }
+          onMutateStats={mutateStats}
         />
 
         <DashboardFeed
