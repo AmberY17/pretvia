@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Trash2, Loader2, ChevronUp, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, User, Trash2, Loader2, SlidersHorizontal, PartyPopper, Calendar, Plus, GripVertical } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -20,6 +20,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { CELEBRATION_KEY } from "@/components/dashboard/confetti-celebration";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const COACH_FILTER_ORDER_KEY = "prets-coach-filter-order";
 const DEFAULT_COACH_ORDER = [
@@ -40,6 +59,49 @@ const FILTER_LABELS: Record<(typeof DEFAULT_COACH_ORDER)[number], string> = {
 
 type CoachFilterId = (typeof DEFAULT_COACH_ORDER)[number];
 
+function SortableFilterItem({
+  id,
+  label,
+}: {
+  id: CoachFilterId;
+  label: string;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 ${
+        isDragging ? "opacity-50" : ""
+      }`}
+    >
+      <span className="text-sm font-medium">{label}</span>
+      <button
+        type="button"
+        className="cursor-grab touch-none rounded p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:cursor-grabbing"
+        aria-label={`Drag to reorder ${label}`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 export default function AccountPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
@@ -50,6 +112,23 @@ export default function AccountPage() {
   const [filterOrder, setFilterOrder] = useState<CoachFilterId[]>([
     ...DEFAULT_COACH_ORDER,
   ]);
+  const [celebrationEnabled, setCelebrationEnabled] = useState(true);
+  const [trainingSlots, setTrainingSlots] = useState<
+    { dayOfWeek: number; time: string }[]
+  >([]);
+  const [savingSlots, setSavingSlots] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = localStorage.getItem(CELEBRATION_KEY);
+      if (stored !== null) {
+        setCelebrationEnabled(stored === "true");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -67,11 +146,18 @@ export default function AccountPage() {
     }
   }, []);
 
-  const moveFilter = (index: number, direction: "up" | "down") => {
-    const newOrder = [...filterOrder];
-    const target = direction === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= newOrder.length) return;
-    [newOrder[index], newOrder[target]] = [newOrder[target], newOrder[index]];
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleFilterDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = filterOrder.indexOf(active.id as CoachFilterId);
+    const newIndex = filterOrder.indexOf(over.id as CoachFilterId);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const newOrder = arrayMove(filterOrder, oldIndex, newIndex);
     setFilterOrder(newOrder);
     localStorage.setItem(COACH_FILTER_ORDER_KEY, JSON.stringify(newOrder));
     toast.success("Filter order updated");
@@ -82,6 +168,19 @@ export default function AccountPage() {
       setProfileEmoji(user.profileEmoji || "");
     }
   }, [user?.profileEmoji]);
+
+  useEffect(() => {
+    if (user?.trainingSlots !== undefined) {
+      setTrainingSlots(
+        Array.isArray(user.trainingSlots) && user.trainingSlots.length > 0
+          ? user.trainingSlots.map((s) => ({
+              dayOfWeek: s.dayOfWeek,
+              time: s.time || "09:00",
+            }))
+          : []
+      );
+    }
+  }, [user?.trainingSlots]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -111,6 +210,58 @@ export default function AccountPage() {
       setSavingEmoji(false);
     }
   };
+
+  const handleSaveTrainingSlots = async () => {
+    setSavingSlots(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trainingSlots }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to update training slots");
+        return;
+      }
+      mutateAuth();
+      toast.success("Training slots updated");
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSavingSlots(false);
+    }
+  };
+
+  const addTrainingSlot = () => {
+    setTrainingSlots((prev) => [...prev, { dayOfWeek: 1, time: "09:00" }]);
+  };
+
+  const removeTrainingSlot = (index: number) => {
+    setTrainingSlots((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateTrainingSlot = (
+    index: number,
+    field: "dayOfWeek" | "time",
+    value: number | string
+  ) => {
+    setTrainingSlots((prev) =>
+      prev.map((s, i) =>
+        i === index ? { ...s, [field]: value } : s
+      )
+    );
+  };
+
+  const DAYS = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
@@ -217,6 +368,116 @@ export default function AccountPage() {
             </div>
           </section>
 
+          {/* Training slots (athletes) */}
+          {user.role === "athlete" && (
+            <section className="rounded-2xl border border-border bg-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
+                <Calendar className="h-4 w-4" />
+                Training Days
+              </h2>
+              <p className="mb-4 text-xs text-muted-foreground">
+                Set your weekly training schedule. Streaks are based on logging
+                within 24 hours of each scheduled slot.
+              </p>
+              <div className="flex flex-col gap-3">
+                {trainingSlots.map((slot, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
+                  >
+                    <select
+                      value={slot.dayOfWeek}
+                      onChange={(e) =>
+                        updateTrainingSlot(
+                          index,
+                          "dayOfWeek",
+                          Number(e.target.value)
+                        )
+                      }
+                      className="h-9 flex-1 min-w-[120px] rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                    >
+                      {DAYS.map((name, i) => (
+                        <option key={i} value={i}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="time"
+                      value={slot.time}
+                      onChange={(e) =>
+                        updateTrainingSlot(index, "time", e.target.value)
+                      }
+                      className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                    />
+                    <Button
+                      variant="ghost-secondary"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => removeTrainingSlot(index)}
+                      aria-label="Remove slot"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="ghost-secondary"
+                  size="sm"
+                  className="w-fit"
+                  onClick={addTrainingSlot}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add training day
+                </Button>
+                {(trainingSlots.length > 0 ||
+                  (user.trainingSlots?.length ?? 0) > 0) && (
+                  <Button
+                    variant="ghost-primary"
+                    size="sm"
+                    className="w-fit"
+                    onClick={handleSaveTrainingSlots}
+                    disabled={savingSlots}
+                  >
+                    {savingSlots ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Celebration toggle (athletes only) */}
+          {user.role === "athlete" && (
+          <section className="rounded-2xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
+              <PartyPopper className="h-4 w-4" />
+              Celebration
+            </h2>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Show a confetti celebration when you create a new log entry.
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Show celebration on new log</span>
+              <Switch
+                checked={celebrationEnabled}
+                onCheckedChange={(checked) => {
+                  setCelebrationEnabled(checked);
+                  try {
+                    localStorage.setItem(CELEBRATION_KEY, String(checked));
+                    toast.success(checked ? "Celebration enabled" : "Celebration disabled");
+                  } catch {
+                    // ignore
+                  }
+                }}
+              />
+            </div>
+          </section>
+          )}
+
           {/* Filter order (coach only) */}
           {user.role === "coach" && (
             <section className="rounded-2xl border border-border bg-card p-6">
@@ -227,40 +488,26 @@ export default function AccountPage() {
               <p className="mb-4 text-xs text-muted-foreground">
                 Reorder the filter sections in your dashboard sidebar.
               </p>
-              <div className="flex flex-col gap-2">
-                {filterOrder.map((id, index) => (
-                  <div
-                    key={id}
-                    className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 px-3 py-2"
-                  >
-                    <span className="text-sm font-medium">
-                      {FILTER_LABELS[id]}
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost-secondary"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => moveFilter(index, "up")}
-                        disabled={index === 0}
-                        aria-label={`Move ${FILTER_LABELS[id]} up`}
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost-secondary"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => moveFilter(index, "down")}
-                        disabled={index === filterOrder.length - 1}
-                        aria-label={`Move ${FILTER_LABELS[id]} down`}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleFilterDragEnd}
+              >
+                <SortableContext
+                  items={filterOrder}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex flex-col gap-2">
+                    {filterOrder.map((id) => (
+                      <SortableFilterItem
+                        key={id}
+                        id={id}
+                        label={FILTER_LABELS[id]}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             </section>
           )}
 

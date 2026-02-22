@@ -18,10 +18,47 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json()
-    const { displayName, profileEmoji } = body
+    const { displayName, profileEmoji, trainingSlots } = body
 
     const db = await getDb()
     const updates: Record<string, unknown> = { updatedAt: new Date() }
+
+    if (trainingSlots !== undefined) {
+      if (!Array.isArray(trainingSlots)) {
+        return NextResponse.json(
+          { error: "trainingSlots must be an array" },
+          { status: 400 }
+        )
+      }
+      const valid = trainingSlots.every(
+        (s: unknown) =>
+          s &&
+          typeof s === "object" &&
+          "dayOfWeek" in s &&
+          "time" in s &&
+          typeof (s as { dayOfWeek: unknown }).dayOfWeek === "number" &&
+          typeof (s as { time: unknown }).time === "string"
+      )
+      if (!valid) {
+        return NextResponse.json(
+          { error: "Each slot must have dayOfWeek (0-6) and time (HH:mm)" },
+          { status: 400 }
+        )
+      }
+      updates.trainingSlots = trainingSlots.map(
+        (s: { dayOfWeek: number; time: string }) => {
+          const t = String(s.time).trim()
+          const match = t.match(/^(\d{1,2}):(\d{2})$/)
+          const time = match
+            ? `${match[1].padStart(2, "0")}:${match[2]}`
+            : "09:00"
+          return {
+            dayOfWeek: Math.max(0, Math.min(6, Number(s.dayOfWeek) || 0)),
+            time,
+          }
+        }
+      )
+    }
 
     if (displayName !== undefined) {
       if (!displayName || displayName.trim().length < 2) {
@@ -75,6 +112,7 @@ export async function PUT(req: Request) {
         displayName: user.displayName,
         profileComplete: user.profileComplete,
         profileEmoji: user.profileEmoji || null,
+        trainingSlots: user.trainingSlots ?? [],
       },
     })
   } catch (error) {

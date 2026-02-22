@@ -16,6 +16,7 @@ export interface UseDashboardPanelParams {
   mutateTags: () => void;
   mutateCheckins?: () => void;
   mutateAllCheckins?: () => void;
+  mutateStats?: () => void;
 }
 
 export function useDashboardPanel({
@@ -23,22 +24,35 @@ export function useDashboardPanel({
   mutateTags,
   mutateCheckins = () => {},
   mutateAllCheckins = () => {},
+  mutateStats = () => {},
 }: UseDashboardPanelParams) {
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   const [checkinPrefill, setCheckinPrefill] = useState<CheckinPrefill | null>(
     null,
   );
+  const [celebrationCount, setCelebrationCount] = useState<number | null>(null);
 
-  const handleLogCreated = useCallback(() => {
-    mutateLogs();
-    mutateTags();
-    mutateCheckins();
-    mutateAllCheckins();
-    setCheckinPrefill(null);
-    setPanelMode("new");
-    setSelectedLog(null);
-  }, [mutateLogs, mutateTags, mutateCheckins, mutateAllCheckins]);
+  const handleLogCreated = useCallback(
+    (totalCount?: number) => {
+      mutateLogs();
+      mutateTags();
+      mutateCheckins();
+      mutateAllCheckins();
+      setCheckinPrefill(null);
+      setPanelMode("new");
+      setSelectedLog(null);
+      if (typeof totalCount === "number") {
+        setCelebrationCount(totalCount);
+      }
+      mutateStats();
+    },
+    [mutateLogs, mutateTags, mutateCheckins, mutateAllCheckins, mutateStats],
+  );
+
+  const handleCelebrationDismiss = useCallback(() => {
+    setCelebrationCount(null);
+  }, []);
 
   const handleDeleteLog = useCallback(
     async (id: string) => {
@@ -102,6 +116,7 @@ export function useDashboardPanel({
       panelMode,
       selectedLog,
       checkinPrefill,
+      celebrationCount,
       isPanelOpen: panelMode !== null,
     },
     panelHandlers: {
@@ -112,6 +127,7 @@ export function useDashboardPanel({
       handleCloseEditToView,
       handleCheckinLog,
       handleLogCreated,
+      handleCelebrationDismiss,
       handleDeleteLog,
       handleMutateLogs: mutateLogs,
     },

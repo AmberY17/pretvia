@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { removeRedundantSkipsForLog } from "@/lib/streak"
+import type { TrainingSlot } from "@/lib/streak"
 
 export async function GET(req: Request) {
   try {
@@ -198,6 +200,9 @@ export async function POST(req: Request) {
     }
 
     const db = await getDb()
+    const user = await db.collection("users").findOne({
+      _id: new ObjectId(session.userId),
+    })
 
     // Determine visibility: prefer new visibility field, fall back to isGroup for backward compat
     const resolvedVisibility = visibility || (isGroup ? "coach" : "private")
@@ -218,6 +223,19 @@ export async function POST(req: Request) {
     }
 
     const result = await db.collection("logs").insertOne(logEntry)
+
+    const totalCount = await db
+      .collection("logs")
+      .countDocuments({ userId: session.userId })
+
+    const logTimestamp = logEntry.timestamp as Date
+    const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
+    await removeRedundantSkipsForLog(
+      db,
+      session.userId,
+      logTimestamp,
+      trainingSlots
+    )
 
     // Save any new tags for the user
     if (logEntry.tags.length > 0) {
@@ -248,6 +266,7 @@ export async function POST(req: Request) {
         isOwn: true,
         createdAt: logEntry.createdAt,
       },
+      totalCount,
     })
   } catch (error) {
     console.error("Create log error:", error)

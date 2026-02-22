@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import type { LogEntry } from "./log-card"
 
 interface LogFormProps {
-  onLogCreated: () => void
+  onLogCreated: (totalCount?: number) => void
   onClose?: () => void
   editLog?: LogEntry | null
   existingTags?: string[]
@@ -110,6 +110,7 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], pre
             return
           }
           toast.success("Log updated!")
+          onLogCreated()
         } else {
           // POST to create
           const res = await fetch("/api/logs", {
@@ -129,10 +130,11 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], pre
             toast.error(data.error || "Failed to create log")
             return
           }
+          const data = await res.json()
           toast.success("Log entry created!")
           resetForm()
+          onLogCreated(data.totalCount)
         }
-        onLogCreated()
       } catch {
         toast.error("Network error. Please try again.")
       } finally {
