@@ -20,12 +20,12 @@ export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
-  const { data: logsData, mutate: mutateLogs } = useSWR<{ logs: LogEntry[] }>(
+  const { data: logsData, isLoading: logsLoading, mutate: mutateLogs } = useSWR<{ logs: LogEntry[] }>(
     user ? [logsUrl, user.id, user.groupId ?? ""] : null,
     urlFetcher,
   );
 
-  const { data: tagsData, mutate: mutateTags } = useSWR<{
+  const { data: tagsData, isLoading: tagsLoading, mutate: mutateTags } = useSWR<{
     tags: { id: string; name: string }[];
   }>(user ? ["/api/tags", user.id] : null, urlFetcher);
 
@@ -93,6 +93,8 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
+  const isDataLoading = logsLoading || tagsLoading;
+
   if (authLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -138,6 +140,7 @@ export default function DashboardPage() {
           sessions={sessions}
           athletes={athletes}
           groupRoles={groupRoles}
+          isLoading={isDataLoading}
         />
 
         <DashboardFeed
@@ -157,6 +160,7 @@ export default function DashboardPage() {
           panelMode={panelState.panelMode}
           announcement={announcementData?.announcement ?? null}
           checkins={checkinsData?.checkins ?? []}
+          isLoading={isDataLoading}
           onMutateAnnouncement={() => mutateAnnouncement()}
           onMutateCheckins={() => {
             mutateCheckins();

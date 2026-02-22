@@ -10,6 +10,7 @@ import { DateFilter } from "@/components/dashboard/date-filter";
 import { AthleteFilter } from "@/components/dashboard/athlete-filter";
 import { RoleFilter } from "@/components/dashboard/role-filter";
 import { ReviewStatusFilter } from "@/components/dashboard/review-status-filter";
+import { SidebarFilterSkeleton } from "@/components/dashboard/dashboard-skeletons";
 import type { User } from "@/hooks/use-auth";
 import type {
   DashboardFiltersState,
@@ -53,6 +54,7 @@ interface DashboardSidebarProps {
   sessions: SessionItem[];
   athletes: Athlete[];
   groupRoles: Role[];
+  isLoading?: boolean;
 }
 
 export function DashboardSidebar({
@@ -65,6 +67,7 @@ export function DashboardSidebar({
   sessions,
   athletes,
   groupRoles,
+  isLoading = false,
 }: DashboardSidebarProps) {
   const [coachFilterOrder, setCoachFilterOrder] = useState<CoachFilterId[]>(
     () => DEFAULT_COACH_ORDER,
@@ -193,6 +196,9 @@ export function DashboardSidebar({
         onGroupChanged={onGroupChanged}
       />
 
+      {isLoading ? (
+        <SidebarFilterSkeleton />
+      ) : (
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -262,6 +268,7 @@ export function DashboardSidebar({
           )}
         </div>
       </div>
+      )}
     </aside>
   );
 }
