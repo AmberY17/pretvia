@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Kumar_One_Outline } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -11,9 +11,14 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
 });
+const kumarOneOutline = Kumar_One_Outline({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-brand",
+});
 
 export const metadata: Metadata = {
-  title: "Prets - Training Logger",
+  title: "Pretvia",
   description:
     "Track your training with emoji-powered visual logs, custom tags, and share them with your fellow athletes.",
 };
@@ -42,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${kumarOneOutline.variable}`}
       suppressHydrationWarning
     >
       <head>

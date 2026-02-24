@@ -4,6 +4,7 @@ import React, { Suspense } from "react";
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { mutate } from "swr";
 import { ArrowLeft, Loader2, Users, Dumbbell } from "lucide-react";
@@ -153,11 +154,20 @@ function AuthForm() {
           >
             <Card className="border-border bg-card">
               <CardHeader className="pb-4">
-                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                  <span className="text-sm font-bold text-primary-foreground">
-                    TL
-                  </span>
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="Pretvia"
+                  width={44}
+                  height={44}
+                  className="mb-2 h-11 w-11 object-contain dark:hidden"
+                />
+                <Image
+                  src="/logo_dark_white.png"
+                  alt="Pretvia"
+                  width={44}
+                  height={44}
+                  className="mb-2 hidden h-11 w-11 object-contain dark:block"
+                />
                 <CardTitle className="text-2xl text-foreground">
                   {isLogin ? "Welcome back" : "Create your account"}
                 </CardTitle>

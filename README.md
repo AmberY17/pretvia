@@ -1,10 +1,10 @@
-# Prets
+# Pretvia
 
 **Log Your Training, Visually.**
 
-Prets is an emoji-first training log platform built for athletes and coaches. Create quick, expressive session logs, get private feedback from your coach, and track progress with powerful filtering—all in one clean dashboard.
+Pretvia is an emoji-first training log platform built for athletes and coaches. Create quick, expressive session logs, get private feedback from your coach, and track progress with powerful filtering—all in one clean dashboard.
 
-_En garde, Prets, Allez!_
+_En garde, Pretvia, Allez!_
 
 ---
 

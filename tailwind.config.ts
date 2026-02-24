@@ -13,6 +13,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-jetbrains-mono)', 'monospace'],
+        brand: ['var(--font-brand)', 'Georgia', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

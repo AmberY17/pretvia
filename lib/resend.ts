@@ -19,7 +19,7 @@ export async function sendVerificationEmail(
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to,
-    subject: "Verify your email – Training Log",
+    subject: "Verify your email – Pretvia",
     html: `
       <p>Thanks for signing up! Click the link below to verify your email and get started.</p>
       <p><a href="${verifyUrl}" style="color: #0070f3;">Verify my email</a></p>

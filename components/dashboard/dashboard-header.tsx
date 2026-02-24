@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Plus, ClipboardCheck, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,21 @@ export function DashboardHeader({ user, onNewLog }: DashboardHeaderProps) {
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">TL</span>
-          </div>
-          <span className="text-sm font-semibold text-foreground">Prets</span>
+          <Image
+            src="/logo.png"
+            alt="Pretvia"
+            width={24}
+            height={24}
+            className="h-6 w-6 object-contain dark:hidden"
+          />
+          <Image
+            src="/logo_dark_white.png"
+            alt="Pretvia"
+            width={24}
+            height={24}
+            className="hidden h-6 w-6 object-contain dark:block"
+          />
+          <span className="font-brand text-sm font-semibold uppercase tracking-[0.15em] text-foreground">Pretvia</span>
         </div>
         <div className="flex items-center gap-2">
           {user.role === "coach" && user.groupId && (
