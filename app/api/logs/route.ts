@@ -25,6 +25,11 @@ export async function GET(req: Request) {
       | "reviewed"
       | "revisit"
       | null
+    const limit = Math.min(
+      Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)),
+      50,
+    )
+    const cursor = searchParams.get("cursor") ?? null
 
     const db = await getDb()
 
@@ -106,11 +111,44 @@ export async function GET(req: Request) {
       filter.timestamp = timestampFilter
     }
 
+    // Cursor-based pagination: fetch documents before cursor (timestamp|id)
+    if (cursor) {
+      try {
+        const sep = cursor.indexOf("|")
+        const tsStr = sep >= 0 ? cursor.slice(0, sep) : ""
+        const idStr = sep >= 0 ? cursor.slice(sep + 1) : ""
+        const cursorTs = new Date(tsStr)
+        const cursorId = safeObjectId(idStr)
+        if (!Number.isNaN(cursorTs.getTime()) && cursorId) {
+          const cursorCondition = {
+            $or: [
+              { timestamp: { $lt: cursorTs } },
+              {
+                timestamp: cursorTs,
+                _id: { $lt: cursorId },
+              },
+            ],
+          }
+          filter = { $and: [filter, cursorCondition] }
+        }
+      } catch {
+        // Invalid cursor, ignore
+      }
+    }
+
     let logs = await db
       .collection("logs")
       .find(filter)
-      .sort({ timestamp: -1 })
+      .sort({ timestamp: -1, _id: -1 })
+      .limit(limit + 1)
       .toArray()
+
+    let nextCursor: string | null = null
+    if (logs.length > limit) {
+      const last = logs[limit - 1] as { timestamp: Date; _id: unknown }
+      nextCursor = `${last.timestamp.toISOString()}|${last._id.toString()}`
+      logs = logs.slice(0, limit)
+    }
 
     // Coach-only: fetch review status and optionally filter by it
     let reviewMap = new Map<string, string>()
@@ -174,6 +212,7 @@ export async function GET(req: Request) {
           ...(reviewStatus !== undefined && { reviewStatus }),
         }
       }),
+      ...(nextCursor !== null && { nextCursor }),
     })
   } catch (error) {
     console.error("Get logs error:", error)

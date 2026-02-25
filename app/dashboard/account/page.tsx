@@ -5,7 +5,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Trash2, Loader2, SlidersHorizontal, PartyPopper, Calendar, Plus, GripVertical, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Trash2,
+  Loader2,
+  SlidersHorizontal,
+  PartyPopper,
+  Calendar,
+  Plus,
+  GripVertical,
+  RefreshCw,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -48,7 +59,7 @@ type TrainingSlotItem = {
 };
 
 function sortSlotsChronologically(
-  slots: TrainingSlotItem[]
+  slots: TrainingSlotItem[],
 ): TrainingSlotItem[] {
   return [...slots].sort((a, b) => {
     if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
@@ -133,7 +144,8 @@ export default function AccountPage() {
     { dayOfWeek: number; time: string; sourceGroupId?: string }[]
   >([]);
   const [savingSlots, setSavingSlots] = useState(false);
-  const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] = useState<number | null>(null);
+  const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] =
+    useState<number | null>(null);
   const [syncingSchedule, setSyncingSchedule] = useState(false);
   const trainingScheduleSaveSkippedRef = useRef(false);
   const lastSavedTrainingSlotsRef = useRef<typeof trainingSlots | null>(null);
@@ -168,7 +180,9 @@ export default function AccountPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleFilterDragEnd = (event: DragEndEvent) => {
@@ -180,7 +194,6 @@ export default function AccountPage() {
     const newOrder = arrayMove(filterOrder, oldIndex, newIndex);
     setFilterOrder(newOrder);
     localStorage.setItem(COACH_FILTER_ORDER_KEY, JSON.stringify(newOrder));
-    toast.success("Filter order updated");
   };
 
   useEffect(() => {
@@ -242,7 +255,6 @@ export default function AccountPage() {
       }
       setProfileEmoji(emoji);
       mutateAuth();
-      toast.success("Profile emoji updated");
     } catch {
       toast.error("Network error");
     } finally {
@@ -252,7 +264,7 @@ export default function AccountPage() {
 
   async function saveTrainingSlotsToServer(
     slots: { dayOfWeek: number; time: string; sourceGroupId?: string }[],
-    options?: { silent?: boolean }
+    options?: { silent?: boolean },
   ) {
     setSavingSlots(true);
     try {
@@ -267,7 +279,6 @@ export default function AccountPage() {
         return;
       }
       mutateAuth();
-      if (!options?.silent) toast.success("Training schedule saved");
       lastSavedTrainingSlotsRef.current = slots;
     } catch {
       toast.error("Network error");
@@ -294,7 +305,6 @@ export default function AccountPage() {
     const nextSlots = trainingSlots.filter((_, i) => i !== index);
     setTrainingSlots(nextSlots);
     await saveTrainingSlotsToServer(nextSlots, { silent: true });
-    toast.success("Group schedule slot removed");
   };
 
   const handleSyncGroupSchedule = async () => {
@@ -315,14 +325,13 @@ export default function AccountPage() {
             dayOfWeek: s.dayOfWeek,
             time: s.time || "09:00",
             sourceGroupId: s.sourceGroupId,
-          })
+          }),
         );
         const nextSlots = sortSlotsChronologically(raw);
         setTrainingSlots(nextSlots);
         lastSavedTrainingSlotsRef.current = nextSlots;
       }
       mutateAuth();
-      toast.success("Group schedule synced");
     } catch {
       toast.error("Network error");
     } finally {
@@ -333,12 +342,10 @@ export default function AccountPage() {
   const updateTrainingSlot = (
     index: number,
     field: "dayOfWeek" | "time",
-    value: number | string
+    value: number | string,
   ) => {
     setTrainingSlots((prev) =>
-      prev.map((s, i) =>
-        i === index ? { ...s, [field]: value } : s
-      )
+      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
     );
   };
 
@@ -521,7 +528,7 @@ export default function AccountPage() {
                           updateTrainingSlot(
                             index,
                             "dayOfWeek",
-                            Number(e.target.value)
+                            Number(e.target.value),
                           )
                         }
                         disabled={!!isGroup}
@@ -551,7 +558,9 @@ export default function AccountPage() {
                             ? setDeleteGroupSlotConfirmIndex(index)
                             : removeTrainingSlot(index)
                         }
-                        aria-label={isGroup ? "Remove group schedule slot" : "Remove slot"}
+                        aria-label={
+                          isGroup ? "Remove group schedule slot" : "Remove slot"
+                        }
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -600,30 +609,31 @@ export default function AccountPage() {
 
           {/* Celebration toggle (athletes only) */}
           {user.role === "athlete" && (
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-              <PartyPopper className="h-4 w-4" />
-              Celebration
-            </h2>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Show a confetti celebration when you create a new log entry.
-            </p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Show celebration on new log</span>
-              <Switch
-                checked={celebrationEnabled}
-                onCheckedChange={(checked) => {
-                  setCelebrationEnabled(checked);
-                  try {
-                    localStorage.setItem(CELEBRATION_KEY, String(checked));
-                    toast.success(checked ? "Celebration enabled" : "Celebration disabled");
-                  } catch {
-                    // ignore
-                  }
-                }}
-              />
-            </div>
-          </section>
+            <section className="rounded-2xl border border-border bg-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
+                <PartyPopper className="h-4 w-4" />
+                Celebration
+              </h2>
+              <p className="mb-4 text-xs text-muted-foreground">
+                Show a confetti celebration when you create a new log entry.
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  Show celebration on new log
+                </span>
+                <Switch
+                  checked={celebrationEnabled}
+                  onCheckedChange={(checked) => {
+                    setCelebrationEnabled(checked);
+                    try {
+                      localStorage.setItem(CELEBRATION_KEY, String(checked));
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                />
+              </div>
+            </section>
           )}
 
           {/* Filter order (coach only) */}
@@ -669,7 +679,10 @@ export default function AccountPage() {
               Permanently delete your account and all associated data. This
               action cannot be undone.
             </p>
-            <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <AlertDialog
+              open={deleteConfirmOpen}
+              onOpenChange={setDeleteConfirmOpen}
+            >
               <Button
                 variant="destructive"
                 size="sm"

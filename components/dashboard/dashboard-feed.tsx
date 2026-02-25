@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,9 @@ interface DashboardFeedProps {
   onMutateCheckins: () => void;
   onMutateLogs?: () => void;
   isLoading?: boolean;
+  hasMoreLogs?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function DashboardFeed({
@@ -72,7 +76,28 @@ export function DashboardFeed({
   onMutateCheckins,
   onMutateLogs,
   isLoading = false,
+  hasMoreLogs = false,
+  isLoadingMore = false,
+  onLoadMore,
 }: DashboardFeedProps) {
+  const scrollRef = useRef<HTMLMainElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasMoreLogs || !onLoadMore || isLoadingMore) return;
+    const scrollEl = scrollRef.current;
+    const sentinel = sentinelRef.current;
+    if (!scrollEl || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) onLoadMore();
+      },
+      { root: scrollEl, rootMargin: "200px", threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreLogs, onLoadMore, isLoadingMore]);
   if (isLoading) {
     return <DashboardFeedSkeleton user={user} />;
   }
@@ -94,6 +119,7 @@ export function DashboardFeed({
 
   return (
     <main
+      ref={scrollRef}
       className="flex-1 overflow-y-auto scrollbar-hidden p-6"
       onClick={() => {
         if (user.role === "coach" && panelMode === "view") onClosePanel();
@@ -245,6 +271,17 @@ export function DashboardFeed({
               ))
             )}
           </AnimatePresence>
+          {hasMoreLogs && (
+            <div
+              ref={sentinelRef}
+              className="flex min-h-[80px] items-center justify-center py-4"
+              aria-hidden
+            >
+              {isLoadingMore && (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </main>

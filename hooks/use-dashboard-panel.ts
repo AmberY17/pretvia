@@ -68,7 +68,6 @@ export function useDashboardPanel({
           setPanelMode("new");
           setSelectedLog(null);
         }
-        toast.success("Log deleted");
       } catch {
         toast.error("Network error");
       }

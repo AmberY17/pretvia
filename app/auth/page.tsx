@@ -61,7 +61,9 @@ function AuthForm() {
   useEffect(() => {
     const error = searchParams.get("error");
     if (error) {
-      toast.error(ERROR_MESSAGES[error] ?? "Something went wrong. Please try again.");
+      toast.error(
+        ERROR_MESSAGES[error] ?? "Something went wrong. Please try again.",
+      );
       router.replace("/auth", { scroll: false });
     }
   }, [searchParams, router]);
@@ -122,11 +124,12 @@ function AuthForm() {
             return;
           }
           if (data.requiresVerification) {
-            toast.success(data.message || "Check your email to verify your account.");
+            toast.success(
+              data.message || "Check your email to verify your account.",
+            );
             setLoading(false);
             return;
           }
-          toast.success("Account created!");
           mutate(
             "/api/auth/session",
             { user: { ...data.user, group: null } },
@@ -240,7 +243,9 @@ function AuthForm() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder={isLogin ? "you@example.com" : "Gmail, Outlook, or Yahoo"}
+                      placeholder={
+                        isLogin ? "you@example.com" : "Gmail, Outlook, or Yahoo"
+                      }
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -383,11 +388,13 @@ function AuthForm() {
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={
-      <main className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </main>
-    }>
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+      }
+    >
       <AuthForm />
     </Suspense>
   );

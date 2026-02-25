@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { urlFetcher } from "@/lib/swr-utils";
+import { urlFetcher, logsInfiniteFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPanel } from "@/hooks/use-dashboard-panel";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -21,10 +22,35 @@ export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
-  const { data: logsData, isLoading: logsLoading, mutate: mutateLogs } = useSWR<{ logs: LogEntry[] }>(
-    user ? [logsUrl, user.id, user.groupId ?? ""] : null,
-    urlFetcher,
+  const {
+    data: logsPagesData,
+    isLoading: logsLoading,
+    mutate: mutateLogs,
+    size,
+    setSize,
+    isValidating: logsValidating,
+  } = useSWRInfinite<{ logs: LogEntry[]; nextCursor: string | null }>(
+    (pageIndex, previousPageData) => {
+      if (!user) return null;
+      if (pageIndex === 0) return [logsUrl, null] as const;
+      if (!previousPageData?.nextCursor) return null;
+      return [logsUrl, previousPageData.nextCursor] as const;
+    },
+    logsInfiniteFetcher,
+    {
+      revalidateFirstPage: false, // Keep first page when loading more
+    },
   );
+
+  const logs = (logsPagesData ?? []).flatMap((p) => p.logs) as LogEntry[];
+  const hasMoreLogs = (logsPagesData?.[logsPagesData.length - 1]?.nextCursor ?? null) !== null;
+  const prevLogsUrlRef = useRef(logsUrl);
+  useEffect(() => {
+    if (prevLogsUrlRef.current !== logsUrl) {
+      prevLogsUrlRef.current = logsUrl;
+      setSize(1);
+    }
+  }, [logsUrl, setSize]);
 
   const { data: tagsData, isLoading: tagsLoading, mutate: mutateTags } = useSWR<{
     tags: { id: string; name: string }[];
@@ -164,7 +190,6 @@ export default function DashboardPage() {
     );
   }
 
-  const logs = logsData?.logs ?? [];
   const tags = tagsData?.tags ?? [];
   const tagNames = tags.map((t) => t.name);
   const athletes = (membersData?.members ?? []).filter(
@@ -231,6 +256,9 @@ export default function DashboardPage() {
           announcement={announcementData?.announcement ?? null}
           checkins={checkinsData?.checkins ?? []}
           isLoading={isDataLoading}
+          hasMoreLogs={hasMoreLogs}
+          isLoadingMore={logsValidating}
+          onLoadMore={() => setSize(size + 1)}
           onMutateAnnouncement={() => mutateAnnouncement()}
           onMutateCheckins={() => {
             mutateCheckins();

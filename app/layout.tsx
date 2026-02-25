@@ -65,6 +65,7 @@ export default function RootLayout({
           {children}
           <Toaster
             position="top-right"
+            duration={2000}
             toastOptions={{
               style: {
                 background: "hsl(var(--card))",

@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import React from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ClipboardCheck,
   Calendar,
@@ -12,8 +12,8 @@ import {
   Loader2,
   Trash2,
   Send,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,37 +23,37 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { toast } from "sonner"
-import { format } from "date-fns"
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 export interface CheckinItem {
-  id: string
-  groupId: string
-  coachId: string
-  title: string | null
-  sessionDate: string
-  createdAt: string
-  expiresAt: string
-  checkedInCount: number
-  totalAthletes: number
-  hasUserLoggged: boolean
+  id: string;
+  groupId: string;
+  coachId: string;
+  title: string | null;
+  sessionDate: string;
+  createdAt: string;
+  expiresAt: string;
+  checkedInCount: number;
+  totalAthletes: number;
+  hasUserLoggged: boolean;
 }
 
 interface CheckinCardProps {
-  checkins: CheckinItem[]
-  isCoach: boolean
-  onCheckinLog: (sessionDate: string, checkinId: string) => void
-  onMutate: () => void
+  checkins: CheckinItem[];
+  isCoach: boolean;
+  onCheckinLog: (sessionDate: string, checkinId: string) => void;
+  onMutate: () => void;
 }
 
 function toLocalDatetime(isoString?: string) {
-  const d = isoString ? new Date(isoString) : new Date()
-  const offset = d.getTimezoneOffset()
-  const local = new Date(d.getTime() - offset * 60 * 1000)
-  return local.toISOString().slice(0, 16)
+  const d = isoString ? new Date(isoString) : new Date();
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }
 
 export function CheckinCard({
@@ -62,15 +62,15 @@ export function CheckinCard({
   onCheckinLog,
   onMutate,
 }: CheckinCardProps) {
-  const [isComposing, setIsComposing] = useState(false)
-  const [title, setTitle] = useState("")
-  const [sessionDate, setSessionDate] = useState(toLocalDatetime())
-  const [loading, setLoading] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [isComposing, setIsComposing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [sessionDate, setSessionDate] = useState(toLocalDatetime());
+  const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleCreate = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await fetch("/api/checkins", {
         method: "POST",
@@ -79,52 +79,53 @@ export function CheckinCard({
           sessionDate: new Date(sessionDate).toISOString(),
           title: title.trim() || null,
         }),
-      })
+      });
       if (!res.ok) {
-        const data = await res.json()
-        toast.error(data.error || "Failed to create check-in")
-        return
+        const data = await res.json();
+        toast.error(data.error || "Failed to create check-in");
+        return;
       }
-      toast.success("Check-in created")
-      setTitle("")
-      setSessionDate(toLocalDatetime())
-      setIsComposing(false)
-      onMutate()
+      setTitle("");
+      setSessionDate(toLocalDatetime());
+      setIsComposing(false);
+      onMutate();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
-    setDeletingId(id)
+    setDeletingId(id);
     try {
-      const res = await fetch(`/api/checkins?id=${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/checkins?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
-        toast.error("Failed to delete check-in")
-        return
+        toast.error("Failed to delete check-in");
+        return;
       }
-      toast.success("Check-in removed")
-      onMutate()
+      onMutate();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setDeletingId(null)
+      setDeletingId(null);
     }
-  }
+  };
 
   return (
     <div className="mb-6 flex flex-col gap-3">
       {/* Active check-in cards */}
       <AnimatePresence>
         {checkins.map((checkin) => {
-          const sessionDateObj = new Date(checkin.sessionDate)
-          const formattedDate = format(sessionDateObj, "MMM d, yyyy")
-          const formattedTime = format(sessionDateObj, "h:mm a")
-          const progress = checkin.totalAthletes > 0
-            ? Math.round((checkin.checkedInCount / checkin.totalAthletes) * 100)
-            : 0
+          const sessionDateObj = new Date(checkin.sessionDate);
+          const formattedDate = format(sessionDateObj, "MMM d, yyyy");
+          const formattedTime = format(sessionDateObj, "h:mm a");
+          const progress =
+            checkin.totalAthletes > 0
+              ? Math.round(
+                  (checkin.checkedInCount / checkin.totalAthletes) * 100,
+                )
+              : 0;
 
           return (
             <motion.div
@@ -166,7 +167,8 @@ export function CheckinCard({
                   <div className="mt-3 flex items-center gap-3">
                     <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                       <CheckCircle2 className="h-3.5 w-3.5 text-checkin" />
-                      {checkin.checkedInCount}/{checkin.totalAthletes} checked in
+                      {checkin.checkedInCount}/{checkin.totalAthletes} checked
+                      in
                     </div>
                     <div className="h-1.5 flex-1 rounded-full bg-secondary">
                       <div
@@ -187,7 +189,9 @@ export function CheckinCard({
                       ) : (
                         <Button
                           size="sm"
-                          onClick={() => onCheckinLog(checkin.sessionDate, checkin.id)}
+                          onClick={() =>
+                            onCheckinLog(checkin.sessionDate, checkin.id)
+                          }
                           className="h-7 gap-1.5 bg-checkin text-xs text-checkin-foreground hover:bg-checkin/90"
                         >
                           <ClipboardCheck className="h-3 w-3" />
@@ -219,7 +223,9 @@ export function CheckinCard({
                     </button>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Are you sure you want to delete?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
                           This session check-in will be removed.
                         </AlertDialogDescription>
@@ -227,7 +233,9 @@ export function CheckinCard({
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+                          onClick={() =>
+                            deleteConfirmId && handleDelete(deleteConfirmId)
+                          }
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Delete
@@ -238,7 +246,7 @@ export function CheckinCard({
                 )}
               </div>
             </motion.div>
-          )
+          );
         })}
       </AnimatePresence>
 
@@ -279,7 +287,10 @@ export function CheckinCard({
 
               <div className="mb-3 flex flex-col gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="checkin-title" className="text-xs text-muted-foreground">
+                  <Label
+                    htmlFor="checkin-title"
+                    className="text-xs text-muted-foreground"
+                  >
                     Title (optional)
                   </Label>
                   <Input
@@ -292,7 +303,10 @@ export function CheckinCard({
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="checkin-date" className="text-xs text-muted-foreground">
+                  <Label
+                    htmlFor="checkin-date"
+                    className="text-xs text-muted-foreground"
+                  >
                     Session Date & Time
                   </Label>
                   <input
@@ -311,9 +325,9 @@ export function CheckinCard({
                   variant="ghost-secondary"
                   size="sm"
                   onClick={() => {
-                    setIsComposing(false)
-                    setTitle("")
-                    setSessionDate(toLocalDatetime())
+                    setIsComposing(false);
+                    setTitle("");
+                    setSessionDate(toLocalDatetime());
                   }}
                   className="h-7 text-xs"
                 >
@@ -340,5 +354,5 @@ export function CheckinCard({
         </AnimatePresence>
       )}
     </div>
-  )
+  );
 }

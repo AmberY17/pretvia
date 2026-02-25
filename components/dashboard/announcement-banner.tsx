@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Megaphone, Trash2, Send, Loader2, Shield, Pencil } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import React from "react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Megaphone, Trash2, Send, Loader2, Shield, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,22 +14,22 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
-import { formatDistanceToNow } from "date-fns"
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
 
 interface Announcement {
-  id: string
-  text: string
-  coachName: string
-  createdAt: string
+  id: string;
+  text: string;
+  coachName: string;
+  createdAt: string;
 }
 
 interface AnnouncementBannerProps {
-  announcement: Announcement | null
-  isCoach: boolean
-  onMutate: () => void
+  announcement: Announcement | null;
+  isCoach: boolean;
+  onMutate: () => void;
 }
 
 export function AnnouncementBanner({
@@ -37,52 +37,50 @@ export function AnnouncementBanner({
   isCoach,
   onMutate,
 }: AnnouncementBannerProps) {
-  const [isComposing, setIsComposing] = useState(false)
-  const [text, setText] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [isComposing, setIsComposing] = useState(false);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handlePost = async () => {
-    if (!text.trim()) return
-    setLoading(true)
+    if (!text.trim()) return;
+    setLoading(true);
     try {
       const res = await fetch("/api/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: text.trim() }),
-      })
+      });
       if (!res.ok) {
-        const data = await res.json()
-        toast.error(data.error || "Failed to post announcement")
-        return
+        const data = await res.json();
+        toast.error(data.error || "Failed to post announcement");
+        return;
       }
-      toast.success("Announcement posted")
-      setText("")
-      setIsComposing(false)
-      onMutate()
+      setText("");
+      setIsComposing(false);
+      onMutate();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDismiss = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const res = await fetch("/api/announcements", { method: "DELETE" })
+      const res = await fetch("/api/announcements", { method: "DELETE" });
       if (!res.ok) {
-        toast.error("Failed to remove announcement")
-        return
+        toast.error("Failed to remove announcement");
+        return;
       }
-      toast.success("Announcement removed")
-      onMutate()
+      onMutate();
     } catch {
-      toast.error("Network error")
+      toast.error("Network error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="mb-6 flex flex-col gap-3">
@@ -122,8 +120,8 @@ export function AnnouncementBanner({
                   <button
                     type="button"
                     onClick={() => {
-                      setText(announcement.text)
-                      setIsComposing(true)
+                      setText(announcement.text);
+                      setIsComposing(true);
                     }}
                     disabled={loading}
                     className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
@@ -131,7 +129,10 @@ export function AnnouncementBanner({
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                  <AlertDialog
+                    open={deleteConfirmOpen}
+                    onOpenChange={setDeleteConfirmOpen}
+                  >
                     <button
                       type="button"
                       onClick={() => setDeleteConfirmOpen(true)}
@@ -143,9 +144,12 @@ export function AnnouncementBanner({
                     </button>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Are you sure you want to delete?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This announcement will be removed for all group members.
+                          This announcement will be removed for all group
+                          members.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -197,7 +201,9 @@ export function AnnouncementBanner({
               <div className="mb-3 flex items-center gap-2">
                 <Shield className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs font-semibold text-foreground">
-                  {announcement && text === announcement.text ? "Edit Announcement" : "New Announcement"}
+                  {announcement && text === announcement.text
+                    ? "Edit Announcement"
+                    : "New Announcement"}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   Visible to all group members
@@ -221,8 +227,8 @@ export function AnnouncementBanner({
                     variant="ghost-secondary"
                     size="sm"
                     onClick={() => {
-                      setIsComposing(false)
-                      setText("")
+                      setIsComposing(false);
+                      setText("");
                     }}
                     className="h-7 text-xs"
                   >
@@ -250,5 +256,5 @@ export function AnnouncementBanner({
         </AnimatePresence>
       )}
     </div>
-  )
+  );
 }

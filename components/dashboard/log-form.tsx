@@ -1,94 +1,103 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState, useCallback, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Loader2, Eye, Lock, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { EmojiPicker } from "./emoji-picker"
-import { TagInput } from "./tag-input"
-import { toast } from "sonner"
-import type { LogEntry } from "./log-card"
+import React from "react";
+import { useState, useCallback, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Loader2, Eye, Lock, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { EmojiPicker } from "./emoji-picker";
+import { TagInput } from "./tag-input";
+import { toast } from "sonner";
+import type { LogEntry } from "./log-card";
 
 interface LogFormProps {
-  onLogCreated: (totalCount?: number) => void
-  onClose?: () => void
-  editLog?: LogEntry | null
-  existingTags?: string[]
-  prefillTimestamp?: string | null
-  checkinId?: string | null
+  onLogCreated: (totalCount?: number) => void;
+  onClose?: () => void;
+  editLog?: LogEntry | null;
+  existingTags?: string[];
+  prefillTimestamp?: string | null;
+  checkinId?: string | null;
 }
 
 function getLocalTimestamp() {
-  const now = new Date()
-  const offset = now.getTimezoneOffset()
-  const local = new Date(now.getTime() - offset * 60 * 1000)
-  return local.toISOString().slice(0, 16)
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }
 
 function toLocalTimestamp(isoString: string) {
-  const d = new Date(isoString)
-  const offset = d.getTimezoneOffset()
-  const local = new Date(d.getTime() - offset * 60 * 1000)
-  return local.toISOString().slice(0, 16)
+  const d = new Date(isoString);
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }
 
-export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], prefillTimestamp, checkinId }: LogFormProps) {
-  const isEditing = Boolean(editLog)
+export function LogForm({
+  onLogCreated,
+  onClose,
+  editLog,
+  existingTags = [],
+  prefillTimestamp,
+  checkinId,
+}: LogFormProps) {
+  const isEditing = Boolean(editLog);
 
-  const [emoji, setEmoji] = useState(editLog?.emoji || "")
+  const [emoji, setEmoji] = useState(editLog?.emoji || "");
   const [timestamp, setTimestamp] = useState(
     editLog
       ? toLocalTimestamp(editLog.timestamp)
       : prefillTimestamp
         ? toLocalTimestamp(prefillTimestamp)
-        : getLocalTimestamp()
-  )
+        : getLocalTimestamp(),
+  );
   const [visibility, setVisibility] = useState<"coach" | "private">(
-    editLog?.visibility || (checkinId ? "coach" : "coach")
-  )
-  const [notes, setNotes] = useState(editLog?.notes || "")
-  const [tags, setTags] = useState<string[]>(editLog?.tags || [])
-  const [loading, setLoading] = useState(false)
+    editLog?.visibility || (checkinId ? "coach" : "coach"),
+  );
+  const [notes, setNotes] = useState(editLog?.notes || "");
+  const [tags, setTags] = useState<string[]>(editLog?.tags || []);
+  const [loading, setLoading] = useState(false);
 
   // Sync fields when editLog changes
   useEffect(() => {
     if (editLog) {
-      setEmoji(editLog.emoji)
-      setTimestamp(toLocalTimestamp(editLog.timestamp))
-      setVisibility(editLog.visibility || "coach")
-      setNotes(editLog.notes)
-      setTags(editLog.tags)
+      setEmoji(editLog.emoji);
+      setTimestamp(toLocalTimestamp(editLog.timestamp));
+      setVisibility(editLog.visibility || "coach");
+      setNotes(editLog.notes);
+      setTags(editLog.tags);
     } else {
-      setEmoji("")
+      setEmoji("");
       setTimestamp(
-        prefillTimestamp ? toLocalTimestamp(prefillTimestamp) : getLocalTimestamp()
-      )
-      setVisibility(checkinId ? "coach" : "coach")
-      setNotes("")
-      setTags([])
+        prefillTimestamp
+          ? toLocalTimestamp(prefillTimestamp)
+          : getLocalTimestamp(),
+      );
+      setVisibility(checkinId ? "coach" : "coach");
+      setNotes("");
+      setTags([]);
     }
-  }, [editLog, prefillTimestamp, checkinId])
+  }, [editLog, prefillTimestamp, checkinId]);
 
   const resetForm = useCallback(() => {
-    setEmoji("")
-    setNotes("")
-    setTags([])
-    setVisibility("coach")
-    setTimestamp(getLocalTimestamp())
-  }, [])
+    setEmoji("");
+    setNotes("");
+    setTags([]);
+    setVisibility("coach");
+    setTimestamp(getLocalTimestamp());
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
-      e.preventDefault()
+      e.preventDefault();
       if (!emoji) {
-        toast.error("Please select an emoji for your log")
-        return
+        toast.error("Please select an emoji for your log");
+        return;
       }
 
-      setLoading(true)
+      setLoading(true);
       try {
         if (isEditing && editLog) {
           // PUT to update
@@ -103,14 +112,13 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], pre
               notes,
               tags,
             }),
-          })
+          });
           if (!res.ok) {
-            const data = await res.json()
-            toast.error(data.error || "Failed to update log")
-            return
+            const data = await res.json();
+            toast.error(data.error || "Failed to update log");
+            return;
           }
-          toast.success("Log updated!")
-          onLogCreated()
+          onLogCreated();
         } else {
           // POST to create
           const res = await fetch("/api/logs", {
@@ -124,25 +132,35 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], pre
               tags,
               ...(checkinId ? { checkinId } : {}),
             }),
-          })
+          });
           if (!res.ok) {
-            const data = await res.json()
-            toast.error(data.error || "Failed to create log")
-            return
+            const data = await res.json();
+            toast.error(data.error || "Failed to create log");
+            return;
           }
-          const data = await res.json()
-          toast.success("Log entry created!")
-          resetForm()
-          onLogCreated(data.totalCount)
+          const data = await res.json();
+          resetForm();
+          onLogCreated(data.totalCount);
         }
       } catch {
-        toast.error("Network error. Please try again.")
+        toast.error("Network error. Please try again.");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     },
-    [emoji, timestamp, visibility, notes, tags, checkinId, onLogCreated, isEditing, editLog, resetForm]
-  )
+    [
+      emoji,
+      timestamp,
+      visibility,
+      notes,
+      tags,
+      checkinId,
+      onLogCreated,
+      isEditing,
+      editLog,
+      resetForm,
+    ],
+  );
 
   return (
     <motion.form
@@ -256,5 +274,5 @@ export function LogForm({ onLogCreated, onClose, editLog, existingTags = [], pre
         )}
       </Button>
     </motion.form>
-  )
+  );
 }

@@ -105,10 +105,7 @@ export default function GroupManagementPage() {
     user?.role === "coach" ? "/api/groups?mode=coach-groups" : null;
   const { data: coachGroupsData } = useSWR<{
     groups: { id: string; name: string }[];
-  }>(
-    groupsUrl && user ? [groupsUrl, user.id] : null,
-    urlFetcher,
-  );
+  }>(groupsUrl && user ? [groupsUrl, user.id] : null, urlFetcher);
 
   const membersUrl = user?.groupId
     ? `/api/groups?groupId=${user.groupId}`
@@ -159,7 +156,9 @@ export default function GroupManagementPage() {
     let cancelled = false;
     const loadTrainingSchedule = async () => {
       try {
-        const res = await fetch(`/api/groups/${user.groupId}/training-schedule`);
+        const res = await fetch(
+          `/api/groups/${user.groupId}/training-schedule`,
+        );
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;
@@ -196,9 +195,7 @@ export default function GroupManagementPage() {
     value: number | string,
   ) => {
     setTrainingSchedule((prev) =>
-      prev.map((s, i) =>
-        i === index ? { ...s, [field]: value } : s,
-      ),
+      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
     );
   };
 
@@ -216,7 +213,9 @@ export default function GroupManagementPage() {
         toast.error(data.error || "Failed to update training schedule");
         return;
       }
-      toast.success("Training schedule updated and applied to all athletes in this group.");
+      toast.success(
+        "Training schedule updated and applied to all athletes in this group.",
+      );
     } catch {
       toast.error("Network error");
     } finally {
@@ -250,7 +249,6 @@ export default function GroupManagementPage() {
       }
       setNewRoleName("");
       mutateMembers();
-      toast.success(`Role "${data.role.name}" added`);
     } catch {
       toast.error("Network error");
     } finally {
@@ -277,7 +275,6 @@ export default function GroupManagementPage() {
       }
       handleCancelEditRole();
       mutateMembers();
-      toast.success("Role updated");
     } catch {
       toast.error("Network error");
     } finally {
@@ -301,7 +298,6 @@ export default function GroupManagementPage() {
       }
       handleCancelEditRole();
       mutateMembers();
-      toast.success("Role deleted");
     } catch {
       toast.error("Network error");
     }
@@ -322,7 +318,6 @@ export default function GroupManagementPage() {
         return;
       }
       mutateMembers();
-      toast.success("Roles updated");
     } catch {
       toast.error("Network error");
     } finally {
@@ -346,7 +341,6 @@ export default function GroupManagementPage() {
         return;
       }
       mutateMembers();
-      toast.success("Athlete removed");
     } catch {
       toast.error("Network error");
     } finally {
@@ -377,7 +371,6 @@ export default function GroupManagementPage() {
       setTransferDropdownOpen(false);
       setTransferSearch("");
       mutateMembers();
-      toast.success("Athlete transferred");
     } catch {
       toast.error("Network error");
     } finally {
@@ -581,9 +574,9 @@ export default function GroupManagementPage() {
                   Training schedule
                 </h2>
                 <p className="mb-4 text-xs text-muted-foreground">
-                  Set a default training schedule for this group. Athletes in this group
-                  will have these slots applied to their account, and they can still add
-                  their own custom training schedule entries.
+                  Set a default training schedule for this group. Athletes in
+                  this group will have these slots applied to their account, and
+                  they can still add their own custom training schedule entries.
                 </p>
                 <div className="flex flex-col gap-3">
                   {trainingSchedule.map((slot, index) => (
@@ -595,7 +588,11 @@ export default function GroupManagementPage() {
                         <select
                           value={slot.dayOfWeek}
                           onChange={(e) =>
-                            updateTrainingSlot(index, "dayOfWeek", Number(e.target.value))
+                            updateTrainingSlot(
+                              index,
+                              "dayOfWeek",
+                              Number(e.target.value),
+                            )
                           }
                           className="h-9 w-full appearance-none rounded-md border border-border bg-background pl-4 pr-10 text-sm text-foreground"
                         >

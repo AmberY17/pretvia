@@ -69,9 +69,7 @@ export default function AttendancePage() {
   const { data: checkinsData } = useSWR<{
     checkins: { id: string; title: string | null; sessionDate: string }[];
   }>(
-    user?.groupId
-      ? ["/api/checkins?mode=all", user.id, user.groupId]
-      : null,
+    user?.groupId ? ["/api/checkins?mode=all", user.id, user.groupId] : null,
     urlFetcher,
   );
 
@@ -80,9 +78,7 @@ export default function AttendancePage() {
       ? `/api/attendance?checkinId=${selectedCheckinId}`
       : null;
   const { data: attendanceData, mutate: mutateAttendance } = useSWR(
-    attendanceUrl && user
-      ? [attendanceUrl, user.id, user.groupId]
-      : null,
+    attendanceUrl && user ? [attendanceUrl, user.id, user.groupId] : null,
     urlFetcher,
   );
 
@@ -136,7 +132,6 @@ export default function AttendancePage() {
         return;
       }
       mutateAttendance();
-      toast.success("Attendance saved");
     } catch {
       toast.error("Network error");
     } finally {
@@ -328,60 +323,67 @@ export default function AttendancePage() {
                         No athletes in this group yet.
                       </div>
                     ) : (
-                      athletes.map((athlete: { id: string; displayName?: string; email?: string; status?: string | null }) => (
-                        <div
-                          key={athlete.id}
-                          className="flex items-center justify-between px-4 py-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">
-                              {athlete.displayName || athlete.email}
-                            </span>
-                          </div>
-                          <div className="flex gap-1">
-                            {(
-                              [
+                      athletes.map(
+                        (athlete: {
+                          id: string;
+                          displayName?: string;
+                          email?: string;
+                          status?: string | null;
+                        }) => (
+                          <div
+                            key={athlete.id}
+                            className="flex items-center justify-between px-4 py-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-foreground">
+                                {athlete.displayName || athlete.email}
+                              </span>
+                            </div>
+                            <div className="flex gap-1">
+                              {(
                                 [
-                                  "present",
-                                  "Present",
-                                  CheckCircle2,
-                                  "text-green-600",
-                                ],
-                                ["absent", "Absent", XCircle, "text-red-600"],
-                                [
-                                  "excused",
-                                  "Excused",
-                                  MinusCircle,
-                                  "text-amber-600",
-                                ],
-                              ] as const
-                            ).map(([status, label, Icon, color]) => (
-                              <button
-                                key={status}
-                                type="button"
-                                onClick={() =>
-                                  handleSetStatus(
-                                    athlete.id,
+                                  [
+                                    "present",
+                                    "Present",
+                                    CheckCircle2,
+                                    "text-green-600",
+                                  ],
+                                  ["absent", "Absent", XCircle, "text-red-600"],
+                                  [
+                                    "excused",
+                                    "Excused",
+                                    MinusCircle,
+                                    "text-amber-600",
+                                  ],
+                                ] as const
+                              ).map(([status, label, Icon, color]) => (
+                                <button
+                                  key={status}
+                                  type="button"
+                                  onClick={() =>
+                                    handleSetStatus(
+                                      athlete.id,
+                                      entries[athlete.id] === status
+                                        ? null
+                                        : status,
+                                    )
+                                  }
+                                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
                                     entries[athlete.id] === status
-                                      ? null
-                                      : status,
-                                  )
-                                }
-                                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
-                                  entries[athlete.id] === status
-                                    ? `${color} bg-primary/10`
-                                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                }`}
-                                title={label}
-                              >
-                                <Icon className="h-3.5 w-3.5" />
-                                {label}
-                              </button>
-                            ))}
+                                      ? `${color} bg-primary/10`
+                                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                  }`}
+                                  title={label}
+                                >
+                                  <Icon className="h-3.5 w-3.5" />
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        ),
+                      )
                     )}
                   </div>
                   {athletes.length > 0 && (

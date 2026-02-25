@@ -27,8 +27,7 @@ const SKIP_DISABLED_MESSAGES: Record<
   string
 > = {
   no_training: "No scheduled training today",
-  already_skipped:
-    "Already skipped. Made a mistake? Add a log to undo it.",
+  already_skipped: "Already skipped. Made a mistake? Add a log to undo it.",
   already_logged: "Already logged",
 };
 
@@ -37,7 +36,11 @@ interface SidebarStatsCardProps {
   streak: number;
   hasTrainingSlots: boolean;
   canSkipToday: boolean;
-  skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null;
+  skipDisabledReason:
+    | "no_training"
+    | "already_skipped"
+    | "already_logged"
+    | null;
   onMutateStats: () => void;
 }
 
@@ -72,7 +75,6 @@ export function SidebarStatsCard({
         toast.error(data.error || "Failed to skip");
         return;
       }
-      toast.success("Training day skipped");
       setSkipOpen(false);
       setSkipReason("");
       onMutateStats();
@@ -181,11 +183,7 @@ export function SidebarStatsCard({
               onClick={handleSkip}
               disabled={skipping || !skipReason.trim()}
             >
-              {skipping ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Skip"
-              )}
+              {skipping ? <Loader2 className="h-4 w-4 animate-spin" /> : "Skip"}
             </Button>
           </DialogFooter>
         </DialogContent>
