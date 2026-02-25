@@ -240,7 +240,7 @@ function AuthForm() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder={isLogin ? "you@example.com" : "Gmail, Outlook, or Yahoo"}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
