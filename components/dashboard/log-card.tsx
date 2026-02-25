@@ -130,7 +130,11 @@ export function LogCard({
                 </Badge>
               )}
               {log.isOwn && (
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div
+                  className={`flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 ${
+                    !isCoach ? "hidden lg:flex" : ""
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={(e) => {

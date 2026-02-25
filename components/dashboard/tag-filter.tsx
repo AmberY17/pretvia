@@ -23,7 +23,13 @@ export function TagFilter({
           No tags yet. Create logs with tags to see them here.
         </p>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div
+          className={
+            hideHeader
+              ? "flex gap-2 overflow-x-auto scrollbar-hidden"
+              : "flex flex-wrap gap-2"
+          }
+        >
           {tags.map((tag) => {
             const isActive = activeTags.includes(tag.name)
             return (
@@ -32,7 +38,7 @@ export function TagFilter({
                 type="button"
                 onClick={() => onToggle(tag.name)}
                 whileTap={{ scale: 0.95 }}
-                className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                className={`inline-flex shrink-0 items-center rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"

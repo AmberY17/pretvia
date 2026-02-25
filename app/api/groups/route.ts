@@ -3,6 +3,10 @@ import { getSession, createSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
+import {
+  applyGroupTrainingScheduleToUser,
+} from "@/lib/group-training-schedule"
 
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -180,6 +184,16 @@ export async function POST(req: Request) {
         }
       )
 
+      // If the group has a training schedule template, apply it to this new member
+      if (Array.isArray(group.trainingScheduleTemplate) && group.trainingScheduleTemplate.length > 0) {
+        await applyGroupTrainingScheduleToUser(
+          db,
+          session.userId,
+          groupId,
+          group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[]
+        )
+      }
+
       // Create group membership for role tracking
       await db.collection("groupMemberships").updateOne(
         { userId: session.userId, groupId },
@@ -287,7 +301,8 @@ export async function POST(req: Request) {
       if (user.role === "coach") {
         await db.collection("groups").updateOne(
           { _id: new ObjectId(currentGroupId) },
-          { $pull: { coachIds: session.userId } }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { $pull: { coachIds: session.userId } } as any
         )
       }
 
@@ -395,6 +410,7 @@ export async function GET(req: Request) {
           name: g.name,
           code: g.code,
           coachId: g.coachId,
+          trainingScheduleUpdatedAt: g.trainingScheduleUpdatedAt ?? null,
         })),
       })
     }
@@ -403,9 +419,13 @@ export async function GET(req: Request) {
     if (!groupId) {
       return NextResponse.json({ members: [], roles: [] })
     }
+    const groupOid = safeObjectId(groupId)
+    if (!groupOid) {
+      return NextResponse.json({ error: "Invalid group ID" }, { status: 400 })
+    }
 
     const group = await db.collection("groups").findOne({
-      _id: new ObjectId(groupId),
+      _id: groupOid,
     })
     const roles = group?.roles ?? []
 
@@ -420,7 +440,7 @@ export async function GET(req: Request) {
       .find({ groupId, userId: { $in: members.map((m) => m._id.toString()) } })
       .toArray()
     const roleIdsByUser = new Map(
-      membershipDocs.map((m: { userId: string; roleIds: string[] }) => [
+      (membershipDocs as unknown as { userId: string; roleIds?: string[] }[]).map((m) => [
         m.userId,
         m.roleIds ?? [],
       ])

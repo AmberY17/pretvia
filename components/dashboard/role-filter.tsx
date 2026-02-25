@@ -99,28 +99,30 @@ export function RoleFilter({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap gap-1.5 lg:hidden">
+    <div className="mb-4 flex items-center gap-1.5 lg:hidden">
       <button
         type="button"
         onClick={() => onFilter(null)}
-        className={`${buttonBase} ${
+        className={`shrink-0 ${buttonBase} ${
           !filterRoleId ? buttonActive : buttonInactive
         }`}
       >
         All Roles
       </button>
-      {roles.map((r) => (
-        <button
-          key={r.id}
-          type="button"
-          onClick={() => handleRoleClick(r.id)}
-          className={`${buttonBase} ${
-            filterRoleId === r.id ? buttonActive : buttonInactive
-          }`}
-        >
-          {r.name}
-        </button>
-      ))}
+      <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto scrollbar-hidden">
+        {roles.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => handleRoleClick(r.id)}
+            className={`shrink-0 ${buttonBase} ${
+              filterRoleId === r.id ? buttonActive : buttonInactive
+            }`}
+          >
+            {r.name}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

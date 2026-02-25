@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 
 const ERROR_MESSAGES: Record<string, string> = {
+  missing_token: "Verification link is invalid. Please sign up again.",
   verification_expired: "Verification link expired. Please sign up again.",
   verification_failed: "Verification failed. Please try again.",
   access_denied: "Sign-in was cancelled.",
@@ -33,6 +34,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   userinfo_failed: "Could not get your profile. Please try again.",
   no_email: "Google did not provide an email. Please try another account.",
   already_exists: "This email is already verified. Please sign in.",
+  user_creation_failed: "Account could not be created. Please try again.",
 };
 
 function AuthForm() {
@@ -58,8 +60,8 @@ function AuthForm() {
 
   useEffect(() => {
     const error = searchParams.get("error");
-    if (error && ERROR_MESSAGES[error]) {
-      toast.error(ERROR_MESSAGES[error]);
+    if (error) {
+      toast.error(ERROR_MESSAGES[error] ?? "Something went wrong. Please try again.");
       router.replace("/auth", { scroll: false });
     }
   }, [searchParams, router]);
@@ -238,7 +240,7 @@ function AuthForm() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder={isLogin ? "you@example.com" : "Gmail, Outlook, or Yahoo"}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required

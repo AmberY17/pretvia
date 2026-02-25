@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
 
 // GET: fetch comments for a specific log
 // Only the log owner and coaches in the same group can view comments
@@ -21,12 +22,16 @@ export async function GET(req: Request) {
         { status: 400 }
       )
     }
+    const logOid = safeObjectId(logId)
+    if (!logOid) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
+    }
 
     const db = await getDb()
 
     // Verify the log exists
     const log = await db.collection("logs").findOne({
-      _id: new ObjectId(logId),
+      _id: logOid,
     })
 
     if (!log) {
@@ -164,9 +169,14 @@ export async function POST(req: Request) {
 
     const db = await getDb()
 
+    const logOidPost = safeObjectId(logId)
+    if (!logOidPost) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
+    }
+
     // Verify the log exists
     const log = await db.collection("logs").findOne({
-      _id: new ObjectId(logId),
+      _id: logOidPost,
     })
 
     if (!log) {
@@ -258,6 +268,10 @@ export async function PUT(req: Request) {
     if (!id) {
       return NextResponse.json({ error: "Comment ID is required" }, { status: 400 })
     }
+    const commentOid = safeObjectId(id)
+    if (!commentOid) {
+      return NextResponse.json({ error: "Invalid comment ID" }, { status: 400 })
+    }
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json({ error: "Comment text is required" }, { status: 400 })
@@ -271,7 +285,7 @@ export async function PUT(req: Request) {
 
     // Only allow editing own comments
     const comment = await db.collection("comments").findOne({
-      _id: new ObjectId(id),
+      _id: commentOid,
       authorId: session.userId,
     })
 
@@ -280,7 +294,7 @@ export async function PUT(req: Request) {
     }
 
     await db.collection("comments").updateOne(
-      { _id: new ObjectId(id) },
+      { _id: commentOid },
       { $set: { text: text.trim(), updatedAt: new Date() } }
     )
 
@@ -305,12 +319,16 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json({ error: "Comment ID is required" }, { status: 400 })
     }
+    const deleteCommentOid = safeObjectId(id)
+    if (!deleteCommentOid) {
+      return NextResponse.json({ error: "Invalid comment ID" }, { status: 400 })
+    }
 
     const db = await getDb()
 
     // Only allow deleting own comments
     const result = await db.collection("comments").deleteOne({
-      _id: new ObjectId(id),
+      _id: deleteCommentOid,
       authorId: session.userId,
     })
 

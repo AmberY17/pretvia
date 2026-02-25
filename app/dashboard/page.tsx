@@ -4,6 +4,7 @@ import { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import useSWR from "swr";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { urlFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
@@ -105,6 +106,47 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
+  const { data: myGroupsData } = useSWR<{
+    groups: {
+      id: string;
+      name: string;
+      code: string;
+      coachId: string;
+      trainingScheduleUpdatedAt?: string | null;
+    }[];
+  }>(
+    user ? ["/api/groups?mode=my-groups", user.id] : null,
+    urlFetcher,
+  );
+
+  useEffect(() => {
+    if (!user || user.role !== "athlete") return;
+    if (!myGroupsData?.groups?.length) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const key = "prets-group-schedule-seen";
+      const stored = window.localStorage.getItem(key);
+      const seen: Record<string, string> = stored ? JSON.parse(stored) : {};
+      const updatedSeen: Record<string, string> = { ...seen };
+
+      myGroupsData.groups.forEach((g) => {
+        if (!g.trainingScheduleUpdatedAt) return;
+        const updatedAt = new Date(g.trainingScheduleUpdatedAt).getTime();
+        if (Number.isNaN(updatedAt)) return;
+        const lastSeen = seen[g.id] ? new Date(seen[g.id]).getTime() : 0;
+        if (!lastSeen || updatedAt > lastSeen) {
+          toast.info(`Your coach updated the training schedule for ${g.name}.`);
+          updatedSeen[g.id] = g.trainingScheduleUpdatedAt;
+        }
+      });
+
+      window.localStorage.setItem(key, JSON.stringify(updatedSeen));
+    } catch {
+      // ignore storage errors
+    }
+  }, [user, myGroupsData]);
+
   const isDataLoading = logsLoading || tagsLoading;
 
   if (authLoading || !user) {
@@ -139,7 +181,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <DashboardHeader user={user} onNewLog={panelHandlers.handleNewLog} />
+      <DashboardHeader
+          user={user}
+          onNewLog={panelHandlers.handleNewLog}
+          onLogout={() => mutateAuth()}
+        />
 
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar

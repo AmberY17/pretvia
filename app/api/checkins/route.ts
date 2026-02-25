@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
 
 // GET: fetch check-ins for the user's group
 export async function GET(req: Request) {
@@ -86,7 +87,7 @@ export async function GET(req: Request) {
         expiresAt: c.expiresAt,
         checkedInCount: checkinLogMap.get(c._id.toString())?.size || 0,
         totalAthletes,
-        hasUserLoggged: userLoggedCheckinIds.has(c._id.toString()),
+        hasUserLogged: userLoggedCheckinIds.has(c._id.toString()),
       })),
     })
   } catch (error) {
@@ -186,12 +187,16 @@ export async function DELETE(req: Request) {
         { status: 400 }
       )
     }
+    const checkinOid = safeObjectId(id)
+    if (!checkinOid) {
+      return NextResponse.json({ error: "Invalid check-in ID" }, { status: 400 })
+    }
 
     const db = await getDb()
 
     // Only the coach who created it can delete
     const result = await db.collection("checkins").deleteOne({
-      _id: new ObjectId(id),
+      _id: checkinOid,
       coachId: session.userId,
     })
 

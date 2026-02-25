@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Trash2, Loader2, SlidersHorizontal, PartyPopper, Calendar, Plus, GripVertical } from "lucide-react";
+import { ArrowLeft, User, Trash2, Loader2, SlidersHorizontal, PartyPopper, Calendar, Plus, GripVertical, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -39,6 +40,21 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+type TrainingSlotItem = {
+  dayOfWeek: number;
+  time: string;
+  sourceGroupId?: string;
+};
+
+function sortSlotsChronologically(
+  slots: TrainingSlotItem[]
+): TrainingSlotItem[] {
+  return [...slots].sort((a, b) => {
+    if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
+    return (a.time || "00:00").localeCompare(b.time || "00:00");
+  });
+}
 
 const COACH_FILTER_ORDER_KEY = "prets-coach-filter-order";
 const DEFAULT_COACH_ORDER = [
@@ -114,9 +130,13 @@ export default function AccountPage() {
   ]);
   const [celebrationEnabled, setCelebrationEnabled] = useState(true);
   const [trainingSlots, setTrainingSlots] = useState<
-    { dayOfWeek: number; time: string }[]
+    { dayOfWeek: number; time: string; sourceGroupId?: string }[]
   >([]);
   const [savingSlots, setSavingSlots] = useState(false);
+  const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] = useState<number | null>(null);
+  const [syncingSchedule, setSyncingSchedule] = useState(false);
+  const trainingScheduleSaveSkippedRef = useRef(false);
+  const lastSavedTrainingSlotsRef = useRef<typeof trainingSlots | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -169,18 +189,37 @@ export default function AccountPage() {
     }
   }, [user?.profileEmoji]);
 
+  // Sync training slots from server only on initial load (user id), so other
+  // profile updates (e.g. emoji) don’t overwrite unsaved schedule changes.
   useEffect(() => {
-    if (user?.trainingSlots !== undefined) {
-      setTrainingSlots(
-        Array.isArray(user.trainingSlots) && user.trainingSlots.length > 0
-          ? user.trainingSlots.map((s) => ({
-              dayOfWeek: s.dayOfWeek,
-              time: s.time || "09:00",
-            }))
-          : []
-      );
+    if (!user?.id || user?.trainingSlots === undefined) return;
+    const raw =
+      Array.isArray(user.trainingSlots) && user.trainingSlots.length > 0
+        ? user.trainingSlots.map((s) => ({
+            dayOfWeek: s.dayOfWeek,
+            time: s.time || "09:00",
+            sourceGroupId: (s as { sourceGroupId?: string }).sourceGroupId,
+          }))
+        : [];
+    const slots = sortSlotsChronologically(raw);
+    setTrainingSlots(slots);
+    lastSavedTrainingSlotsRef.current = slots;
+    trainingScheduleSaveSkippedRef.current = false;
+  }, [user?.id]);
+
+  // Auto-save training schedule when it changes (debounced). Skip the first run after load.
+  useEffect(() => {
+    if (user?.role !== "athlete") return;
+    if (!trainingScheduleSaveSkippedRef.current) {
+      trainingScheduleSaveSkippedRef.current = true;
+      return;
     }
-  }, [user?.trainingSlots]);
+    if (trainingSlots === lastSavedTrainingSlotsRef.current) return;
+    const timeout = setTimeout(() => {
+      saveTrainingSlotsToServer(trainingSlots);
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [user?.role, trainingSlots]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -211,13 +250,16 @@ export default function AccountPage() {
     }
   };
 
-  const handleSaveTrainingSlots = async () => {
+  async function saveTrainingSlotsToServer(
+    slots: { dayOfWeek: number; time: string; sourceGroupId?: string }[],
+    options?: { silent?: boolean }
+  ) {
     setSavingSlots(true);
     try {
       const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainingSlots }),
+        body: JSON.stringify({ trainingSlots: slots }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -225,13 +267,14 @@ export default function AccountPage() {
         return;
       }
       mutateAuth();
-      toast.success("Training slots updated");
+      if (!options?.silent) toast.success("Training schedule saved");
+      lastSavedTrainingSlotsRef.current = slots;
     } catch {
       toast.error("Network error");
     } finally {
       setSavingSlots(false);
     }
-  };
+  }
 
   const addTrainingSlot = () => {
     setTrainingSlots((prev) => [...prev, { dayOfWeek: 1, time: "09:00" }]);
@@ -239,6 +282,52 @@ export default function AccountPage() {
 
   const removeTrainingSlot = (index: number) => {
     setTrainingSlots((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const isGroupSlot = (slot: { sourceGroupId?: string }) =>
+    user?.groupId && slot.sourceGroupId === user.groupId;
+
+  const handleConfirmRemoveGroupSlot = async () => {
+    if (deleteGroupSlotConfirmIndex === null) return;
+    const index = deleteGroupSlotConfirmIndex;
+    setDeleteGroupSlotConfirmIndex(null);
+    const nextSlots = trainingSlots.filter((_, i) => i !== index);
+    setTrainingSlots(nextSlots);
+    await saveTrainingSlotsToServer(nextSlots, { silent: true });
+    toast.success("Group schedule slot removed");
+  };
+
+  const handleSyncGroupSchedule = async () => {
+    if (!user?.groupId) return;
+    setSyncingSchedule(true);
+    try {
+      const res = await fetch("/api/athlete/sync-group-schedule", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to sync group schedule");
+        return;
+      }
+      if (Array.isArray(data.trainingSlots)) {
+        const raw = data.trainingSlots.map(
+          (s: { dayOfWeek: number; time: string; sourceGroupId?: string }) => ({
+            dayOfWeek: s.dayOfWeek,
+            time: s.time || "09:00",
+            sourceGroupId: s.sourceGroupId,
+          })
+        );
+        const nextSlots = sortSlotsChronologically(raw);
+        setTrainingSlots(nextSlots);
+        lastSavedTrainingSlotsRef.current = nextSlots;
+      }
+      mutateAuth();
+      toast.success("Group schedule synced");
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setSyncingSchedule(false);
+    }
   };
 
   const updateTrainingSlot = (
@@ -300,26 +389,45 @@ export default function AccountPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+        <div className="flex h-14 items-center justify-between gap-4 px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground lg:flex lg:w-[4.5rem]"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Back</span>
             </Link>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary">
-              <span className="text-xs font-bold text-primary-foreground">
-                TL
-              </span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Pretvia"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain dark:hidden"
+              />
+              <Image
+                src="/logo_dark_white.png"
+                alt="Pretvia"
+                width={24}
+                height={24}
+                className="hidden h-6 w-6 object-contain dark:block"
+              />
             </div>
-            <span className="text-sm font-semibold text-foreground">
+            <span className="truncate text-base font-semibold text-foreground">
               Account Settings
             </span>
           </div>
-          <ThemeSwitcher />
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground lg:hidden"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <ThemeSwitcher />
+          </div>
         </div>
       </header>
 
@@ -371,56 +479,85 @@ export default function AccountPage() {
           {/* Training slots (athletes) */}
           {user.role === "athlete" && (
             <section className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-                <Calendar className="h-4 w-4" />
-                Training Days
-              </h2>
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+                  <Calendar className="h-4 w-4" />
+                  Training schedule
+                </h2>
+                {user.groupId && (
+                  <Button
+                    variant="ghost-secondary"
+                    size="sm"
+                    className="h-8 shrink-0 gap-1.5"
+                    onClick={handleSyncGroupSchedule}
+                    disabled={syncingSchedule}
+                    aria-label="Sync with group"
+                  >
+                    {syncingSchedule ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    Sync with group
+                  </Button>
+                )}
+              </div>
               <p className="mb-4 text-xs text-muted-foreground">
-                Set your weekly training schedule. Streaks are based on logging
-                within 24 hours of each scheduled slot.
+                Set your weekly training schedule. Group schedule set by Coach
+                cannot be modified. Streaks are based on logging within 24 hours
+                of each scheduled slot.
               </p>
               <div className="flex flex-col gap-3">
-                {trainingSlots.map((slot, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
-                  >
-                    <select
-                      value={slot.dayOfWeek}
-                      onChange={(e) =>
-                        updateTrainingSlot(
-                          index,
-                          "dayOfWeek",
-                          Number(e.target.value)
-                        )
-                      }
-                      className="h-9 flex-1 min-w-[120px] rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                {trainingSlots.map((slot, index) => {
+                  const isGroup = isGroupSlot(slot);
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
                     >
-                      {DAYS.map((name, i) => (
-                        <option key={i} value={i}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="time"
-                      value={slot.time}
-                      onChange={(e) =>
-                        updateTrainingSlot(index, "time", e.target.value)
-                      }
-                      className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground"
-                    />
-                    <Button
-                      variant="ghost-secondary"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => removeTrainingSlot(index)}
-                      aria-label="Remove slot"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <select
+                        value={slot.dayOfWeek}
+                        onChange={(e) =>
+                          updateTrainingSlot(
+                            index,
+                            "dayOfWeek",
+                            Number(e.target.value)
+                          )
+                        }
+                        disabled={!!isGroup}
+                        className="h-9 flex-1 min-w-[120px] rounded-md border border-border bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {DAYS.map((name, i) => (
+                          <option key={i} value={i}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="time"
+                        value={slot.time}
+                        onChange={(e) =>
+                          updateTrainingSlot(index, "time", e.target.value)
+                        }
+                        disabled={!!isGroup}
+                        className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                      />
+                      <Button
+                        variant="ghost-secondary"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() =>
+                          isGroup
+                            ? setDeleteGroupSlotConfirmIndex(index)
+                            : removeTrainingSlot(index)
+                        }
+                        aria-label={isGroup ? "Remove group schedule slot" : "Remove slot"}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
                 <Button
                   variant="ghost-secondary"
                   size="sm"
@@ -428,25 +565,36 @@ export default function AccountPage() {
                   onClick={addTrainingSlot}
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add training day
+                  Add schedule slot
                 </Button>
-                {(trainingSlots.length > 0 ||
-                  (user.trainingSlots?.length ?? 0) > 0) && (
-                  <Button
-                    variant="ghost-primary"
-                    size="sm"
-                    className="w-fit"
-                    onClick={handleSaveTrainingSlots}
-                    disabled={savingSlots}
-                  >
-                    {savingSlots ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Save"
-                    )}
-                  </Button>
-                )}
               </div>
+              <AlertDialog
+                open={deleteGroupSlotConfirmIndex !== null}
+                onOpenChange={(open) =>
+                  !open && setDeleteGroupSlotConfirmIndex(null)
+                }
+              >
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Are you sure you want to delete the group schedule?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove this group schedule slot. You can bring
+                      it back anytime with Sync.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleConfirmRemoveGroupSlot}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </section>
           )}
 

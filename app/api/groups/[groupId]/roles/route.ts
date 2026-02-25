@@ -192,7 +192,8 @@ export async function DELETE(
     // Remove roleId from all groupMemberships
     await db.collection("groupMemberships").updateMany(
       { groupId },
-      { $pull: { roleIds: roleId } }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { $pull: { roleIds: roleId } } as any
     )
 
     return NextResponse.json({ success: true })

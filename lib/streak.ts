@@ -10,6 +10,8 @@ import { ObjectId } from "mongodb"
 export interface TrainingSlot {
   dayOfWeek: number // 0 = Sun, 6 = Sat
   time: string // "HH:mm" 24h
+  // Optional: which group this slot was sourced from (if any)
+  sourceGroupId?: string
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000

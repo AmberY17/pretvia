@@ -14,7 +14,7 @@ import {
   Check,
   Shield,
   ChevronDown,
-  User,
+  User as UserIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { User } from "@/hooks/use-auth";
 import { toast } from "sonner";
+
+type UserGroup = { id: string; name: string; code: string; coachId: string };
 
 interface SidebarProfileProps {
   user: User;
@@ -58,7 +60,7 @@ export function SidebarProfile({
   const userGroups = user.groups ?? [];
   const hasMultipleGroups = userGroups.length > 1;
   const filteredGroups = groupSearch.trim()
-    ? userGroups.filter((g) =>
+    ? userGroups.filter((g: UserGroup) =>
         g.name.toLowerCase().includes(groupSearch.trim().toLowerCase())
       )
     : userGroups;
@@ -260,7 +262,7 @@ export function SidebarProfile({
                           : ""
                       }`}
                     >
-                    {filteredGroups.map((g) => (
+                    {filteredGroups.map((g: UserGroup) => (
                     <button
                       key={g.id}
                       type="button"
@@ -433,7 +435,7 @@ export function SidebarProfile({
 
       <Button variant="ghost-secondary" size="sm" asChild className="w-full gap-2">
         <Link href="/dashboard/account">
-          <User className="h-4 w-4" />
+          <UserIcon className="h-4 w-4" />
           Account Settings
         </Link>
       </Button>

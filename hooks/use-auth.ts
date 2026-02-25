@@ -23,7 +23,7 @@ export interface User {
   groupIds: string[]
   profileComplete: boolean
   profileEmoji: string | null
-  trainingSlots: { dayOfWeek: number; time: string }[]
+  trainingSlots: { dayOfWeek: number; time: string; sourceGroupId?: string }[]
 }
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
 
 const VALID_STATUSES = ["pending", "reviewed", "revisit"] as const
 
@@ -34,6 +35,10 @@ export async function PATCH(
         { status: 400 }
       )
     }
+    const logOid = safeObjectId(logId)
+    if (!logOid) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
+    }
 
     const { status } = await req.json()
     if (
@@ -48,7 +53,7 @@ export async function PATCH(
 
     // Verify coach can access this log (must be coach-shared from their group)
     const log = await db.collection("logs").findOne({
-      _id: new ObjectId(logId),
+      _id: logOid,
     })
     if (!log) {
       return NextResponse.json({ error: "Log not found" }, { status: 404 })
@@ -135,6 +140,9 @@ export async function GET(
         { error: "Log ID is required" },
         { status: 400 }
       )
+    }
+    if (!safeObjectId(logId)) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
     }
 
     const review = await db.collection("log_reviews").findOne({

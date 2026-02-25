@@ -81,7 +81,7 @@ export function DashboardSidebar({
   onMutateStats = () => {},
 }: DashboardSidebarProps) {
   const [coachFilterOrder, setCoachFilterOrder] = useState<CoachFilterId[]>(
-    () => DEFAULT_COACH_ORDER,
+    () => [...DEFAULT_COACH_ORDER],
   );
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 

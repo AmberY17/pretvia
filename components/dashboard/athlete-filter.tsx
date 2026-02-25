@@ -99,28 +99,30 @@ export function AthleteFilter({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap gap-1.5 lg:hidden">
+    <div className="mb-4 flex items-center gap-1.5 lg:hidden">
       <button
         type="button"
         onClick={() => onFilter(null)}
-        className={`${buttonBase} ${
+        className={`shrink-0 ${buttonBase} ${
           !filterAthleteId ? buttonActive : buttonInactive
         }`}
       >
         All
       </button>
-      {athletes.map((athlete) => (
-        <button
-          key={athlete.id}
-          type="button"
-          onClick={() => onFilter(athlete.id)}
-          className={`${buttonBase} ${
-            filterAthleteId === athlete.id ? buttonActive : buttonInactive
-          }`}
-        >
-          {athlete.displayName || athlete.email}
-        </button>
-      ))}
+      <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto scrollbar-hidden">
+        {athletes.map((athlete) => (
+          <button
+            key={athlete.id}
+            type="button"
+            onClick={() => onFilter(athlete.id)}
+            className={`shrink-0 ${buttonBase} ${
+              filterAthleteId === athlete.id ? buttonActive : buttonInactive
+            }`}
+          >
+            {athlete.displayName || athlete.email}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -46,16 +46,20 @@ export async function PUT(req: Request) {
         )
       }
       updates.trainingSlots = trainingSlots.map(
-        (s: { dayOfWeek: number; time: string }) => {
+        (s: { dayOfWeek: number; time: string; sourceGroupId?: string }) => {
           const t = String(s.time).trim()
           const match = t.match(/^(\d{1,2}):(\d{2})$/)
           const time = match
             ? `${match[1].padStart(2, "0")}:${match[2]}`
             : "09:00"
-          return {
-            dayOfWeek: Math.max(0, Math.min(6, Number(s.dayOfWeek) || 0)),
+          const dayOfWeek = Math.max(0, Math.min(6, Number(s.dayOfWeek) || 0))
+          const base = {
+            dayOfWeek,
             time,
           }
+          return s.sourceGroupId
+            ? { ...base, sourceGroupId: String(s.sourceGroupId) }
+            : base
         }
       )
     }

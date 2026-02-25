@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
 import { removeRedundantSkipsForLog } from "@/lib/streak"
 import type { TrainingSlot } from "@/lib/streak"
 
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
           .find({ groupId: userGroupId, roleIds: filterRoleId })
           .project({ userId: 1 })
           .toArray()
-        const roleMemberIds = withRole.map((m: { userId: string }) => m.userId)
+        const roleMemberIds = (withRole as { userId: string }[]).map((m) => m.userId)
         memberIds = memberIds.filter((id) => roleMemberIds.includes(id))
       }
 
@@ -238,8 +239,9 @@ export async function POST(req: Request) {
     )
 
     // Save any new tags for the user
-    if (logEntry.tags.length > 0) {
-      for (const tag of logEntry.tags) {
+    const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []
+    if (logTags.length > 0) {
+      for (const tag of logTags) {
         await db.collection("tags").updateOne(
           { userId: session.userId, name: tag },
           {
@@ -259,7 +261,7 @@ export async function POST(req: Request) {
         timestamp: logEntry.timestamp,
         visibility: logEntry.visibility,
         notes: logEntry.notes,
-        tags: logEntry.tags,
+        tags: logTags,
         userId: logEntry.userId,
         checkinId: logEntry.checkinId || null,
         userName: session.displayName || "Unknown",
@@ -289,12 +291,16 @@ export async function PUT(req: Request) {
     if (!id) {
       return NextResponse.json({ error: "Log ID is required" }, { status: 400 })
     }
+    const logOid = safeObjectId(id)
+    if (!logOid) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
+    }
 
     const db = await getDb()
 
     // Only allow editing own logs
     const existing = await db.collection("logs").findOne({
-      _id: new ObjectId(id),
+      _id: logOid,
       userId: session.userId,
     })
 
@@ -314,7 +320,7 @@ export async function PUT(req: Request) {
     if (tags !== undefined) update.tags = Array.isArray(tags) ? tags : []
 
     await db.collection("logs").updateOne(
-      { _id: new ObjectId(id) },
+      { _id: logOid },
       { $set: update }
     )
 
@@ -358,10 +364,14 @@ export async function DELETE(req: Request) {
         { status: 400 }
       )
     }
+    const deleteLogOid = safeObjectId(logId)
+    if (!deleteLogOid) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
+    }
 
     const db = await getDb()
     await db.collection("logs").deleteOne({
-      _id: new ObjectId(logId),
+      _id: deleteLogOid,
       userId: session.userId,
     })
 
