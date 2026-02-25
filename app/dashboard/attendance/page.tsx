@@ -1,14 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import useSWR from "swr";
 import { urlFetcher } from "@/lib/swr-utils";
 import {
-  ArrowLeft,
   ClipboardCheck,
   CheckCircle2,
   XCircle,
@@ -20,12 +17,13 @@ import {
   Check,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useClickOutside } from "@/hooks/use-click-outside";
 import { Button } from "@/components/ui/button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-type AttendanceStatus = "present" | "absent" | "excused" | null;
+import type { AttendanceStatus } from "@/types/dashboard";
 
 export default function AttendancePage() {
   const router = useRouter();
@@ -42,6 +40,10 @@ export default function AttendancePage() {
   >([]);
   const sessionDropdownRef = useRef<HTMLDivElement>(null);
 
+  useClickOutside(sessionDropdownRef, sessionDropdownOpen, () =>
+    setSessionDropdownOpen(false),
+  );
+
   const filteredCheckins = sessionSearch.trim()
     ? checkins.filter((c) => {
         const label =
@@ -51,20 +53,6 @@ export default function AttendancePage() {
         return label.toLowerCase().includes(sessionSearch.trim().toLowerCase());
       })
     : checkins;
-
-  useEffect(() => {
-    if (!sessionDropdownOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        sessionDropdownRef.current &&
-        !sessionDropdownRef.current.contains(e.target as Node)
-      ) {
-        setSessionDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [sessionDropdownOpen]);
 
   const { data: checkinsData } = useSWR<{
     checkins: { id: string; title: string | null; sessionDate: string }[];
@@ -143,64 +131,12 @@ export default function AttendancePage() {
   const selectedCheckin = checkins.find((c) => c.id === selectedCheckinId);
 
   if (authLoading || !user || user.role !== "coach") {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </motion.div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between gap-4 px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="hidden shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground lg:flex lg:w-[4.5rem]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-sm">Back</span>
-            </Link>
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Pretvia"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain dark:hidden"
-              />
-              <Image
-                src="/logo_dark_white.png"
-                alt="Pretvia"
-                width={24}
-                height={24}
-                className="hidden h-6 w-6 object-contain dark:block"
-              />
-            </div>
-            <span className="truncate text-base font-semibold text-foreground">
-              Attendance
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground lg:hidden"
-              aria-label="Back to dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <ThemeSwitcher />
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Attendance" />
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl">

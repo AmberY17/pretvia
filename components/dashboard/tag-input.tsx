@@ -5,6 +5,7 @@ import React from "react"
 import { useState, useCallback, useRef, useEffect } from "react"
 import { X } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { useClickOutside } from "@/hooks/use-click-outside"
 
 interface TagInputProps {
   tags: string[]
@@ -24,6 +25,8 @@ export function TagInput({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
+  useClickOutside(wrapperRef, showSuggestions, () => setShowSuggestions(false))
+
   // Filter suggestions based on input
   const filteredSuggestions =
     inputValue.trim().length > 0
@@ -33,17 +36,6 @@ export function TagInput({
             !tags.includes(s)
         )
       : []
-
-  // Close suggestions on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
 
   // Reset selected index when suggestions change
   useEffect(() => {

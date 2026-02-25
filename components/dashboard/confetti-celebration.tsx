@@ -4,8 +4,7 @@ import { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
-
-const CELEBRATION_KEY = "prets-celebration-enabled";
+import { CELEBRATION_KEY } from "@/lib/constants";
 
 function getOrdinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
@@ -113,5 +112,3 @@ export function ConfettiCelebration({ totalCount, onDismiss }: ConfettiCelebrati
     document.body
   );
 }
-
-export { CELEBRATION_KEY };

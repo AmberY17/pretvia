@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
@@ -14,6 +13,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardFeed } from "@/components/dashboard/dashboard-feed";
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
 import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
 
@@ -176,18 +176,7 @@ export default function DashboardPage() {
   const isDataLoading = logsLoading || tagsLoading;
 
   if (authLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
-        </motion.div>
-      </div>
-    );
+    return <LoadingScreen message="Loading dashboard..." />;
   }
 
   const tags = tagsData?.tags ?? [];

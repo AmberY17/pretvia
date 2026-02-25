@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   User,
   Trash2,
   Loader2,
@@ -19,7 +15,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmojiPicker } from "@/components/dashboard/emoji-picker";
 import {
   AlertDialog,
@@ -33,7 +30,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
-import { CELEBRATION_KEY } from "@/components/dashboard/confetti-celebration";
+import {
+  CELEBRATION_KEY,
+  COACH_FILTER_ORDER_KEY,
+  DEFAULT_COACH_ORDER,
+  FILTER_LABELS,
+  DAYS,
+  type CoachFilterId,
+} from "@/lib/constants";
 import {
   DndContext,
   closestCenter,
@@ -51,12 +55,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
-type TrainingSlotItem = {
-  dayOfWeek: number;
-  time: string;
-  sourceGroupId?: string;
-};
+import type { TrainingSlotItem } from "@/types/dashboard";
 
 function sortSlotsChronologically(
   slots: TrainingSlotItem[],
@@ -66,25 +65,6 @@ function sortSlotsChronologically(
     return (a.time || "00:00").localeCompare(b.time || "00:00");
   });
 }
-
-const COACH_FILTER_ORDER_KEY = "prets-coach-filter-order";
-const DEFAULT_COACH_ORDER = [
-  "sessions",
-  "role",
-  "reviewStatus",
-  "athlete",
-  "date",
-] as const;
-
-const FILTER_LABELS: Record<(typeof DEFAULT_COACH_ORDER)[number], string> = {
-  sessions: "Training Sessions",
-  role: "Role",
-  reviewStatus: "Review Status",
-  athlete: "Athlete",
-  date: "Date",
-};
-
-type CoachFilterId = (typeof DEFAULT_COACH_ORDER)[number];
 
 function SortableFilterItem({
   id,
@@ -349,16 +329,6 @@ export default function AccountPage() {
     );
   };
 
-  const DAYS = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
@@ -379,64 +349,12 @@ export default function AccountPage() {
   };
 
   if (authLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </motion.div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between gap-4 px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="hidden shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground lg:flex lg:w-[4.5rem]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-sm">Back</span>
-            </Link>
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Pretvia"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain dark:hidden"
-              />
-              <Image
-                src="/logo_dark_white.png"
-                alt="Pretvia"
-                width={24}
-                height={24}
-                className="hidden h-6 w-6 object-contain dark:block"
-              />
-            </div>
-            <span className="truncate text-base font-semibold text-foreground">
-              Account Settings
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground lg:hidden"
-              aria-label="Back to dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <ThemeSwitcher />
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Account Settings" />
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-8">
