@@ -145,7 +145,7 @@ export async function GET(req: Request) {
 
     let nextCursor: string | null = null
     if (logs.length > limit) {
-      const last = logs[limit - 1] as { timestamp: Date; _id: unknown }
+      const last = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
       nextCursor = `${last.timestamp.toISOString()}|${last._id.toString()}`
       logs = logs.slice(0, limit)
     }

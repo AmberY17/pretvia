@@ -3,11 +3,13 @@ export function urlFetcher(key: string | readonly [string, ...unknown[]]) {
   return fetch(url).then((r) => r.json());
 }
 
+import type { LogEntry } from "@/types/dashboard";
+
 const LOGS_PAGE_SIZE = 20;
 
 export async function logsInfiniteFetcher(
   key: readonly [string, string | null],
-): Promise<{ logs: unknown[]; nextCursor: string | null }> {
+): Promise<{ logs: LogEntry[]; nextCursor: string | null }> {
   const [baseUrl, cursor] = key;
   const separator = baseUrl.includes("?") ? "&" : "?";
   const limitParam = `${separator}limit=${LOGS_PAGE_SIZE}`;
@@ -16,7 +18,7 @@ export async function logsInfiniteFetcher(
     : `${baseUrl}${limitParam}`;
   const data = await fetch(url).then((r) => r.json());
   return {
-    logs: data.logs ?? [],
+    logs: (data.logs ?? []) as LogEntry[],
     nextCursor: data.nextCursor ?? null,
   };
 }

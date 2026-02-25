@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import useSWR from "swr";
 import { urlFetcher } from "@/lib/swr-utils";
 import { Settings } from "lucide-react";
@@ -10,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { GroupRolesSection } from "@/components/dashboard/group/group-roles-section";
 import { GroupTrainingScheduleSection } from "@/components/dashboard/group/group-training-schedule-section";
 import { GroupAthletesSection } from "@/components/dashboard/group/group-athletes-section";
@@ -318,17 +318,10 @@ export default function GroupManagementPage() {
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-8">
           {!user.groupId ? (
-            <div className="rounded-2xl border border-dashed border-border py-16 text-center">
-              <Settings className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Join a group to manage it.
-              </p>
-              <Link href="/dashboard">
-                <Button variant="ghost-primary" size="sm" className="mt-4">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            </div>
+            <EmptyStateCard
+              icon={Settings}
+              message="Join a group to manage it."
+            />
           ) : (
             <>
               <GroupRolesSection

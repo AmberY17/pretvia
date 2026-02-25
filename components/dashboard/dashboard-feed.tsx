@@ -80,7 +80,7 @@ export function DashboardFeed({
   isLoadingMore = false,
   onLoadMore,
 }: DashboardFeedProps) {
-  const scrollRef = useRef<HTMLMainElement>(null);
+  const scrollRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

@@ -6,10 +6,10 @@ import Link from "next/link";
 import { Plus, ClipboardCheck, Settings, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import type { User } from "@/hooks/use-auth";
+import type { User as AuthUser } from "@/hooks/use-auth";
 
 interface DashboardHeaderProps {
-  user: User;
+  user: AuthUser;
   onNewLog?: () => void;
   onLogout: () => void;
 }

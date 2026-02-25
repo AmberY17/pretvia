@@ -2,112 +2,25 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  User,
-  Trash2,
-  Loader2,
-  SlidersHorizontal,
-  PartyPopper,
-  Calendar,
-  Plus,
-  GripVertical,
-  RefreshCw,
-} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { EmojiPicker } from "@/components/dashboard/emoji-picker";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AccountProfileEmojiSection } from "@/components/dashboard/account/account-profile-emoji-section";
+import { AccountTrainingSlotsSection } from "@/components/dashboard/account/account-training-slots-section";
+import { AccountCelebrationSection } from "@/components/dashboard/account/account-celebration-section";
+import { AccountFilterOrderSection } from "@/components/dashboard/account/account-filter-order-section";
+import { AccountDeleteSection } from "@/components/dashboard/account/account-delete-section";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
 import {
   CELEBRATION_KEY,
   COACH_FILTER_ORDER_KEY,
   DEFAULT_COACH_ORDER,
-  FILTER_LABELS,
-  DAYS,
   type CoachFilterId,
 } from "@/lib/constants";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
+import { sortSlotsChronologically } from "@/lib/training-slot-utils";
 import type { TrainingSlotItem } from "@/types/dashboard";
-
-function sortSlotsChronologically(
-  slots: TrainingSlotItem[],
-): TrainingSlotItem[] {
-  return [...slots].sort((a, b) => {
-    if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek - b.dayOfWeek;
-    return (a.time || "00:00").localeCompare(b.time || "00:00");
-  });
-}
-
-function SortableFilterItem({
-  id,
-  label,
-}: {
-  id: CoachFilterId;
-  label: string;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 ${
-        isDragging ? "opacity-50" : ""
-      }`}
-    >
-      <span className="text-sm font-medium">{label}</span>
-      <button
-        type="button"
-        className="cursor-grab touch-none rounded p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:cursor-grabbing"
-        aria-label={`Drag to reorder ${label}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
 
 export default function AccountPage() {
   const router = useRouter();
@@ -157,13 +70,6 @@ export default function AccountPage() {
       // ignore
     }
   }, []);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
 
   const handleFilterDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -275,8 +181,8 @@ export default function AccountPage() {
     setTrainingSlots((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const isGroupSlot = (slot: { sourceGroupId?: string }) =>
-    user?.groupId && slot.sourceGroupId === user.groupId;
+  const isGroupSlot = (slot: TrainingSlotItem): boolean =>
+    !!(user?.groupId && slot.sourceGroupId === user.groupId);
 
   const handleConfirmRemoveGroupSlot = async () => {
     if (deleteGroupSlotConfirmIndex === null) return;
@@ -358,283 +264,48 @@ export default function AccountPage() {
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-8">
-          {/* Profile emoji section */}
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-              <User className="h-4 w-4" />
-              Profile Emoji
-            </h2>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Choose an emoji to represent you. It will appear next to your name
-              in the sidebar and in comments.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <EmojiPicker
-                  value={profileEmoji}
-                  onChange={handleEmojiChange}
-                />
-                {savingEmoji && (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-background/60">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-1 items-center gap-2">
-                {!profileEmoji && (
-                  <p className="text-sm text-muted-foreground">
-                    Click to choose an emoji
-                  </p>
-                )}
-                {profileEmoji && (
-                  <Button
-                    variant="ghost-destructive"
-                    size="sm"
-                    onClick={() => handleEmojiChange("")}
-                    disabled={savingEmoji}
-                    className="h-7 text-xs"
-                  >
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </div>
-          </section>
+          <AccountProfileEmojiSection
+            profileEmoji={profileEmoji}
+            savingEmoji={savingEmoji}
+            onEmojiChange={handleEmojiChange}
+          />
 
-          {/* Training slots (athletes) */}
           {user.role === "athlete" && (
-            <section className="rounded-2xl border border-border bg-card p-6">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-                  <Calendar className="h-4 w-4" />
-                  Training schedule
-                </h2>
-                {user.groupId && (
-                  <Button
-                    variant="ghost-secondary"
-                    size="sm"
-                    className="h-8 shrink-0 gap-1.5"
-                    onClick={handleSyncGroupSchedule}
-                    disabled={syncingSchedule}
-                    aria-label="Sync with group"
-                  >
-                    {syncingSchedule ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    )}
-                    Sync with group
-                  </Button>
-                )}
-              </div>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Set your weekly training schedule. Group schedule set by Coach
-                cannot be modified. Streaks are based on logging within 24 hours
-                of each scheduled slot.
-              </p>
-              <div className="flex flex-col gap-3">
-                {trainingSlots.map((slot, index) => {
-                  const isGroup = isGroupSlot(slot);
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
-                    >
-                      <select
-                        value={slot.dayOfWeek}
-                        onChange={(e) =>
-                          updateTrainingSlot(
-                            index,
-                            "dayOfWeek",
-                            Number(e.target.value),
-                          )
-                        }
-                        disabled={!!isGroup}
-                        className="h-9 flex-1 min-w-[120px] rounded-md border border-border bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-70"
-                      >
-                        {DAYS.map((name, i) => (
-                          <option key={i} value={i}>
-                            {name}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="time"
-                        value={slot.time}
-                        onChange={(e) =>
-                          updateTrainingSlot(index, "time", e.target.value)
-                        }
-                        disabled={!!isGroup}
-                        className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-70"
-                      />
-                      <Button
-                        variant="ghost-secondary"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() =>
-                          isGroup
-                            ? setDeleteGroupSlotConfirmIndex(index)
-                            : removeTrainingSlot(index)
-                        }
-                        aria-label={
-                          isGroup ? "Remove group schedule slot" : "Remove slot"
-                        }
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  );
-                })}
-                <Button
-                  variant="ghost-secondary"
-                  size="sm"
-                  className="w-fit"
-                  onClick={addTrainingSlot}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add schedule slot
-                </Button>
-              </div>
-              <AlertDialog
-                open={deleteGroupSlotConfirmIndex !== null}
-                onOpenChange={(open) =>
-                  !open && setDeleteGroupSlotConfirmIndex(null)
-                }
-              >
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Are you sure you want to delete the group schedule?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will remove this group schedule slot. You can bring
-                      it back anytime with Sync.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleConfirmRemoveGroupSlot}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Remove
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </section>
+            <AccountTrainingSlotsSection
+              trainingSlots={trainingSlots}
+              hasGroupId={!!user.groupId}
+              syncingSchedule={syncingSchedule}
+              deleteGroupSlotConfirmIndex={deleteGroupSlotConfirmIndex}
+              setDeleteGroupSlotConfirmIndex={setDeleteGroupSlotConfirmIndex}
+              onAddSlot={addTrainingSlot}
+              onRemoveSlot={removeTrainingSlot}
+              onUpdateSlot={updateTrainingSlot}
+              onSyncGroupSchedule={handleSyncGroupSchedule}
+              onConfirmRemoveGroupSlot={handleConfirmRemoveGroupSlot}
+              isGroupSlot={isGroupSlot}
+            />
           )}
 
-          {/* Celebration toggle (athletes only) */}
           {user.role === "athlete" && (
-            <section className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-                <PartyPopper className="h-4 w-4" />
-                Celebration
-              </h2>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Show a confetti celebration when you create a new log entry.
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  Show celebration on new log
-                </span>
-                <Switch
-                  checked={celebrationEnabled}
-                  onCheckedChange={(checked) => {
-                    setCelebrationEnabled(checked);
-                    try {
-                      localStorage.setItem(CELEBRATION_KEY, String(checked));
-                    } catch {
-                      // ignore
-                    }
-                  }}
-                />
-              </div>
-            </section>
+            <AccountCelebrationSection
+              celebrationEnabled={celebrationEnabled}
+              onCelebrationChange={setCelebrationEnabled}
+            />
           )}
 
-          {/* Filter order (coach only) */}
           {user.role === "coach" && (
-            <section className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-                <SlidersHorizontal className="h-4 w-4" />
-                Filter Order
-              </h2>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Reorder the filter sections in your dashboard sidebar.
-              </p>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleFilterDragEnd}
-              >
-                <SortableContext
-                  items={filterOrder}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="flex flex-col gap-2">
-                    {filterOrder.map((id) => (
-                      <SortableFilterItem
-                        key={id}
-                        id={id}
-                        label={FILTER_LABELS[id]}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </section>
+            <AccountFilterOrderSection
+              filterOrder={filterOrder}
+              onFilterDragEnd={handleFilterDragEnd}
+            />
           )}
 
-          {/* Delete account section */}
-          <section className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-destructive">
-              <Trash2 className="h-4 w-4" />
-              Delete Account
-            </h2>
-            <p className="mb-4 text-xs text-muted-foreground">
-              Permanently delete your account and all associated data. This
-              action cannot be undone.
-            </p>
-            <AlertDialog
-              open={deleteConfirmOpen}
-              onOpenChange={setDeleteConfirmOpen}
-            >
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setDeleteConfirmOpen(true)}
-              >
-                Delete Account
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Are you sure you want to delete your account?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete your account, all your logs,
-                    and any groups you coach. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteAccount}
-                    disabled={deleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {deleting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Delete"
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </section>
+          <AccountDeleteSection
+            deleteConfirmOpen={deleteConfirmOpen}
+            setDeleteConfirmOpen={setDeleteConfirmOpen}
+            deleting={deleting}
+            onDeleteAccount={handleDeleteAccount}
+          />
         </div>
       </main>
     </div>

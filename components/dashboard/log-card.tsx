@@ -17,21 +17,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CommentSection } from "./comment-section";
 import { ReviewStatusBadge } from "./review-status-badge";
+import type { LogEntry } from "@/types/dashboard";
 
-export interface LogEntry {
-  id: string;
-  emoji: string;
-  timestamp: string;
-  visibility: "coach" | "private";
-  notes: string;
-  tags: string[];
-  userId: string;
-  userName: string;
-  isOwn: boolean;
-  checkinId?: string | null;
-  createdAt: string;
-  reviewStatus?: "pending" | "reviewed" | "revisit";
-}
+export type { LogEntry };
 
 interface LogCardProps {
   log: LogEntry;
