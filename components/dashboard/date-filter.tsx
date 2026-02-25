@@ -109,37 +109,52 @@ export function DateFilter({
     );
   }
 
+  const [allOpt, ...restOpts] = options;
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-1.5 lg:hidden">
-      {options.map((opt) => (
-        <button
-          key={opt.key}
-          type="button"
-          onClick={() => {
-            onDateFilterChange(opt.key);
-            onCustomDateChange("");
-          }}
-          className={`${buttonBase} ${
-            dateFilter === opt.key ? buttonActive : buttonInactive
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-      <input
-        type="date"
-        value={customDate}
-        onChange={(e) => {
-          onCustomDateChange(e.target.value);
-          if (e.target.value) onDateFilterChange("custom");
-          else onDateFilterChange("all");
+    <div className="mb-4 flex items-center gap-1.5 lg:hidden">
+      <button
+        type="button"
+        onClick={() => {
+          onDateFilterChange(allOpt.key);
+          onCustomDateChange("");
         }}
-        className={`rounded-full border border-border bg-secondary px-2.5 py-1 text-xs text-foreground ${
-          dateFilter === "custom"
-            ? "border-primary/30 bg-primary/10 text-primary"
-            : ""
+        className={`shrink-0 ${buttonBase} ${
+          dateFilter === allOpt.key ? buttonActive : buttonInactive
         }`}
-      />
+      >
+        {allOpt.label}
+      </button>
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hidden">
+        {restOpts.map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => {
+              onDateFilterChange(opt.key);
+              onCustomDateChange("");
+            }}
+            className={`shrink-0 ${buttonBase} ${
+              dateFilter === opt.key ? buttonActive : buttonInactive
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <input
+          type="date"
+          value={customDate}
+          onChange={(e) => {
+            onCustomDateChange(e.target.value);
+            if (e.target.value) onDateFilterChange("custom");
+            else onDateFilterChange("all");
+          }}
+          className={`shrink-0 rounded-full border border-border bg-secondary px-2.5 py-1 text-xs text-foreground ${
+            dateFilter === "custom"
+              ? "border-primary/30 bg-primary/10 text-primary"
+              : ""
+          }`}
+        />
+      </div>
     </div>
   );
 }

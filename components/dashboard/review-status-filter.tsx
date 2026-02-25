@@ -80,20 +80,32 @@ export function ReviewStatusFilter({
     );
   }
 
+  const [allOpt, ...restOpts] = OPTIONS;
   return (
-    <div className="mb-4 flex flex-wrap gap-1.5 lg:hidden">
-      {OPTIONS.map((opt) => (
-        <button
-          key={opt.value ?? "all"}
-          type="button"
-          onClick={() => onFilter(opt.value)}
-          className={`${buttonBase} ${
-            filterReviewStatus === opt.value ? buttonActive : buttonInactive
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+    <div className="mb-4 flex items-center gap-1.5 lg:hidden">
+      <button
+        type="button"
+        onClick={() => onFilter(allOpt.value)}
+        className={`shrink-0 ${buttonBase} ${
+          filterReviewStatus === allOpt.value ? buttonActive : buttonInactive
+        }`}
+      >
+        {allOpt.label}
+      </button>
+      <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto scrollbar-hidden">
+        {restOpts.map((opt) => (
+          <button
+            key={opt.value ?? "all"}
+            type="button"
+            onClick={() => onFilter(opt.value)}
+            className={`shrink-0 ${buttonBase} ${
+              filterReviewStatus === opt.value ? buttonActive : buttonInactive
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

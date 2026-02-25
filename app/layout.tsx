@@ -55,7 +55,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: colorThemeScript }} />
       </head>
-      <body className="font-sans antialiased min-h-screen">
+      <body className="font-sans antialiased min-h-screen overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

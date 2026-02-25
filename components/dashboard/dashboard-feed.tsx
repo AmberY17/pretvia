@@ -89,7 +89,8 @@ export function DashboardFeed({
     filters.dateFilter !== "all" ||
     filters.filterSessionId ||
     filters.filterRoleId ||
-    filters.filterReviewStatus;
+    filters.filterReviewStatus ||
+    filters.filterAthleteId;
 
   return (
     <main
@@ -129,7 +130,22 @@ export function DashboardFeed({
         )}
 
         {user.role === "coach" && (
-          <>
+          <div className="flex flex-col gap-2 lg:hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Filter by
+              </span>
+              {isFiltered && (
+                <button
+                  type="button"
+                  onClick={handlers.clearAllFilters}
+                  className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Reset all filters"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
             <RoleFilter
               variant="mobile"
               roles={groupRoles}
@@ -147,7 +163,7 @@ export function DashboardFeed({
               filterReviewStatus={filters.filterReviewStatus}
               onFilter={handlers.setFilterReviewStatus}
             />
-          </>
+          </div>
         )}
 
         <DateFilter

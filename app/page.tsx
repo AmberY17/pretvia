@@ -171,11 +171,11 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Floating emojis */}
-          <motion.div variants={fadeUp} custom={4} className="mt-16 flex gap-4">
+          <motion.div variants={fadeUp} custom={4} className="mt-16 flex flex-wrap justify-center gap-3 sm:gap-4">
             {floatingEmojis.map((emoji, i) => (
               <motion.span
                 key={i}
-                className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card text-2xl shadow-lg"
+                className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border border-border bg-card text-xl sm:text-2xl shadow-lg"
                 animate={{ y: [0, -8, 0] }}
                 transition={{
                   duration: 3,
@@ -221,15 +221,15 @@ export default function LandingPage() {
                   duration: 0.6,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="group relative rounded-2xl border border-border bg-card p-8 transition-colors hover:border-primary/30"
+                className="group relative min-w-0 rounded-2xl border border-border bg-card p-8 transition-colors hover:border-primary/30"
               >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+                <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                   <feature.icon className="h-6 w-6" />
                 </div>
                 <h3 className="mb-2 text-lg font-semibold text-foreground">
                   {feature.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="break-words text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
               </motion.div>

@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Calendar,
   Trash2,
+  Search,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,7 @@ export default function GroupManagementPage() {
     { dayOfWeek: number; time: string }[]
   >([]);
   const [savingTrainingSchedule, setSavingTrainingSchedule] = useState(false);
+  const [athleteSearch, setAthleteSearch] = useState("");
   const transferDropdownRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -125,9 +127,20 @@ export default function GroupManagementPage() {
     }
   }, [authLoading, user, router]);
 
-  const athletes = (membersData?.members ?? []).filter(
+  const allAthletes = (membersData?.members ?? []).filter(
     (m) => m.role !== "coach",
   );
+  const athletes = athleteSearch.trim()
+    ? allAthletes.filter(
+        (a) =>
+          (a.displayName ?? "")
+            .toLowerCase()
+            .includes(athleteSearch.trim().toLowerCase()) ||
+          (a.email ?? "")
+            .toLowerCase()
+            .includes(athleteSearch.trim().toLowerCase()),
+      )
+    : allAthletes;
   const roles = membersData?.roles ?? [];
   const coachGroups = coachGroupsData?.groups ?? [];
   const transferableGroups = coachGroups.filter((g) => g.id !== user?.groupId);
@@ -390,37 +403,45 @@ export default function GroupManagementPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+        <div className="flex h-14 items-center justify-between gap-4 px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+              className="hidden shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground lg:flex lg:w-[4.5rem]"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">Back</span>
             </Link>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center">
               <Image
                 src="/logo.png"
                 alt="Pretvia"
-                width={20}
-                height={20}
-                className="h-5 w-5 object-contain dark:hidden"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain dark:hidden"
               />
               <Image
                 src="/logo_dark_white.png"
                 alt="Pretvia"
-                width={20}
-                height={20}
-                className="hidden h-5 w-5 object-contain dark:block"
+                width={24}
+                height={24}
+                className="hidden h-6 w-6 object-contain dark:block"
               />
             </div>
-            <span className="text-sm font-semibold text-foreground">
+            <span className="truncate text-base font-semibold text-foreground">
               Manage Group
             </span>
           </div>
-          <ThemeSwitcher />
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground lg:hidden"
+              aria-label="Back to dashboard"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <ThemeSwitcher />
+          </div>
         </div>
       </header>
 
@@ -570,19 +591,25 @@ export default function GroupManagementPage() {
                       key={index}
                       className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
                     >
-                      <select
-                        value={slot.dayOfWeek}
-                        onChange={(e) =>
-                          updateTrainingSlot(index, "dayOfWeek", Number(e.target.value))
-                        }
-                        className="h-9 flex-1 min-w-[120px] rounded-md border border-border bg-background px-3 text-sm text-foreground"
-                      >
-                        {DAYS.map((name, i) => (
-                          <option key={i} value={i}>
-                            {name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative flex flex-1 min-w-[120px]">
+                        <select
+                          value={slot.dayOfWeek}
+                          onChange={(e) =>
+                            updateTrainingSlot(index, "dayOfWeek", Number(e.target.value))
+                          }
+                          className="h-9 w-full appearance-none rounded-md border border-border bg-background pl-4 pr-10 text-sm text-foreground"
+                        >
+                          {DAYS.map((name, i) => (
+                            <option key={i} value={i}>
+                              {name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                          aria-hidden
+                        />
+                      </div>
                       <input
                         type="time"
                         value={slot.time}
@@ -635,13 +662,35 @@ export default function GroupManagementPage() {
                   <Users className="h-4 w-4" />
                   Athletes
                 </h2>
-                {athletes.length === 0 ? (
+                {allAthletes.length > 0 && (
+                  <div className="relative mb-4">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search athletes by name or email..."
+                      value={athleteSearch}
+                      onChange={(e) => setAthleteSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                )}
+                {allAthletes.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No athletes in this group yet. Share the group code to
                     invite them.
                   </p>
+                ) : athletes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No athletes match your search.
+                  </p>
                 ) : (
-                  <div className="space-y-4">
+                  <div
+                    className={`space-y-4 ${
+                      athletes.length > 4
+                        ? "max-h-[340px] overflow-y-auto scrollbar-hidden"
+                        : ""
+                    }`}
+                  >
                     {athletes.map((a) => (
                       <div
                         key={a.id}

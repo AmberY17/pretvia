@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, ClipboardCheck, Settings } from "lucide-react";
+import { Plus, ClipboardCheck, Settings, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import type { User } from "@/hooks/use-auth";
@@ -10,13 +11,22 @@ import type { User } from "@/hooks/use-auth";
 interface DashboardHeaderProps {
   user: User;
   onNewLog?: () => void;
+  onLogout: () => void;
 }
 
-export function DashboardHeader({ user, onNewLog }: DashboardHeaderProps) {
+export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderProps) {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    onLogout();
+    router.push("/");
+  };
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-6">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="hidden w-[4.5rem] shrink-0 lg:block" aria-hidden="true" />
           <Image
             src="/logo.png"
             alt="Pretvia"
@@ -69,6 +79,20 @@ export function DashboardHeader({ user, onNewLog }: DashboardHeaderProps) {
               <span className="hidden sm:inline">New Log</span>
             </Button>
           )}
+          <Link href="/dashboard/account" className="lg:hidden">
+            <Button variant="ghost-secondary" size="sm" className="gap-2" aria-label="Account settings">
+              <User className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Button
+            variant="ghost-secondary"
+            size="sm"
+            onClick={handleSignOut}
+            className="gap-2 lg:hidden"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
           <ThemeSwitcher />
         </div>
       </div>

@@ -181,7 +181,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <DashboardHeader user={user} onNewLog={panelHandlers.handleNewLog} />
+      <DashboardHeader
+          user={user}
+          onNewLog={panelHandlers.handleNewLog}
+          onLogout={() => mutateAuth()}
+        />
 
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar
