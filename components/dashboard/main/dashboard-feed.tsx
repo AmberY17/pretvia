@@ -128,23 +128,25 @@ export function DashboardFeed({
       tabIndex={user.role === "coach" && panelMode === "view" ? 0 : undefined}
     >
       <div className="mx-auto max-w-2xl">
-        {user.role !== "coach" && (
-          <div className="mb-4 flex flex-col gap-2 lg:hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Filter by
-              </span>
-              {(filters.activeTags.length > 0 || filters.dateFilter !== "all") && (
-                <button
-                  type="button"
-                  onClick={handlers.clearAllFilters}
-                  className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Reset all filters"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
+        {/* Mobile filter section — unified for consistent gap-2 spacing */}
+        <div className="mb-4 flex flex-col gap-2 lg:hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Filter by
+            </span>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handlers.clearAllFilters}
+                className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Reset all filters"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {user.role !== "coach" && (
             <TagFilter
               tags={tags}
               activeTags={filters.activeTags}
@@ -152,54 +154,40 @@ export function DashboardFeed({
               onClear={handlers.handleClearTags}
               hideHeader
             />
-          </div>
-        )}
+          )}
 
-        {user.role === "coach" && (
-          <div className="flex flex-col gap-2 lg:hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Filter by
-              </span>
-              {isFiltered && (
-                <button
-                  type="button"
-                  onClick={handlers.clearAllFilters}
-                  className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Reset all filters"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
-            <RoleFilter
-              variant="mobile"
-              roles={groupRoles}
-              filterRoleId={filters.filterRoleId}
-              onFilter={(id) => handlers.setFilterRoleId(id)}
-            />
-            <AthleteFilter
-              variant="mobile"
-              athletes={athletes}
-              filterAthleteId={filters.filterAthleteId}
-              onFilter={handlers.handleFilterAthlete}
-            />
-            <ReviewStatusFilter
-              variant="mobile"
-              filterReviewStatus={filters.filterReviewStatus}
-              onFilter={handlers.setFilterReviewStatus}
-            />
-          </div>
-        )}
+          {user.role === "coach" && (
+            <>
+              <RoleFilter
+                variant="mobile"
+                roles={groupRoles}
+                filterRoleId={filters.filterRoleId}
+                onFilter={(id) => handlers.setFilterRoleId(id)}
+              />
+              <AthleteFilter
+                variant="mobile"
+                athletes={athletes}
+                filterAthleteId={filters.filterAthleteId}
+                onFilter={handlers.handleFilterAthlete}
+              />
+              <ReviewStatusFilter
+                variant="mobile"
+                filterReviewStatus={filters.filterReviewStatus}
+                onFilter={handlers.setFilterReviewStatus}
+              />
+            </>
+          )}
 
-        <DateFilter
-          variant="mobile"
-          dateFilter={filters.dateFilter}
-          customDate={filters.customDate}
-          onDateFilterChange={handlers.setDateFilter}
-          onCustomDateChange={handlers.setCustomDate}
-          onClear={handlers.clearDateFilter}
-        />
+          <DateFilter
+            variant="mobile"
+            inline
+            dateFilter={filters.dateFilter}
+            customDate={filters.customDate}
+            onDateFilterChange={handlers.setDateFilter}
+            onCustomDateChange={handlers.setCustomDate}
+            onClear={handlers.clearDateFilter}
+          />
+        </div>
 
         {user.groupId && (
           <AnnouncementBanner

@@ -90,80 +90,85 @@ export function AnnouncementBanner({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="group/announcement relative rounded-2xl border border-primary/20 bg-primary/5 p-4"
+            className="rounded-2xl border border-primary/20 bg-primary/5 p-4"
           >
             <div className="flex items-start gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <Megaphone className="h-4 w-4 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-primary">
-                    Announcement
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    from {announcement.coachName}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(announcement.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </span>
+                {/* Title row: label + actions pinned to the right */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      <span className="text-xs font-semibold text-primary">
+                        Announcement
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        from {announcement.coachName}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(announcement.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  {isCoach && (
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setText(announcement.text);
+                          setIsComposing(true);
+                        }}
+                        disabled={loading}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+                        aria-label="Edit announcement"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <AlertDialog
+                        open={deleteConfirmOpen}
+                        onOpenChange={setDeleteConfirmOpen}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmOpen(true)}
+                          disabled={loading}
+                          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="Remove announcement"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you sure you want to delete?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This announcement will be removed for all group
+                              members.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDismiss}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
                 <p className="mt-1 text-sm leading-relaxed text-foreground">
                   {announcement.text}
                 </p>
               </div>
-              {isCoach && (
-                <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover/announcement:opacity-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setText(announcement.text);
-                      setIsComposing(true);
-                    }}
-                    disabled={loading}
-                    className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
-                    aria-label="Edit announcement"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <AlertDialog
-                    open={deleteConfirmOpen}
-                    onOpenChange={setDeleteConfirmOpen}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirmOpen(true)}
-                      disabled={loading}
-                      className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                      aria-label="Remove announcement"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you sure you want to delete?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This announcement will be removed for all group
-                          members.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDismiss}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )}
             </div>
           </motion.div>
         )}

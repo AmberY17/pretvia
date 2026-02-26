@@ -110,11 +110,13 @@ export function LogCard({
                   }`}
                 >
                   {log.visibility === "coach" ? (
-                    <Eye className="mr-1 h-3 w-3" />
+                    <Eye className="h-3 w-3 sm:mr-1" />
                   ) : (
-                    <Lock className="mr-1 h-3 w-3" />
+                    <Lock className="h-3 w-3 sm:mr-1" />
                   )}
-                  {log.visibility === "coach" ? "Shared" : "Private"}
+                  <span className="hidden sm:inline">
+                    {log.visibility === "coach" ? "Shared" : "Private"}
+                  </span>
                 </Badge>
               )}
               {log.isOwn && (

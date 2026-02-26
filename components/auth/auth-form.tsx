@@ -28,6 +28,9 @@ export function AuthForm() {
   const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   // Force fresh session on mount (avoid stale cache from previous visit)
   useEffect(() => {
@@ -129,6 +132,31 @@ export function AuthForm() {
     [email, password, isLogin, displayName, role, router],
   );
 
+  const handleForgotPassword = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      try {
+        const res = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: forgotEmail }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          toast.error(data.error || "Something went wrong");
+        } else {
+          setForgotSent(true);
+        }
+      } catch {
+        toast.error("Network error. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [forgotEmail],
+  );
+
   const handleContinueAs = useCallback(() => {
     router.replace("/dashboard");
   }, [router]);
@@ -202,6 +230,67 @@ export function AuthForm() {
                 Sign in with different account
               </Button>
             </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
+  }
+
+  if (showForgot) {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center px-6 py-12">
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.06] blur-[150px]" />
+        </div>
+        <div className="relative z-10 w-full max-w-md">
+          <button
+            type="button"
+            onClick={() => { setShowForgot(false); setForgotSent(false); }}
+            className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to sign in
+          </button>
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-4">
+              <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
+              <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+              <CardTitle className="text-2xl text-foreground">Reset password</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                {forgotSent
+                  ? "Check your email for a reset link."
+                  : "Enter your email and we'll send you a link to reset your password."}
+              </CardDescription>
+            </CardHeader>
+            {!forgotSent && (
+              <CardContent>
+                <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="forgot-email" className="text-foreground">Email</Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      autoFocus
+                      className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="mt-2 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+                  </Button>
+                </form>
+              </CardContent>
+            )}
           </Card>
         </div>
       </main>
@@ -303,9 +392,24 @@ export function AuthForm() {
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="password" className="text-foreground">
-                      Password
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-foreground">
+                        Password
+                      </Label>
+                      {isLogin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowForgot(true);
+                            setForgotEmail(email);
+                            setForgotSent(false);
+                          }}
+                          className="text-xs text-muted-foreground transition-colors hover:text-primary"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
                     <Input
                       id="password"
                       type="password"

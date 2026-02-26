@@ -79,8 +79,8 @@ export function ReviewStatusBadge({
           onClick={(e) => e.stopPropagation()}
         >
           <Icon className="h-3 w-3" />
-          {config.label}
-          <ChevronDown className="h-3 w-3 opacity-70" />
+          <span className="hidden sm:inline">{config.label}</span>
+          <ChevronDown className="hidden h-3 w-3 opacity-70 sm:block" />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>

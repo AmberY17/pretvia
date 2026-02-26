@@ -82,7 +82,7 @@ export function ReviewStatusFilter({
 
   const [allOpt, ...restOpts] = OPTIONS;
   return (
-    <div className="mb-4 flex items-center gap-1.5 lg:hidden">
+    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hidden lg:hidden">
       <button
         type="button"
         onClick={() => onFilter(allOpt.value)}
