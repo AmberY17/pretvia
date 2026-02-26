@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -32,9 +32,9 @@ export default function DashboardPage() {
   } = useSWRInfinite<{ logs: LogEntry[]; nextCursor: string | null }>(
     (pageIndex, previousPageData) => {
       if (!user) return null;
-      if (pageIndex === 0) return [logsUrl, null] as const;
+      if (pageIndex === 0) return [logsUrl, user.id, null] as const;
       if (!previousPageData?.nextCursor) return null;
-      return [logsUrl, previousPageData.nextCursor] as const;
+      return [logsUrl, user.id, previousPageData.nextCursor] as const;
     },
     logsInfiniteFetcher,
     {
@@ -45,12 +45,14 @@ export default function DashboardPage() {
   const logs = (logsPagesData ?? []).flatMap((p) => p.logs) as LogEntry[];
   const hasMoreLogs = (logsPagesData?.[logsPagesData.length - 1]?.nextCursor ?? null) !== null;
   const prevLogsUrlRef = useRef(logsUrl);
+  const prevUserIdRef = useRef(user?.id);
   useEffect(() => {
-    if (prevLogsUrlRef.current !== logsUrl) {
+    if (prevLogsUrlRef.current !== logsUrl || prevUserIdRef.current !== user?.id) {
       prevLogsUrlRef.current = logsUrl;
+      prevUserIdRef.current = user?.id;
       setSize(1);
     }
-  }, [logsUrl, setSize]);
+  }, [logsUrl, user?.id, setSize]);
 
   const { data: tagsData, isLoading: tagsLoading, mutate: mutateTags } = useSWR<{
     tags: { id: string; name: string }[];
@@ -102,13 +104,27 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
+  const handleLogout = useCallback(() => {
+    globalMutate(() => true, undefined, { revalidate: false });
+    mutateAuth();
+  }, [mutateAuth]);
+
   const { panelState, panelHandlers } = useDashboardPanel({
+    userId: user?.id,
     mutateLogs,
     mutateTags,
     mutateCheckins,
     mutateAllCheckins,
     mutateStats: user?.role === "athlete" ? mutateStats : undefined,
   });
+
+  const prevUserIdForFiltersRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (prevUserIdForFiltersRef.current !== undefined && prevUserIdForFiltersRef.current !== user?.id) {
+      handlers.clearAllFilters();
+    }
+    prevUserIdForFiltersRef.current = user?.id;
+  }, [user?.id, handlers]);
 
   const handleGroupChanged = useCallback(() => {
     mutateAuth();
@@ -198,13 +214,13 @@ export default function DashboardPage() {
       <DashboardHeader
           user={user}
           onNewLog={panelHandlers.handleNewLog}
-          onLogout={() => mutateAuth()}
+          onLogout={handleLogout}
         />
 
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar
           user={user}
-          onLogout={() => mutateAuth()}
+          onLogout={handleLogout}
           onGroupChanged={handleGroupChanged}
           filters={filters}
           handlers={handlers}

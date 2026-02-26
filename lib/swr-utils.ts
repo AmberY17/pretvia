@@ -8,9 +8,10 @@ import type { LogEntry } from "@/types/dashboard";
 const LOGS_PAGE_SIZE = 20;
 
 export async function logsInfiniteFetcher(
-  key: readonly [string, string | null],
+  key: readonly [string, ...unknown[]],
 ): Promise<{ logs: LogEntry[]; nextCursor: string | null }> {
-  const [baseUrl, cursor] = key;
+  const baseUrl = key[0];
+  const cursor = (key.length >= 3 ? key[2] : key[1]) as string | null;
   const separator = baseUrl.includes("?") ? "&" : "?";
   const limitParam = `${separator}limit=${LOGS_PAGE_SIZE}`;
   const url = cursor

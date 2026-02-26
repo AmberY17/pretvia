@@ -32,11 +32,15 @@ export default function AttendancePage() {
 
   const filteredCheckins = sessionSearch.trim()
     ? checkins.filter((c) => {
-        const label =
-          (c.title || "Session") +
-          " " +
-          format(new Date(c.sessionDate), "MMM d, yyyy");
-        return label.toLowerCase().includes(sessionSearch.trim().toLowerCase());
+        try {
+          const label =
+            (c.title || "Session") +
+            " " +
+            format(new Date(c.sessionDate), "MMM d, yyyy");
+          return label.toLowerCase().includes(sessionSearch.trim().toLowerCase());
+        } catch {
+          return false;
+        }
       })
     : checkins;
 
@@ -59,10 +63,12 @@ export default function AttendancePage() {
   useEffect(() => {
     const list = checkinsData?.checkins ?? [];
     setCheckins(list);
-    if (list.length > 0 && !selectedCheckinId) {
-      setSelectedCheckinId(list[0].id);
-    }
-  }, [checkinsData, selectedCheckinId]);
+    setSelectedCheckinId((prev) => {
+      if (list.length === 0) return null;
+      if (prev && list.some((c) => c.id === prev)) return prev;
+      return list[0].id;
+    });
+  }, [checkinsData]);
 
   useEffect(() => {
     if (attendanceData?.athletes) {

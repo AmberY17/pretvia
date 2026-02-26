@@ -93,7 +93,7 @@ export function DashboardSidebar({
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const stored = localStorage.getItem(COACH_FILTER_ORDER_KEY);
+      const stored = localStorage.getItem(`${COACH_FILTER_ORDER_KEY}-${user.id}`);
       if (stored) {
         const parsed = JSON.parse(stored) as string[];
         const valid = DEFAULT_COACH_ORDER.filter((id) => parsed.includes(id));
@@ -104,7 +104,7 @@ export function DashboardSidebar({
     } catch {
       // ignore invalid localStorage
     }
-  }, []);
+  }, [user.id]);
 
   const hasAnyFilter =
     filters.activeTags.length > 0 ||

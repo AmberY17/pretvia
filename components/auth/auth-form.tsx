@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -29,12 +29,10 @@ export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // Redirect logged-in users (e.g. after verifying in another tab)
+  // Force fresh session on mount (avoid stale cache from previous visit)
   useEffect(() => {
-    if (!authLoading && user) {
-      router.replace("/dashboard");
-    }
-  }, [user, authLoading, router]);
+    mutateAuth();
+  }, [mutateAuth]);
 
   // Revalidate session when tab gains focus so we pick up verification from another tab
   useEffect(() => {
@@ -131,12 +129,83 @@ export function AuthForm() {
     [email, password, isLogin, displayName, role, router],
   );
 
+  const handleContinueAs = useCallback(() => {
+    router.replace("/dashboard");
+  }, [router]);
+
+  const handleUseDifferentAccount = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      mutate(() => true, undefined, { revalidate: false });
+      mutateAuth();
+    } catch {
+      toast.error("Could not sign out. Please try again.");
+    }
+  }, [mutateAuth]);
+
   if (authLoading) {
     return <LoadingScreen />;
   }
 
   if (user) {
-    return null; // Redirecting to dashboard
+    return (
+      <main className="relative flex min-h-screen items-center justify-center px-6 py-12">
+        <div
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.06] blur-[150px]" />
+        </div>
+        <div className="relative z-10 w-full max-w-md">
+          <Link
+            href="/"
+            className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to home
+          </Link>
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-4">
+              <Image
+                src="/logo.png"
+                alt="Pretvia"
+                width={44}
+                height={44}
+                className="mb-2 h-11 w-11 object-contain dark:hidden"
+              />
+              <Image
+                src="/logo_dark_white.png"
+                alt="Pretvia"
+                width={44}
+                height={44}
+                className="mb-2 hidden h-11 w-11 object-contain dark:block"
+              />
+              <CardTitle className="text-2xl text-foreground">
+                You&apos;re signed in
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Choose how to continue
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button
+                onClick={handleContinueAs}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Continue as {user.email}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleUseDifferentAccount}
+                className="w-full"
+              >
+                Sign in with different account
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
   }
 
   return (

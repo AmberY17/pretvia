@@ -44,21 +44,21 @@ export default function AccountPage() {
   const lastSavedTrainingSlotsRef = useRef<typeof trainingSlots | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !user?.id) return;
     try {
-      const stored = localStorage.getItem(CELEBRATION_KEY);
+      const stored = localStorage.getItem(`${CELEBRATION_KEY}-${user.id}`);
       if (stored !== null) {
         setCelebrationEnabled(stored === "true");
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !user?.id) return;
     try {
-      const stored = localStorage.getItem(COACH_FILTER_ORDER_KEY);
+      const stored = localStorage.getItem(`${COACH_FILTER_ORDER_KEY}-${user.id}`);
       if (stored) {
         const parsed = JSON.parse(stored) as string[];
         const valid = DEFAULT_COACH_ORDER.filter((id) => parsed.includes(id));
@@ -69,7 +69,7 @@ export default function AccountPage() {
     } catch {
       // ignore
     }
-  }, []);
+  }, [user?.id]);
 
   const handleFilterDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -79,7 +79,9 @@ export default function AccountPage() {
     if (oldIndex === -1 || newIndex === -1) return;
     const newOrder = arrayMove(filterOrder, oldIndex, newIndex);
     setFilterOrder(newOrder);
-    localStorage.setItem(COACH_FILTER_ORDER_KEY, JSON.stringify(newOrder));
+    if (user?.id) {
+      localStorage.setItem(`${COACH_FILTER_ORDER_KEY}-${user.id}`, JSON.stringify(newOrder));
+    }
   };
 
   useEffect(() => {
@@ -122,7 +124,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/");
+      router.push("/auth");
     }
   }, [authLoading, user, router]);
 
@@ -290,6 +292,7 @@ export default function AccountPage() {
             <AccountCelebrationSection
               celebrationEnabled={celebrationEnabled}
               onCelebrationChange={setCelebrationEnabled}
+              userId={user.id}
             />
           )}
 

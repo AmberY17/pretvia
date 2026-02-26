@@ -7,11 +7,13 @@ import { CELEBRATION_KEY } from "@/lib/constants";
 interface AccountCelebrationSectionProps {
   celebrationEnabled: boolean;
   onCelebrationChange: (enabled: boolean) => void;
+  userId: string;
 }
 
 export function AccountCelebrationSection({
   celebrationEnabled,
   onCelebrationChange,
+  userId,
 }: AccountCelebrationSectionProps) {
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -31,7 +33,7 @@ export function AccountCelebrationSection({
           onCheckedChange={(checked) => {
             onCelebrationChange(checked);
             try {
-              localStorage.setItem(CELEBRATION_KEY, String(checked));
+              localStorage.setItem(`${CELEBRATION_KEY}-${userId}`, String(checked));
             } catch {
               // ignore
             }

@@ -13,10 +13,10 @@ function getOrdinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-function isCelebrationEnabled(): boolean {
+function isCelebrationEnabled(userId: string): boolean {
   if (typeof window === "undefined") return true;
   try {
-    const stored = localStorage.getItem(CELEBRATION_KEY);
+    const stored = localStorage.getItem(`${CELEBRATION_KEY}-${userId}`);
     if (stored === null) return true;
     return stored === "true";
   } catch {
@@ -27,15 +27,16 @@ function isCelebrationEnabled(): boolean {
 interface ConfettiCelebrationProps {
   totalCount: number;
   onDismiss: () => void;
+  userId: string;
 }
 
-export function ConfettiCelebration({ totalCount, onDismiss }: ConfettiCelebrationProps) {
+export function ConfettiCelebration({ totalCount, onDismiss, userId }: ConfettiCelebrationProps) {
   const handleDismiss = useCallback(() => {
     onDismiss();
   }, [onDismiss]);
 
   useEffect(() => {
-    if (!isCelebrationEnabled()) {
+    if (!isCelebrationEnabled(userId)) {
       handleDismiss();
       return;
     }
@@ -80,7 +81,7 @@ export function ConfettiCelebration({ totalCount, onDismiss }: ConfettiCelebrati
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleDismiss]);
 
-  if (!isCelebrationEnabled()) return null;
+  if (!isCelebrationEnabled(userId)) return null;
 
   return createPortal(
     <motion.div

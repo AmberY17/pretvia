@@ -158,6 +158,7 @@ export function DashboardPanel({
             key={celebrationCount}
             totalCount={celebrationCount}
             onDismiss={handleCelebrationDismiss}
+            userId={user.id}
           />
         )}
       </AnimatePresence>

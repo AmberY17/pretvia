@@ -21,6 +21,7 @@ export async function GET() {
     response_type: "code",
     scope: "openid email profile",
     state,
+    prompt: "select_account",
   })
 
   const url = `${GOOGLE_AUTH_URL}?${params.toString()}`

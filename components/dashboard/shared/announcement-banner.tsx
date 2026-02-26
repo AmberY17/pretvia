@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Megaphone, Trash2, Send, Loader2, Shield, Pencil } from "lucide-react";

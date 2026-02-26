@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Eye, Lock, X } from "lucide-react";
@@ -54,7 +53,7 @@ export function LogForm({
         : getLocalTimestamp(),
   );
   const [visibility, setVisibility] = useState<"coach" | "private">(
-    editLog?.visibility || (checkinId ? "coach" : "coach"),
+    editLog?.visibility || "coach",
   );
   const [notes, setNotes] = useState(editLog?.notes || "");
   const [tags, setTags] = useState<string[]>(editLog?.tags || []);
@@ -75,7 +74,7 @@ export function LogForm({
           ? toLocalTimestamp(prefillTimestamp)
           : getLocalTimestamp(),
       );
-      setVisibility(checkinId ? "coach" : "coach");
+      setVisibility("coach");
       setNotes("");
       setTags([]);
     }
