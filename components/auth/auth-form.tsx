@@ -42,11 +42,6 @@ export function AuthForm() {
     }
   }, [authLoading, user]);
 
-  // Force fresh session on mount (avoid stale cache from previous visit)
-  useEffect(() => {
-    mutateAuth();
-  }, [mutateAuth]);
-
   // Revalidate session when tab gains focus so we pick up verification from another tab
   useEffect(() => {
     const onFocus = () => mutateAuth();
