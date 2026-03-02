@@ -1,0 +1,46 @@
+---
+description: Shared type definitions, custom hook patterns, and state management conventions
+globs: types/**/*.ts,hooks/**/*.ts
+alwaysApply: false
+---
+
+# Types & State Management
+
+## Shared Types
+
+All shared domain types live in `types/dashboard.ts` — never duplicate them:
+
+`Athlete`, `Member`, `Role`, `SessionItem`, `TrainingSlot`, `TrainingSlotItem`,
+`ReviewStatus`, `ReviewStatusFilterValue`, `AttendanceStatus`, `LogEntry`
+
+When adding a new shared type, add it to `types/dashboard.ts`.
+
+## Custom Hooks
+
+- Hooks live in `hooks/` with a `use-` prefix (kebab-case files)
+- One hook per file, named export matching the filename
+
+### Key Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `useAuth()` | Current user session + `mutate` for revalidation |
+| `useRequireAuth()` | Page-level auth guard — redirects unauthenticated users |
+| `useTrainingSlots()` | CRUD state for training slot arrays |
+| `useDashboardFilters()` | Filter state for the main dashboard feed |
+| `useClickOutside()` | Close dropdowns/popovers on outside click |
+
+## Auth Guards
+
+Use `useRequireAuth()` instead of manual `useEffect` + `router.push`:
+
+```ts
+const { user, isLoading, mutate, loggingOutRef } = useRequireAuth();
+// For coach-only pages:
+const { user, isLoading } = useRequireAuth({ requireCoach: true });
+```
+
+## SWR Data Fetching
+
+- Fetchers come from `lib/swr-utils.ts` (`urlFetcher`, `logsInfiniteFetcher`)
+- Use `useSWR` for single resources, `useSWRInfinite` for paginated feeds

@@ -7,6 +7,8 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import "./globals.css";
+import "@ncdai/react-wheel-picker/style.css";
+import "react-day-picker/dist/style.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({
@@ -33,7 +35,7 @@ export const viewport: Viewport = {
 const colorThemeScript = `
 (function() {
   try {
-    var c = localStorage.getItem('prets-color');
+    var c = localStorage.getItem('pretvia-color');
     if (c && ['green','blue','indigo'].indexOf(c) !== -1) {
       document.documentElement.setAttribute('data-theme', c);
     }
@@ -52,7 +54,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} ${kumarOneOutline.variable}`}
       suppressHydrationWarning
     >
-      <head>
+      <head suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: colorThemeScript }} />
       </head>
       <body className="font-sans antialiased min-h-screen overflow-x-hidden">

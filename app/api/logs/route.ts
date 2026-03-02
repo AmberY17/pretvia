@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     const filterRoleId = searchParams.get("roleId") // Filter by group role
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
+    const datesParam = searchParams.get("dates") // comma-separated yyyy-MM-dd
     const filterCheckinId = searchParams.get("checkinId") // Filter by check-in session
     const filterReviewStatus = searchParams.get("reviewStatus") as
       | "pending"
@@ -104,7 +105,23 @@ export async function GET(req: Request) {
     }
 
     // Date filtering
-    if (dateFrom || dateTo) {
+    if (datesParam) {
+      const dateStrs = datesParam.split(",").map((s) => s.trim()).filter(Boolean)
+      if (dateStrs.length > 0) {
+        const dayConditions = dateStrs
+          .map((d) => {
+            const [y, m, day] = d.split("-").map(Number)
+            if (!y || !m || !day) return null
+            const start = new Date(y, m - 1, day, 0, 0, 0, 0)
+            const end = new Date(y, m - 1, day, 23, 59, 59, 999)
+            return { timestamp: { $gte: start, $lte: end } }
+          })
+          .filter(Boolean) as Record<string, unknown>[]
+        if (dayConditions.length > 0) {
+          filter = { $and: [filter, { $or: dayConditions }] }
+        }
+      }
+    } else if (dateFrom || dateTo) {
       const timestampFilter: Record<string, Date> = {}
       if (dateFrom) timestampFilter.$gte = new Date(dateFrom)
       if (dateTo) timestampFilter.$lte = new Date(dateTo)
@@ -145,7 +162,7 @@ export async function GET(req: Request) {
 
     let nextCursor: string | null = null
     if (logs.length > limit) {
-      const last = logs[limit - 1] as { timestamp: Date; _id: unknown }
+      const last = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
       nextCursor = `${last.timestamp.toISOString()}|${last._id.toString()}`
       logs = logs.slice(0, limit)
     }

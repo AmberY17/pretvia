@@ -429,6 +429,18 @@ export async function GET(req: Request) {
     })
     const roles = group?.roles ?? []
 
+    const user = await db.collection("users").findOne({
+      _id: new ObjectId(session.userId),
+    })
+    const isCoachOfGroup =
+      user?.role === "coach" &&
+      group &&
+      (
+        (Array.isArray(group.coachIds) && group.coachIds.includes(session.userId)) ||
+        group.coachId === session.userId ||
+        (Array.isArray(user?.groupIds) && user.groupIds.includes(groupId))
+      )
+
     const members = await db
       .collection("users")
       .find({ $or: [{ groupIds: groupId }, { groupId: groupId }] })
@@ -446,7 +458,11 @@ export async function GET(req: Request) {
       ])
     )
 
-    return NextResponse.json({
+    const response: {
+      members: { id: string; displayName: string; email: string; role: string; roleIds: string[] }[]
+      roles: unknown[]
+      trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+    } = {
       members: members.map((m) => ({
         id: m._id.toString(),
         displayName: m.displayName,
@@ -455,7 +471,14 @@ export async function GET(req: Request) {
         roleIds: roleIdsByUser.get(m._id.toString()) ?? [],
       })),
       roles,
-    })
+    }
+    if (isCoachOfGroup && Array.isArray(group?.trainingScheduleTemplate)) {
+      response.trainingScheduleTemplate = group.trainingScheduleTemplate as {
+        dayOfWeek: number
+        time: string
+      }[]
+    }
+    return NextResponse.json(response)
   } catch (error) {
     console.error("Get group members error:", error)
     return NextResponse.json(

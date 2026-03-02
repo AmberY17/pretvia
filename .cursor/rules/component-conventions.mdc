@@ -1,0 +1,51 @@
+---
+description: React component naming, structure, and reusable pattern conventions
+globs: components/**/*.tsx
+alwaysApply: false
+---
+
+# Component Conventions
+
+## Naming
+
+- **Files:** kebab-case (`log-card.tsx`, `dashboard-sidebar.tsx`)
+- **Exports:** PascalCase named exports — no default exports
+- **Props:** interface named `ComponentNameProps`
+
+## Structure
+
+- Add `"use client"` only when the component uses hooks or browser APIs
+- Use `cn()` from `@/lib/utils` for conditional/merged Tailwind classes
+
+## Shared Types — Never Duplicate
+
+Import from `@/types/dashboard` — never define these locally:
+
+`Athlete`, `Role`, `SessionItem`, `TrainingSlot`, `TrainingSlotItem`,
+`ReviewStatus`, `ReviewStatusFilterValue`, `LogEntry`, `Member`, `AttendanceStatus`
+
+## Reusable Components — Use Instead of Inlining
+
+| Pattern | Use this component |
+|---------|--------------------|
+| Delete/leave/remove confirmation | `DeleteConfirmDialog` from `@/components/ui/delete-confirm-dialog` |
+| Log visibility badge (Shared/Private) | `VisibilityBadge` from `@/components/dashboard/shared/visibility-badge` |
+| Tag pills in log cards/details | `TagPill` from `@/components/dashboard/shared/tag-pill` |
+
+## Example
+
+```tsx
+"use client";
+
+import { cn } from "@/lib/utils";
+import type { Athlete } from "@/types/dashboard";
+
+interface MyComponentProps {
+  athletes: Athlete[];
+  className?: string;
+}
+
+export function MyComponent({ athletes, className }: MyComponentProps) {
+  return <div className={cn("rounded-lg p-4", className)}>...</div>;
+}
+```

@@ -46,7 +46,7 @@ export function ThemeSwitcher() {
 
   useEffect(() => {
     setMounted(true);
-    const stored = localStorage.getItem("prets-color") as ColorThemeId | null;
+    const stored = localStorage.getItem("pretvia-color") as ColorThemeId | null;
     if (stored && colorThemes.some((t) => t.id === stored)) {
       setColorTheme(stored);
       document.documentElement.setAttribute("data-theme", stored);
@@ -56,7 +56,7 @@ export function ThemeSwitcher() {
   const handleColorChange = (id: ColorThemeId) => {
     setColorTheme(id);
     document.documentElement.setAttribute("data-theme", id);
-    localStorage.setItem("prets-color", id);
+    localStorage.setItem("pretvia-color", id);
   };
 
   const isDark = resolvedTheme === "dark";
@@ -88,9 +88,7 @@ export function ThemeSwitcher() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 p-3">
         {/* Color choices */}
-        <p className="mb-2 text-xs font-medium text-muted-foreground">
-          Color
-        </p>
+        <p className="mb-2 text-xs font-medium text-muted-foreground">Color</p>
         <div className="flex flex-col gap-1">
           {colorThemes.map((ct) => {
             const isActive = colorTheme === ct.id;
@@ -129,9 +127,7 @@ export function ThemeSwitcher() {
         <div className="my-2 h-px bg-border" />
 
         {/* Light / Dark toggle */}
-        <p className="mb-2 text-xs font-medium text-muted-foreground">
-          Mode
-        </p>
+        <p className="mb-2 text-xs font-medium text-muted-foreground">Mode</p>
         <div className="flex gap-1">
           <button
             type="button"

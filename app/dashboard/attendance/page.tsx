@@ -1,35 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { urlFetcher } from "@/lib/swr-utils";
+import { ClipboardCheck } from "lucide-react";
+import { useRequireAuth } from "@/hooks/use-require-auth";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { PageHeader } from "@/components/dashboard/shared/page-header";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import {
-  ArrowLeft,
-  ClipboardCheck,
-  CheckCircle2,
-  XCircle,
-  MinusCircle,
-  Loader2,
-  Save,
-  User,
-  ChevronDown,
-  Check,
-} from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+  AttendanceSessionDropdown,
+  type CheckinItem,
+} from "@/components/dashboard/attendance/attendance-session-dropdown";
+import { AttendanceSessionCard } from "@/components/dashboard/attendance/attendance-session-card";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-type AttendanceStatus = "present" | "absent" | "excused" | null;
+import type { AttendanceStatus } from "@/types/dashboard";
 
 export default function AttendancePage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
   const [selectedCheckinId, setSelectedCheckinId] = useState<string | null>(
     null,
   );
@@ -37,37 +26,24 @@ export default function AttendancePage() {
   const [sessionSearch, setSessionSearch] = useState("");
   const [entries, setEntries] = useState<Record<string, AttendanceStatus>>({});
   const [saving, setSaving] = useState(false);
-  const [checkins, setCheckins] = useState<
-    { id: string; title: string | null; sessionDate: string }[]
-  >([]);
-  const sessionDropdownRef = useRef<HTMLDivElement>(null);
+  const [checkins, setCheckins] = useState<CheckinItem[]>([]);
 
   const filteredCheckins = sessionSearch.trim()
     ? checkins.filter((c) => {
-        const label =
-          (c.title || "Session") +
-          " " +
-          format(new Date(c.sessionDate), "MMM d, yyyy");
-        return label.toLowerCase().includes(sessionSearch.trim().toLowerCase());
+        try {
+          const label =
+            (c.title || "Session") +
+            " " +
+            format(new Date(c.sessionDate), "MMM d, yyyy");
+          return label.toLowerCase().includes(sessionSearch.trim().toLowerCase());
+        } catch {
+          return false;
+        }
       })
     : checkins;
 
-  useEffect(() => {
-    if (!sessionDropdownOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        sessionDropdownRef.current &&
-        !sessionDropdownRef.current.contains(e.target as Node)
-      ) {
-        setSessionDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [sessionDropdownOpen]);
-
   const { data: checkinsData } = useSWR<{
-    checkins: { id: string; title: string | null; sessionDate: string }[];
+    checkins: CheckinItem[];
   }>(
     user?.groupId ? ["/api/checkins?mode=all", user.id, user.groupId] : null,
     urlFetcher,
@@ -85,10 +61,12 @@ export default function AttendancePage() {
   useEffect(() => {
     const list = checkinsData?.checkins ?? [];
     setCheckins(list);
-    if (list.length > 0 && !selectedCheckinId) {
-      setSelectedCheckinId(list[0].id);
-    }
-  }, [checkinsData, selectedCheckinId]);
+    setSelectedCheckinId((prev) => {
+      if (list.length === 0) return null;
+      if (prev && list.some((c) => c.id === prev)) return prev;
+      return list[0].id;
+    });
+  }, [checkinsData]);
 
   useEffect(() => {
     if (attendanceData?.athletes) {
@@ -99,14 +77,6 @@ export default function AttendancePage() {
       setEntries(map);
     }
   }, [attendanceData]);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    } else if (!authLoading && user?.role !== "coach") {
-      router.push("/dashboard");
-    }
-  }, [authLoading, user, router]);
 
   const handleSetStatus = (athleteId: string, status: AttendanceStatus) => {
     setEntries((prev) => ({ ...prev, [athleteId]: status }));
@@ -143,267 +113,47 @@ export default function AttendancePage() {
   const selectedCheckin = checkins.find((c) => c.id === selectedCheckinId);
 
   if (authLoading || !user || user.role !== "coach") {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </motion.div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between gap-4 px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="hidden shrink-0 items-center gap-2 text-muted-foreground transition-colors hover:text-foreground lg:flex lg:w-[4.5rem]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-sm">Back</span>
-            </Link>
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="Pretvia"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain dark:hidden"
-              />
-              <Image
-                src="/logo_dark_white.png"
-                alt="Pretvia"
-                width={24}
-                height={24}
-                className="hidden h-6 w-6 object-contain dark:block"
-              />
-            </div>
-            <span className="truncate text-base font-semibold text-foreground">
-              Attendance
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground lg:hidden"
-              aria-label="Back to dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <ThemeSwitcher />
-          </div>
-        </div>
-      </header>
+    <div className="flex h-screen flex-col overflow-hidden">
+      <PageHeader title="Attendance" />
 
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
         <div className="mx-auto max-w-2xl">
           {!user.groupId ? (
-            <div className="rounded-2xl border border-dashed border-border py-16 text-center">
-              <ClipboardCheck className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Join a group to take attendance.
-              </p>
-              <Link href="/dashboard">
-                <Button variant="ghost-primary" size="sm" className="mt-4">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            </div>
+            <EmptyStateCard
+              icon={ClipboardCheck}
+              message="Join a group to take attendance."
+            />
           ) : checkins.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border py-16 text-center">
-              <ClipboardCheck className="mx-auto h-12 w-12 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Create a check-in session first.
-              </p>
-              <Link href="/dashboard">
-                <Button variant="ghost-primary" size="sm" className="mt-4">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            </div>
+            <EmptyStateCard
+              icon={ClipboardCheck}
+              message="Create a check-in session first."
+            />
           ) : (
             <>
-              <div className="relative mb-6" ref={sessionDropdownRef}>
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Session
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setSessionDropdownOpen((prev) => !prev)}
-                  className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-secondary/80 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <span className="flex items-center gap-2 truncate">
-                    <ClipboardCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    {selectedCheckin
-                      ? `${selectedCheckin.title || format(new Date(selectedCheckin.sessionDate), "h:mm a")} – ${format(new Date(selectedCheckin.sessionDate), "MMM d, yyyy")}`
-                      : "Select session"}
-                  </span>
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${sessionDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                {sessionDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full z-50 mt-1 flex max-h-48 flex-col gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
-                    {checkins.length >= 5 && (
-                      <input
-                        type="text"
-                        value={sessionSearch}
-                        onChange={(e) => setSessionSearch(e.target.value)}
-                        placeholder="Search sessions..."
-                        className="mx-1 rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                      />
-                    )}
-                    {filteredCheckins.length === 0 ? (
-                      <p className="px-2.5 py-2 text-xs text-muted-foreground">
-                        No sessions match
-                      </p>
-                    ) : (
-                      <div
-                        className={`flex flex-col gap-0.5 ${
-                          checkins.length > 5
-                            ? "max-h-36 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                            : ""
-                        }`}
-                      >
-                        {filteredCheckins.map((c) => {
-                          const isActive = selectedCheckinId === c.id;
-                          const label = `${c.title || format(new Date(c.sessionDate), "h:mm a")} – ${format(new Date(c.sessionDate), "MMM d, yyyy")}`;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCheckinId(c.id);
-                                setSessionDropdownOpen(false);
-                                setSessionSearch("");
-                              }}
-                              className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors ${
-                                isActive
-                                  ? "bg-primary/10 font-medium text-primary"
-                                  : "text-foreground hover:bg-secondary"
-                              }`}
-                            >
-                              <ClipboardCheck className="h-3 w-3 shrink-0" />
-                              <span className="flex-1 truncate">{label}</span>
-                              {isActive && (
-                                <Check className="h-3 w-3 shrink-0 text-primary" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <AttendanceSessionDropdown
+                checkins={checkins}
+                filteredCheckins={filteredCheckins}
+                selectedCheckinId={selectedCheckinId}
+                sessionDropdownOpen={sessionDropdownOpen}
+                sessionSearch={sessionSearch}
+                onSelectedCheckinIdChange={setSelectedCheckinId}
+                onSessionDropdownOpenChange={setSessionDropdownOpen}
+                onSessionSearchChange={setSessionSearch}
+              />
 
               {selectedCheckin && (
-                <div className="rounded-2xl border border-border bg-card">
-                  <div className="border-b border-border px-4 py-3">
-                    <h2 className="text-sm font-semibold text-foreground">
-                      {selectedCheckin.title || "Session"}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {format(
-                        new Date(selectedCheckin.sessionDate),
-                        "EEEE, MMMM d, yyyy",
-                      )}
-                    </p>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {athletes.length === 0 ? (
-                      <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                        No athletes in this group yet.
-                      </div>
-                    ) : (
-                      athletes.map(
-                        (athlete: {
-                          id: string;
-                          displayName?: string;
-                          email?: string;
-                          status?: string | null;
-                        }) => (
-                          <div
-                            key={athlete.id}
-                            className="flex items-center justify-between px-4 py-3"
-                          >
-                            <div className="flex items-center gap-3">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-foreground">
-                                {athlete.displayName || athlete.email}
-                              </span>
-                            </div>
-                            <div className="flex gap-1">
-                              {(
-                                [
-                                  [
-                                    "present",
-                                    "Present",
-                                    CheckCircle2,
-                                    "text-green-600",
-                                  ],
-                                  ["absent", "Absent", XCircle, "text-red-600"],
-                                  [
-                                    "excused",
-                                    "Excused",
-                                    MinusCircle,
-                                    "text-amber-600",
-                                  ],
-                                ] as const
-                              ).map(([status, label, Icon, color]) => (
-                                <button
-                                  key={status}
-                                  type="button"
-                                  onClick={() =>
-                                    handleSetStatus(
-                                      athlete.id,
-                                      entries[athlete.id] === status
-                                        ? null
-                                        : status,
-                                    )
-                                  }
-                                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
-                                    entries[athlete.id] === status
-                                      ? `${color} bg-primary/10`
-                                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                  }`}
-                                  title={label}
-                                >
-                                  <Icon className="h-3.5 w-3.5" />
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ),
-                      )
-                    )}
-                  </div>
-                  {athletes.length > 0 && (
-                    <div className="border-t border-border px-4 py-3">
-                      <Button
-                        variant="ghost-primary"
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="gap-2"
-                      >
-                        {saving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Save className="h-4 w-4" />
-                        )}
-                        Save Attendance
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <AttendanceSessionCard
+                  selectedCheckin={selectedCheckin}
+                  athletes={athletes}
+                  entries={entries}
+                  saving={saving}
+                  onSetStatus={handleSetStatus}
+                  onSave={handleSave}
+                />
               )}
             </>
           )}

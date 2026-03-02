@@ -1,17 +1,21 @@
 "use client";
 
 import { useMemo } from "react";
-import type { DateFilterKey } from "@/lib/date-utils";
-import { getDateRangeParams } from "@/lib/date-utils";
+import type {
+  DateFilterKey,
+  CustomDateSelection,
+} from "@/lib/date-utils";
+import { getDateFilterParams } from "@/lib/date-utils";
+import type { ReviewStatusFilterValue } from "@/types/dashboard";
 
 export interface LogsUrlFilters {
   activeTags: string[];
   filterAthleteId: string | null;
   filterSessionId: string | null;
   filterRoleId: string | null;
-  filterReviewStatus: "pending" | "reviewed" | "revisit" | null;
+  filterReviewStatus: ReviewStatusFilterValue;
   dateFilter: DateFilterKey;
-  customDate: string;
+  customDates: CustomDateSelection | null;
 }
 
 export function buildLogsUrl(filters: LogsUrlFilters): string {
@@ -24,12 +28,13 @@ export function buildLogsUrl(filters: LogsUrlFilters): string {
   if (filters.filterReviewStatus)
     params.set("reviewStatus", filters.filterReviewStatus);
 
-  const { dateFrom, dateTo } = getDateRangeParams(
+  const { dateFrom, dateTo, dates } = getDateFilterParams(
     filters.dateFilter,
-    filters.customDate,
+    filters.customDates,
   );
   if (dateFrom) params.set("dateFrom", dateFrom);
   if (dateTo) params.set("dateTo", dateTo);
+  if (dates) params.set("dates", dates);
 
   const qs = params.toString();
   return qs ? `/api/logs?${qs}` : "/api/logs";
@@ -45,7 +50,7 @@ export function useLogsUrl(filters: LogsUrlFilters): string {
       filters.filterRoleId,
       filters.filterReviewStatus,
       filters.dateFilter,
-      filters.customDate,
+      filters.customDates?.join(",") ?? "",
     ],
   );
 }

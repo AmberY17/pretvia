@@ -1,25 +1,23 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { urlFetcher, logsInfiniteFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPanel } from "@/hooks/use-dashboard-panel";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
-import { DashboardFeed } from "@/components/dashboard/dashboard-feed";
-import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
-import { LogCard, type LogEntry } from "@/components/dashboard/log-card";
-import { CheckinCard, type CheckinItem } from "@/components/dashboard/checkin-card";
+import { DashboardHeader } from "@/components/dashboard/main/dashboard-header";
+import { DashboardSidebar } from "@/components/dashboard/main/dashboard-sidebar";
+import { DashboardFeed } from "@/components/dashboard/main/dashboard-feed";
+import { DashboardPanel } from "@/components/dashboard/main/dashboard-panel";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import type { LogEntry } from "@/types/dashboard";
+import type { CheckinItem } from "@/components/dashboard/shared/checkin-card";
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
+  const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth();
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
   const {
@@ -32,9 +30,9 @@ export default function DashboardPage() {
   } = useSWRInfinite<{ logs: LogEntry[]; nextCursor: string | null }>(
     (pageIndex, previousPageData) => {
       if (!user) return null;
-      if (pageIndex === 0) return [logsUrl, null] as const;
+      if (pageIndex === 0) return [logsUrl, user.id, null] as const;
       if (!previousPageData?.nextCursor) return null;
-      return [logsUrl, previousPageData.nextCursor] as const;
+      return [logsUrl, user.id, previousPageData.nextCursor] as const;
     },
     logsInfiniteFetcher,
     {
@@ -45,12 +43,14 @@ export default function DashboardPage() {
   const logs = (logsPagesData ?? []).flatMap((p) => p.logs) as LogEntry[];
   const hasMoreLogs = (logsPagesData?.[logsPagesData.length - 1]?.nextCursor ?? null) !== null;
   const prevLogsUrlRef = useRef(logsUrl);
+  const prevUserIdRef = useRef(user?.id);
   useEffect(() => {
-    if (prevLogsUrlRef.current !== logsUrl) {
+    if (prevLogsUrlRef.current !== logsUrl || prevUserIdRef.current !== user?.id) {
       prevLogsUrlRef.current = logsUrl;
+      prevUserIdRef.current = user?.id;
       setSize(1);
     }
-  }, [logsUrl, setSize]);
+  }, [logsUrl, user?.id, setSize]);
 
   const { data: tagsData, isLoading: tagsLoading, mutate: mutateTags } = useSWR<{
     tags: { id: string; name: string }[];
@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const { data: membersData } = useSWR<{
     members: { id: string; displayName: string; email: string; role: string }[];
     roles: { id: string; name: string }[];
+    trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
   }>(
     user?.role === "coach" && user?.groupId
       ? [`/api/groups?groupId=${user.groupId}`, user.id]
@@ -91,24 +92,39 @@ export default function DashboardPage() {
   );
 
   const { data: announcementData, mutate: mutateAnnouncement } = useSWR<{
-    announcement: {
+    announcements: {
       id: string;
       text: string;
       coachName: string;
       createdAt: string;
-    } | null;
+    }[];
   }>(
     user?.groupId ? ["/api/announcements", user.id, user.groupId] : null,
     urlFetcher,
   );
 
+  const handleLogout = useCallback(() => {
+    loggingOutRef.current = true;
+    globalMutate(() => true, undefined, { revalidate: false });
+    mutateAuth();
+  }, [mutateAuth]);
+
   const { panelState, panelHandlers } = useDashboardPanel({
+    userId: user?.id,
     mutateLogs,
     mutateTags,
     mutateCheckins,
     mutateAllCheckins,
     mutateStats: user?.role === "athlete" ? mutateStats : undefined,
   });
+
+  const prevUserIdForFiltersRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (prevUserIdForFiltersRef.current !== undefined && prevUserIdForFiltersRef.current !== user?.id) {
+      handlers.clearAllFilters();
+    }
+    prevUserIdForFiltersRef.current = user?.id;
+  }, [user?.id, handlers]);
 
   const handleGroupChanged = useCallback(() => {
     mutateAuth();
@@ -125,12 +141,6 @@ export default function DashboardPage() {
     mutateAllCheckins,
     handlers,
   ]);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    }
-  }, [authLoading, user, router]);
 
   const { data: myGroupsData } = useSWR<{
     groups: {
@@ -151,7 +161,7 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return;
 
     try {
-      const key = "prets-group-schedule-seen";
+      const key = "pretvia-group-schedule-seen";
       const stored = window.localStorage.getItem(key);
       const seen: Record<string, string> = stored ? JSON.parse(stored) : {};
       const updatedSeen: Record<string, string> = { ...seen };
@@ -173,21 +183,8 @@ export default function DashboardPage() {
     }
   }, [user, myGroupsData]);
 
-  const isDataLoading = logsLoading || tagsLoading;
-
   if (authLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-3"
-        >
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
-        </motion.div>
-      </div>
-    );
+    return <LoadingScreen message="Loading dashboard..." />;
   }
 
   const tags = tagsData?.tags ?? [];
@@ -209,13 +206,13 @@ export default function DashboardPage() {
       <DashboardHeader
           user={user}
           onNewLog={panelHandlers.handleNewLog}
-          onLogout={() => mutateAuth()}
+          onLogout={handleLogout}
         />
 
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar
           user={user}
-          onLogout={() => mutateAuth()}
+          onLogout={handleLogout}
           onGroupChanged={handleGroupChanged}
           filters={filters}
           handlers={handlers}
@@ -223,7 +220,7 @@ export default function DashboardPage() {
           sessions={sessions}
           athletes={athletes}
           groupRoles={groupRoles}
-          isLoading={isDataLoading}
+          isLoading={tagsLoading}
           stats={
             user.role === "athlete"
               ? {
@@ -253,9 +250,10 @@ export default function DashboardPage() {
           onNewLog={panelHandlers.handleNewLog}
           onClosePanel={panelHandlers.handleClosePanel}
           panelMode={panelState.panelMode}
-          announcement={announcementData?.announcement ?? null}
+          announcements={announcementData?.announcements ?? []}
           checkins={checkinsData?.checkins ?? []}
-          isLoading={isDataLoading}
+          trainingScheduleTemplate={membersData?.trainingScheduleTemplate}
+          isLoading={logsLoading}
           hasMoreLogs={hasMoreLogs}
           isLoadingMore={logsValidating}
           onLoadMore={() => setSize(size + 1)}

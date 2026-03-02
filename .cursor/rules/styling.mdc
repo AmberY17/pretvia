@@ -1,0 +1,47 @@
+---
+description: Tailwind CSS, theming, and styling conventions
+globs: "**/*.tsx,**/*.css"
+alwaysApply: false
+---
+
+# Styling Conventions
+
+## Tailwind Only
+
+Use Tailwind utility classes exclusively — no CSS modules or inline `style` objects.
+
+## Theme Colors
+
+Colors are defined as CSS custom properties and consumed via `hsl(var(--token))`.
+Never hardcode hex/rgb colors. Use semantic tokens:
+
+`primary`, `secondary`, `destructive`, `muted`, `accent`, `checkin`,
+`background`, `foreground`, `card`, `popover`, `border`, `ring`
+
+```tsx
+<div className="bg-primary text-primary-foreground" />
+<span className="text-destructive" />
+```
+
+## Dark Mode & Color Themes
+
+- Dark mode uses the `class` strategy (`dark` class on `<html>`)
+- Color themes are applied via `[data-theme="..."]` attribute on `<html>`
+
+## Class Merging
+
+Always use `cn()` from `@/lib/utils` to merge/conditionally apply classes:
+
+```tsx
+import { cn } from "@/lib/utils";
+<div className={cn("rounded-lg p-4", isActive && "ring-2 ring-primary")} />
+```
+
+## Custom Utilities
+
+- `.scrollbar-hidden` — hides scrollbar on overflow-scroll containers
+- Use `cva` (class-variance-authority) for component variant styles (buttons, badges)
+
+## Responsive
+
+Mobile-first breakpoints. Use Tailwind `sm:`, `md:`, `lg:` prefixes.

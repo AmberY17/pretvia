@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import type { LogEntry } from "@/components/dashboard/log-card";
+import type { LogEntry } from "@/components/dashboard/logs/log-card";
 
 export type PanelMode = "new" | "view" | "edit" | null;
 
@@ -12,6 +12,7 @@ export interface CheckinPrefill {
 }
 
 export interface UseDashboardPanelParams {
+  userId?: string;
   mutateLogs: () => void;
   mutateTags: () => void;
   mutateCheckins?: () => void;
@@ -20,6 +21,7 @@ export interface UseDashboardPanelParams {
 }
 
 export function useDashboardPanel({
+  userId,
   mutateLogs,
   mutateTags,
   mutateCheckins = () => {},
@@ -32,6 +34,13 @@ export function useDashboardPanel({
     null,
   );
   const [celebrationCount, setCelebrationCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPanelMode(null);
+    setSelectedLog(null);
+    setCheckinPrefill(null);
+    setCelebrationCount(null);
+  }, [userId]);
 
   const handleLogCreated = useCallback(
     (totalCount?: number) => {

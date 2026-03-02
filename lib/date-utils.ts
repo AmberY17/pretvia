@@ -1,9 +1,12 @@
 export type DateFilterKey = "all" | "today" | "7d" | "30d" | "custom";
 
-export function getDateRangeParams(
+/** Array of ISO date strings (yyyy-MM-dd) for multiple discrete date selection */
+export type CustomDateSelection = string[];
+
+export function getDateFilterParams(
   dateFilter: DateFilterKey,
-  customDate: string,
-): { dateFrom?: string; dateTo?: string } {
+  customDates: CustomDateSelection | null,
+): { dateFrom?: string; dateTo?: string; dates?: string } {
   if (dateFilter === "all") return {};
   const now = new Date();
   let start: Date;
@@ -50,10 +53,8 @@ export function getDateRangeParams(
       59,
       999,
     );
-  } else if (dateFilter === "custom" && customDate) {
-    const [y, m, d] = customDate.split("-").map(Number);
-    start = new Date(y, m - 1, d, 0, 0, 0, 0);
-    end = new Date(y, m - 1, d, 23, 59, 59, 999);
+  } else if (dateFilter === "custom" && customDates && customDates.length > 0) {
+    return { dates: customDates.join(",") };
   } else {
     return {};
   }
