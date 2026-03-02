@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { urlFetcher } from "@/lib/swr-utils";
 import { ClipboardCheck } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -19,8 +18,7 @@ import { format } from "date-fns";
 import type { AttendanceStatus } from "@/types/dashboard";
 
 export default function AttendancePage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
   const [selectedCheckinId, setSelectedCheckinId] = useState<string | null>(
     null,
   );
@@ -79,14 +77,6 @@ export default function AttendancePage() {
       setEntries(map);
     }
   }, [attendanceData]);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    } else if (!authLoading && user?.role !== "coach") {
-      router.push("/dashboard");
-    }
-  }, [authLoading, user, router]);
 
   const handleSetStatus = (athleteId: string, status: AttendanceStatus) => {
     setEntries((prev) => ({ ...prev, [athleteId]: status }));

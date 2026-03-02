@@ -20,16 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import type { User } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
@@ -302,34 +293,22 @@ export function SidebarProfile({
               <Plus className="h-3 w-3" />
               Join Another
             </Button>
-            <AlertDialog open={leaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
-              <Button
-                variant="ghost-destructive"
-                size="sm"
-                onClick={() => setLeaveConfirmOpen(true)}
-                disabled={loading}
-                className="h-7 gap-1 text-xs"
-              >
-                Leave
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You will lose access to this group and its content.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleLeaveGroup}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Leave
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              variant="ghost-destructive"
+              size="sm"
+              onClick={() => setLeaveConfirmOpen(true)}
+              disabled={loading}
+              className="h-7 gap-1 text-xs"
+            >
+              Leave
+            </Button>
+            <DeleteConfirmDialog
+              open={leaveConfirmOpen}
+              onOpenChange={setLeaveConfirmOpen}
+              title="Are you sure you want to leave?"
+              description="You will lose access to this group and its content."
+              onConfirm={handleLeaveGroup}
+            />
           </div>
         </div>
       ) : null}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { AccountProfileEmojiSection } from "@/components/dashboard/account/account-profile-emoji-section";
@@ -20,11 +20,12 @@ import {
 import { type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { sortSlotsChronologically } from "@/lib/training-slot-utils";
+import { useTrainingSlots } from "@/hooks/use-training-slots";
 import type { TrainingSlotItem } from "@/types/dashboard";
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
+  const { user, isLoading: authLoading, mutate: mutateAuth } = useRequireAuth();
   const [profileEmoji, setProfileEmoji] = useState<string>("");
   const [savingEmoji, setSavingEmoji] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -33,9 +34,13 @@ export default function AccountPage() {
     ...DEFAULT_COACH_ORDER,
   ]);
   const [celebrationEnabled, setCelebrationEnabled] = useState(true);
-  const [trainingSlots, setTrainingSlots] = useState<
-    { dayOfWeek: number; time: string; sourceGroupId?: string }[]
-  >([]);
+  const {
+    slots: trainingSlots,
+    setSlots: setTrainingSlots,
+    addSlot: addTrainingSlot,
+    removeSlot: removeTrainingSlot,
+    updateSlot: updateTrainingSlot,
+  } = useTrainingSlots();
   const [savingSlots, setSavingSlots] = useState(false);
   const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] =
     useState<number | null>(null);
@@ -122,12 +127,6 @@ export default function AccountPage() {
     return () => clearTimeout(timeout);
   }, [user?.role, trainingSlots]);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    }
-  }, [authLoading, user, router]);
-
   const handleEmojiChange = async (emoji: string) => {
     setSavingEmoji(true);
     try {
@@ -175,14 +174,6 @@ export default function AccountPage() {
     }
   }
 
-  const addTrainingSlot = () => {
-    setTrainingSlots((prev) => [...prev, { dayOfWeek: 1, time: "09:00" }]);
-  };
-
-  const removeTrainingSlot = (index: number) => {
-    setTrainingSlots((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const isGroupSlot = (slot: TrainingSlotItem): boolean =>
     !!(user?.groupId && slot.sourceGroupId === user.groupId);
 
@@ -225,16 +216,6 @@ export default function AccountPage() {
     } finally {
       setSyncingSchedule(false);
     }
-  };
-
-  const updateTrainingSlot = (
-    index: number,
-    field: "dayOfWeek" | "time",
-    value: number | string,
-  ) => {
-    setTrainingSlots((prev) =>
-      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
-    );
   };
 
   const handleDeleteAccount = async () => {

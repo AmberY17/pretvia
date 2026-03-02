@@ -17,33 +17,12 @@ import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
 } from "@/hooks/use-dashboard-filters";
-
-const COACH_FILTER_ORDER_KEY = "pretvia-coach-filter-order";
-const DEFAULT_COACH_ORDER = [
-  "sessions",
-  "role",
-  "reviewStatus",
-  "athlete",
-  "date",
-] as const;
-
-type CoachFilterId = (typeof DEFAULT_COACH_ORDER)[number];
-
-type SessionItem = {
-  id: string;
-  title: string | null;
-  sessionDate: string;
-  checkedInCount: number;
-  totalAthletes: number;
-};
-
-type Athlete = {
-  id: string;
-  displayName: string;
-  email: string;
-};
-
-type Role = { id: string; name: string };
+import {
+  COACH_FILTER_ORDER_KEY,
+  DEFAULT_COACH_ORDER,
+  type CoachFilterId,
+} from "@/lib/constants";
+import type { Athlete, Role, SessionItem } from "@/types/dashboard";
 
 interface DashboardSidebarProps {
   user: User;

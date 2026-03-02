@@ -6,20 +6,14 @@
 
 import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
+import { parseTime } from "@/lib/time-utils"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
-export interface TrainingSlot {
-  dayOfWeek: number // 0 = Sun, 6 = Sat
-  time: string // "HH:mm" 24h
-  // Optional: which group this slot was sourced from (if any)
-  sourceGroupId?: string
-}
+export type TrainingSlot = TrainingSlotItem
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const WINDOW_MS = DAY_MS // 24-hour window to log after slot
 
-/**
- * Get the date of the most recent occurrence of a given dayOfWeek before or at a reference date.
- */
 function getLastOccurrenceOfDay(refDate: Date, dayOfWeek: number): Date {
   const d = new Date(refDate)
   const currentDay = d.getUTCDay()
@@ -28,14 +22,6 @@ function getLastOccurrenceOfDay(refDate: Date, dayOfWeek: number): Date {
   d.setUTCDate(d.getUTCDate() - diff)
   d.setUTCHours(0, 0, 0, 0)
   return d
-}
-
-/**
- * Parse "HH:mm" into hours and minutes.
- */
-function parseTime(time: string): { hours: number; minutes: number } {
-  const [h, m] = time.split(":").map(Number)
-  return { hours: h ?? 0, minutes: m ?? 0 }
 }
 
 /**

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { urlFetcher } from "@/lib/swr-utils";
 import { Settings } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
@@ -13,11 +12,11 @@ import { GroupRolesSection } from "@/components/dashboard/group/group-roles-sect
 import { GroupTrainingScheduleSection } from "@/components/dashboard/group/group-training-schedule-section";
 import { GroupAthletesSection } from "@/components/dashboard/group/group-athletes-section";
 import { toast } from "sonner";
+import { useTrainingSlots } from "@/hooks/use-training-slots";
 import type { Member, Role } from "@/types/dashboard";
 
 export default function GroupManagementPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
   const [newRoleName, setNewRoleName] = useState("");
   const [addingRole, setAddingRole] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
@@ -33,9 +32,13 @@ export default function GroupManagementPage() {
     null,
   );
   const [deleteRoleConfirmOpen, setDeleteRoleConfirmOpen] = useState(false);
-  const [trainingSchedule, setTrainingSchedule] = useState<
-    { dayOfWeek: number; time: string }[]
-  >([]);
+  const {
+    slots: trainingSchedule,
+    setSlots: setTrainingSchedule,
+    addSlot: addTrainingSlot,
+    removeSlot: removeTrainingSlot,
+    updateSlot: updateTrainingSlot,
+  } = useTrainingSlots();
   const [savingTrainingSchedule, setSavingTrainingSchedule] = useState(false);
   const [athleteSearch, setAthleteSearch] = useState("");
 
@@ -56,14 +59,6 @@ export default function GroupManagementPage() {
     urlFetcher,
   );
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
-    } else if (!authLoading && user?.role !== "coach") {
-      router.push("/dashboard");
-    }
-  }, [authLoading, user, router]);
-
   const allAthletes = (membersData?.members ?? []).filter(
     (m) => m.role !== "coach",
   );
@@ -81,53 +76,31 @@ export default function GroupManagementPage() {
   const roles = membersData?.roles ?? [];
   const coachGroups = coachGroupsData?.groups ?? [];
   const transferableGroups = coachGroups.filter((g) => g.id !== user?.groupId);
+
+  const trainingScheduleUrl = user?.groupId
+    ? `/api/groups/${user.groupId}/training-schedule`
+    : null;
+  const { data: trainingScheduleData } = useSWR<{
+    trainingScheduleTemplate: { dayOfWeek: number; time: string }[];
+  }>(
+    trainingScheduleUrl && user
+      ? [trainingScheduleUrl, user.id, user.groupId]
+      : null,
+    urlFetcher,
+  );
+
   useEffect(() => {
-    if (!user?.groupId) return;
-    let cancelled = false;
-    const loadTrainingSchedule = async () => {
-      try {
-        const res = await fetch(
-          `/api/groups/${user.groupId}/training-schedule`,
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        const slots = Array.isArray(data.trainingScheduleTemplate)
-          ? data.trainingScheduleTemplate
-          : [];
-        setTrainingSchedule(
-          slots.map((s: { dayOfWeek: number; time: string }) => ({
-            dayOfWeek: s.dayOfWeek,
-            time: s.time || "09:00",
-          })),
-        );
-      } catch {
-        // ignore for now
-      }
-    };
-    loadTrainingSchedule();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.groupId]);
-
-  const addTrainingSlot = () => {
-    setTrainingSchedule((prev) => [...prev, { dayOfWeek: 1, time: "09:00" }]);
-  };
-
-  const removeTrainingSlot = (index: number) => {
-    setTrainingSchedule((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const updateTrainingSlot = (
-    index: number,
-    field: "dayOfWeek" | "time",
-    value: number | string,
-  ) => {
-    setTrainingSchedule((prev) =>
-      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
+    if (!trainingScheduleData) return;
+    const slots = Array.isArray(trainingScheduleData.trainingScheduleTemplate)
+      ? trainingScheduleData.trainingScheduleTemplate
+      : [];
+    setTrainingSchedule(
+      slots.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        time: s.time || "09:00",
+      })),
     );
-  };
+  }, [trainingScheduleData]);
 
   const handleSaveTrainingSchedule = async () => {
     if (!user?.groupId) return;

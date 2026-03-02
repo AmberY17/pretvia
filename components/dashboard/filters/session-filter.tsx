@@ -3,14 +3,7 @@
 import { motion } from "framer-motion"
 import { ClipboardCheck, X, Calendar, Clock } from "lucide-react"
 import { format } from "date-fns"
-
-interface SessionItem {
-  id: string
-  title: string | null
-  sessionDate: string
-  checkedInCount: number
-  totalAthletes: number
-}
+import type { SessionItem } from "@/types/dashboard"
 
 interface SessionFilterProps {
   sessions: SessionItem[]

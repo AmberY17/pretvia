@@ -2,19 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Trash2, Pencil, User, Eye } from "lucide-react";
+import { Trash2, Pencil, User } from "lucide-react";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { VisibilityBadge } from "@/components/dashboard/shared/visibility-badge";
+import { TagPill } from "@/components/dashboard/shared/tag-pill";
 import { CommentSection } from "./comment-section";
 import { ReviewStatusBadge } from "./review-status-badge";
 import type { LogEntry } from "@/types/dashboard";
@@ -104,23 +96,7 @@ export function LogCard({
                 />
               )}
               {!isCoach && (
-                <Badge
-                  variant={log.visibility === "coach" ? "default" : "secondary"}
-                  className={`text-xs pointer-events-none ${
-                    log.visibility === "coach"
-                      ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/10"
-                      : "bg-secondary text-muted-foreground border-border hover:bg-secondary"
-                  }`}
-                >
-                  {log.visibility === "coach" ? (
-                    <Eye className="h-3 w-3 sm:mr-1" />
-                  ) : (
-                    <Lock className="h-3 w-3 sm:mr-1" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {log.visibility === "coach" ? "Shared" : "Private"}
-                  </span>
-                </Badge>
+                <VisibilityBadge visibility={log.visibility} />
               )}
               {log.isOwn && (
                 <div
@@ -139,39 +115,24 @@ export function LogCard({
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteConfirmOpen(true);
-                      }}
-                      className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
-                      aria-label="Delete log"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This log entry will be permanently removed.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(log.id);
-                          }}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteConfirmOpen(true);
+                    }}
+                    className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive"
+                    aria-label="Delete log"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                  <DeleteConfirmDialog
+                    open={deleteConfirmOpen}
+                    onOpenChange={setDeleteConfirmOpen}
+                    description="This log entry will be permanently removed."
+                    onConfirm={() => onDelete(log.id)}
+                    stopPropagation
+                  />
                 </div>
               )}
             </div>
@@ -198,12 +159,7 @@ export function LogCard({
           {log.tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {log.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-                >
-                  {tag}
-                </span>
+                <TagPill key={tag} tag={tag} />
               ))}
             </div>
           )}

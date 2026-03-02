@@ -4,16 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Megaphone, Trash2, Send, Loader2, Shield, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -157,42 +148,23 @@ export function AnnouncementBanner({
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
-                      <AlertDialog
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmId(announcement.id)}
+                        disabled={loading}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        aria-label="Remove announcement"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                      <DeleteConfirmDialog
                         open={deleteConfirmId === announcement.id}
                         onOpenChange={(open) =>
                           !open && setDeleteConfirmId(null)
                         }
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmId(announcement.id)}
-                          disabled={loading}
-                          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                          aria-label="Remove announcement"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Are you sure you want to delete?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This announcement will be removed for all group
-                              members.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(announcement.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                        description="This announcement will be removed for all group members."
+                        onConfirm={() => handleDelete(announcement.id)}
+                      />
                     </div>
                   )}
                 </div>

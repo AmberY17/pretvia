@@ -3,10 +3,7 @@
  * Returns the closest slot occurrence at or after fromDate, in local time.
  */
 
-function parseTime(time: string): { hours: number; minutes: number } {
-  const [h, m] = String(time).trim().split(":").map(Number)
-  return { hours: h ?? 0, minutes: m ?? 0 }
-}
+import { parseTime } from "@/lib/time-utils"
 
 /**
  * Get the next occurrence of a (dayOfWeek, time) slot at or after fromDate.

@@ -1,7 +1,5 @@
 "use client";
 
-import type { User } from "@/hooks/use-auth";
-
 function Skeleton({
   className,
   ...props
@@ -78,30 +76,6 @@ export function CheckinSkeleton() {
         </div>
       </div>
     </div>
-  );
-}
-
-export function DashboardFeedSkeleton({ user }: { user: User }) {
-  return (
-    <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
-      <div className="mx-auto max-w-2xl space-y-6">
-        {user.groupId && <AnnouncementSkeleton />}
-        {user.groupId && <CheckinSkeleton />}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          </div>
-          <div className="flex flex-col gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <LogCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
   );
 }
 

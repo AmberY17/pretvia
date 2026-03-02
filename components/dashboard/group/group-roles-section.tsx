@@ -3,16 +3,7 @@
 import { Settings, Plus, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import type { Role } from "@/types/dashboard";
 
 interface GroupRolesSectionProps {
@@ -84,37 +75,19 @@ export function GroupRolesSection({
               )}
               Update
             </Button>
-            <AlertDialog
+            <Button
+              variant="ghost-destructive"
+              onClick={() => setDeleteRoleConfirmOpen(true)}
+              disabled={saving}
+            >
+              Delete
+            </Button>
+            <DeleteConfirmDialog
               open={deleteRoleConfirmOpen}
               onOpenChange={setDeleteRoleConfirmOpen}
-            >
-              <Button
-                variant="ghost-destructive"
-                onClick={() => setDeleteRoleConfirmOpen(true)}
-                disabled={saving}
-              >
-                Delete
-              </Button>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Are you sure you want to delete?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Athletes will lose this role assignment.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDeleteRole()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              description="Athletes will lose this role assignment."
+              onConfirm={() => onDeleteRole()}
+            />
             <Button
               variant="ghost-primary"
               onClick={onCancelEdit}

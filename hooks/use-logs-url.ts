@@ -6,13 +6,14 @@ import type {
   CustomDateSelection,
 } from "@/lib/date-utils";
 import { getDateFilterParams } from "@/lib/date-utils";
+import type { ReviewStatusFilterValue } from "@/types/dashboard";
 
 export interface LogsUrlFilters {
   activeTags: string[];
   filterAthleteId: string | null;
   filterSessionId: string | null;
   filterRoleId: string | null;
-  filterReviewStatus: "pending" | "reviewed" | "revisit" | null;
+  filterReviewStatus: ReviewStatusFilterValue;
   dateFilter: DateFilterKey;
   customDates: CustomDateSelection | null;
 }

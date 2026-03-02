@@ -11,16 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import type { Member, Role } from "@/types/dashboard";
 
@@ -307,45 +298,28 @@ export function GroupAthletesSection({
                       <ArrowRightLeft className="h-3 w-3" />
                       Transfer
                     </Button>
-                    <AlertDialog
+                    <Button
+                      size="sm"
+                      variant="ghost-destructive"
+                      onClick={() => setRemoveConfirmUserId(a.id)}
+                      disabled={saving}
+                      className="gap-1 text-xs"
+                    >
+                      <UserMinus className="h-3 w-3" />
+                      Remove
+                    </Button>
+                    <DeleteConfirmDialog
                       open={removeConfirmUserId === a.id}
                       onOpenChange={(open) =>
                         !open && setRemoveConfirmUserId(null)
                       }
-                    >
-                      <Button
-                        size="sm"
-                        variant="ghost-destructive"
-                        onClick={() => setRemoveConfirmUserId(a.id)}
-                        disabled={saving}
-                        className="gap-1 text-xs"
-                      >
-                        <UserMinus className="h-3 w-3" />
-                        Remove
-                      </Button>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Are you sure you want to remove?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This athlete will be removed from the group.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() =>
-                              removeConfirmUserId &&
-                              onRemoveAthlete(removeConfirmUserId)
-                            }
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Remove
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      title="Are you sure you want to remove?"
+                      description="This athlete will be removed from the group."
+                      onConfirm={() =>
+                        removeConfirmUserId &&
+                        onRemoveAthlete(removeConfirmUserId)
+                      }
+                    />
                   </>
                 )}
               </div>

@@ -1,8 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-
-type Role = { id: string; name: string };
+import type { Role } from "@/types/dashboard";
 
 interface RoleFilterProps {
   roles: Role[];

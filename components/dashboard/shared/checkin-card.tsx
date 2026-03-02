@@ -13,16 +13,7 @@ import {
   Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -207,10 +198,7 @@ export function CheckinCard({
 
                 {/* Coach delete */}
                 {isCoach && (
-                  <AlertDialog
-                    open={deleteConfirmId === checkin.id}
-                    onOpenChange={(open) => !open && setDeleteConfirmId(null)}
-                  >
+                  <>
                     <button
                       type="button"
                       onClick={() => setDeleteConfirmId(checkin.id)}
@@ -224,28 +212,15 @@ export function CheckinCard({
                         <Trash2 className="h-3.5 w-3.5" />
                       )}
                     </button>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you sure you want to delete?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This session check-in will be removed.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() =>
-                            deleteConfirmId && handleDelete(deleteConfirmId)
-                          }
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    <DeleteConfirmDialog
+                      open={deleteConfirmId === checkin.id}
+                      onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+                      description="This session check-in will be removed."
+                      onConfirm={() =>
+                        deleteConfirmId && handleDelete(deleteConfirmId)
+                      }
+                    />
+                  </>
                 )}
               </div>
             </motion.div>

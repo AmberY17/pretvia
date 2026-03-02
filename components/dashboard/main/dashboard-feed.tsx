@@ -21,14 +21,7 @@ import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
 } from "@/hooks/use-dashboard-filters";
-
-type Athlete = {
-  id: string;
-  displayName: string;
-  email: string;
-};
-
-type Role = { id: string; name: string };
+import type { Athlete, Role } from "@/types/dashboard";
 
 interface DashboardFeedProps {
   user: User;

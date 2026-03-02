@@ -4,11 +4,7 @@ import { Calendar, Plus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayWheelPicker } from "@/components/dashboard/shared/day-wheel-picker";
 import { TimeWheelPicker } from "@/components/dashboard/shared/time-wheel-picker";
-
-interface TrainingSlot {
-  dayOfWeek: number;
-  time: string;
-}
+import type { TrainingSlot } from "@/types/dashboard";
 
 interface GroupTrainingScheduleSectionProps {
   trainingSchedule: TrainingSlot[];

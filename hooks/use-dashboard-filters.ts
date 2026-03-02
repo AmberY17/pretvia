@@ -9,12 +9,7 @@ import {
   useLogsUrl,
   type LogsUrlFilters,
 } from "@/hooks/use-logs-url";
-
-export type ReviewStatusFilterValue =
-  | "pending"
-  | "reviewed"
-  | "revisit"
-  | null;
+import type { ReviewStatusFilterValue } from "@/types/dashboard";
 
 export interface DashboardFiltersState {
   activeTags: string[];

@@ -1,17 +1,8 @@
 "use client";
 
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 
 interface AccountDeleteSectionProps {
   deleteConfirmOpen: boolean;
@@ -36,40 +27,20 @@ export function AccountDeleteSection({
         Permanently delete your account and all associated data. This action
         cannot be undone.
       </p>
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setDeleteConfirmOpen(true)}
-        >
-          Delete Account
-        </Button>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Are you sure you want to delete your account?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete your account, all your logs, and any
-              groups you coach. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onDeleteAccount}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Delete"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => setDeleteConfirmOpen(true)}
+      >
+        Delete Account
+      </Button>
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Are you sure you want to delete your account?"
+        description="This will permanently delete your account, all your logs, and any groups you coach. This action cannot be undone."
+        onConfirm={onDeleteAccount}
+      />
     </section>
   );
 }

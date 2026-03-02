@@ -1,8 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-
-export type ReviewStatusFilterValue = "pending" | "reviewed" | "revisit" | null;
+import type { ReviewStatusFilterValue } from "@/types/dashboard";
 
 interface ReviewStatusFilterProps {
   filterReviewStatus: ReviewStatusFilterValue;

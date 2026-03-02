@@ -13,12 +13,40 @@ export type Role = {
   name: string;
 };
 
-/** Training schedule slot (day + time, optional source group) */
+/** Athlete summary used in filters and lists */
+export type Athlete = {
+  id: string;
+  displayName: string;
+  email: string;
+};
+
+/** Training session used in session filters and sidebar */
+export type SessionItem = {
+  id: string;
+  title: string | null;
+  sessionDate: string;
+  checkedInCount: number;
+  totalAthletes: number;
+};
+
+/** Base training slot (day + time) */
+export type TrainingSlot = {
+  dayOfWeek: number;
+  time: string;
+};
+
+/** Training schedule slot with optional source group */
 export type TrainingSlotItem = {
   dayOfWeek: number;
   time: string;
   sourceGroupId?: string;
 };
+
+/** Review status for coach log review */
+export type ReviewStatus = "pending" | "reviewed" | "revisit";
+
+/** Review status filter value (includes null for "all") */
+export type ReviewStatusFilterValue = ReviewStatus | null;
 
 /** Attendance status for a session */
 export type AttendanceStatus = "present" | "absent" | "excused" | null;
@@ -36,5 +64,5 @@ export type LogEntry = {
   isOwn: boolean;
   checkinId?: string | null;
   createdAt: string;
-  reviewStatus?: "pending" | "reviewed" | "revisit";
+  reviewStatus?: ReviewStatus;
 };

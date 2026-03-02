@@ -4,8 +4,7 @@ import { useCallback } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronDown, Circle, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-export type ReviewStatus = "pending" | "reviewed" | "revisit";
+import type { ReviewStatus } from "@/types/dashboard";
 
 const STATUS_CONFIG: Record<
   ReviewStatus,

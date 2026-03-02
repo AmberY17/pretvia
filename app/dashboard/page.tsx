@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import useSWR, { mutate as globalMutate } from "swr";
 import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 import { urlFetcher, logsInfiniteFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPanel } from "@/hooks/use-dashboard-panel";
@@ -18,8 +17,7 @@ import type { LogEntry } from "@/types/dashboard";
 import type { CheckinItem } from "@/components/dashboard/shared/checkin-card";
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
+  const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth();
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
   const {
@@ -105,10 +103,6 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
-  // Prevents the "!user → /auth" redirect from firing when the user
-  // deliberately logs out (the sidebar-profile then navigates to "/").
-  const loggingOutRef = useRef(false);
-
   const handleLogout = useCallback(() => {
     loggingOutRef.current = true;
     globalMutate(() => true, undefined, { revalidate: false });
@@ -147,12 +141,6 @@ export default function DashboardPage() {
     mutateAllCheckins,
     handlers,
   ]);
-
-  useEffect(() => {
-    if (!authLoading && !user && !loggingOutRef.current) {
-      router.push("/auth");
-    }
-  }, [authLoading, user, router]);
 
   const { data: myGroupsData } = useSWR<{
     groups: {

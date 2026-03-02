@@ -1,12 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-
-type Athlete = {
-  id: string;
-  displayName: string;
-  email: string;
-};
+import type { Athlete } from "@/types/dashboard";
 
 interface AthleteFilterProps {
   athletes: Athlete[];

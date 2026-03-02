@@ -2,21 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Eye, Lock, X, Pencil, Trash2, User, Calendar, Clock } from "lucide-react"
+import { X, Pencil, Trash2, User, Calendar, Clock } from "lucide-react"
 import { format } from "date-fns"
-import { Badge } from "@/components/ui/badge"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog"
 import { Button } from "@/components/ui/button"
-import type { LogEntry } from "./log-card"
+import { VisibilityBadge } from "@/components/dashboard/shared/visibility-badge"
+import { TagPill } from "@/components/dashboard/shared/tag-pill"
+import type { LogEntry } from "@/types/dashboard"
 import { ReviewStatusBadge } from "./review-status-badge"
 
 interface LogDetailProps {
@@ -119,21 +111,7 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
         {/* Visibility Badge (hidden for coaches - they only see shared logs) */}
         {!isCoach && (
           <div className="mt-4 flex justify-center">
-            <Badge
-              variant={log.visibility === "coach" ? "default" : "secondary"}
-              className={`text-xs pointer-events-none ${
-                log.visibility === "coach"
-                  ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/10"
-                  : "bg-secondary text-muted-foreground border-border hover:bg-secondary"
-              }`}
-            >
-              {log.visibility === "coach" ? (
-                <Eye className="mr-1.5 h-3 w-3" />
-              ) : (
-                <Lock className="mr-1.5 h-3 w-3" />
-              )}
-              {log.visibility === "coach" ? "Shared" : "Private"}
-            </Badge>
+            <VisibilityBadge visibility={log.visibility} />
           </div>
         )}
 
@@ -167,12 +145,7 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
             </h4>
             <div className="flex flex-wrap gap-2">
               {log.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                >
-                  {tag}
-                </span>
+                <TagPill key={tag} tag={tag} size="md" />
               ))}
             </div>
           </div>
@@ -191,34 +164,21 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
             <Pencil className="h-3.5 w-3.5" />
             Edit
           </Button>
-          <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-            <Button
-              variant="ghost-destructive"
-              size="sm"
-              onClick={() => setDeleteConfirmOpen(true)}
-              className="gap-2"
-            >
+          <Button
+            variant="ghost-destructive"
+            size="sm"
+            onClick={() => setDeleteConfirmOpen(true)}
+            className="gap-2"
+          >
             <Trash2 className="h-3.5 w-3.5" />
             Delete
           </Button>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This log entry will be permanently removed.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => onDelete(log.id)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          <DeleteConfirmDialog
+            open={deleteConfirmOpen}
+            onOpenChange={setDeleteConfirmOpen}
+            description="This log entry will be permanently removed."
+            onConfirm={() => onDelete(log.id)}
+          />
         </div>
       )}
     </motion.div>
