@@ -1,0 +1,43 @@
+---
+description: Lib utility organization — constants, time parsing, schedule helpers, and auth
+globs: lib/**/*.ts
+alwaysApply: false
+---
+
+# Lib Utility Conventions
+
+## Constants
+
+App-wide constants live in `lib/constants.ts`:
+
+- Filter order keys, day-of-week names, localStorage keys
+- Never scatter magic strings across components — add them here
+
+## Time Parsing
+
+Use `parseTime()` from `@/lib/time-utils` to convert `"HH:mm"` strings.
+Never write a local time parser.
+
+```ts
+import { parseTime } from "@/lib/time-utils";
+const { hours, minutes } = parseTime("09:30");
+```
+
+## Training Schedule
+
+- `lib/group-training-schedule.ts` — normalizes and deduplicates training slot arrays
+- Use this for any logic that merges slots from multiple groups
+
+## API Authorization Helpers
+
+- `lib/api-auth.ts` — `canManageGroup(db, userId, groupId)` checks coach access
+- `lib/api-utils.ts` — `apiError(message, status)` and `apiSuccess(data)` for consistent responses
+
+## SWR Fetchers
+
+- `lib/swr-utils.ts` — `urlFetcher` (single-resource) and `logsInfiniteFetcher` (paginated)
+- Always import fetchers from here; never define inline fetch wrappers
+
+## Safe ObjectId
+
+- `lib/objectid.ts` — `safeObjectId(id)` validates and converts strings to MongoDB `ObjectId`

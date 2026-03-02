@@ -1,0 +1,39 @@
+---
+description: Core project context — tech stack, directory layout, and key architecture decisions
+alwaysApply: true
+---
+
+# Pretvia — Project Overview
+
+Next.js 16 App Router project with React 19, TypeScript, MongoDB, and Tailwind CSS.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript 5.7
+- **Database:** MongoDB via `getDb()` from `lib/mongodb.ts`
+- **Auth:** JWT in httpOnly cookies (jose), bcrypt passwords — `lib/auth.ts`
+- **Data fetching:** SWR (client), fetchers in `lib/swr-utils.ts`
+- **UI:** shadcn/ui (Radix) in `components/ui/`, Tailwind CSS, Framer Motion
+- **Package manager:** pnpm
+
+## Directory Layout
+
+```
+app/              # Pages, layouts, API routes (App Router)
+app/api/          # REST API route handlers
+components/ui/    # shadcn/ui primitives (Button, Dialog, etc.)
+components/dashboard/  # Feature components (logs, filters, sidebar, etc.)
+hooks/            # Custom React hooks (use-auth, use-require-auth, etc.)
+lib/              # Shared server/client utilities (auth, db, constants)
+types/            # Shared TypeScript types (types/dashboard.ts)
+```
+
+## Import Alias
+
+All imports use `@/*` mapped to the project root:
+
+```ts
+import { Button } from "@/components/ui/button";
+import type { LogEntry } from "@/types/dashboard";
+import { getSession } from "@/lib/auth";
+```
