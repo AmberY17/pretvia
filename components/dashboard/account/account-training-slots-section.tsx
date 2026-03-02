@@ -2,6 +2,8 @@
 
 import { Calendar, Plus, Loader2, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DayWheelPicker } from "@/components/dashboard/shared/day-wheel-picker";
+import { TimeWheelPicker } from "@/components/dashboard/shared/time-wheel-picker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,7 +14,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DAYS } from "@/lib/constants";
 import type { TrainingSlotItem } from "@/types/dashboard";
 
 interface AccountTrainingSlotsSectionProps {
@@ -82,33 +83,22 @@ export function AccountTrainingSlotsSection({
           return (
             <div
               key={index}
-              className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
+              className="flex flex-nowrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
             >
-              <select
+              <DayWheelPicker
                 value={slot.dayOfWeek}
-                onChange={(e) =>
-                  onUpdateSlot(index, "dayOfWeek", Number(e.target.value))
-                }
+                onChange={(v) => onUpdateSlot(index, "dayOfWeek", v)}
                 disabled={!!isGroup}
-                className="h-9 flex-1 min-w-[120px] rounded-md border border-border bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {DAYS.map((name, i) => (
-                  <option key={i} value={i}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="time"
+              />
+              <TimeWheelPicker
                 value={slot.time}
-                onChange={(e) => onUpdateSlot(index, "time", e.target.value)}
+                onChange={(v) => onUpdateSlot(index, "time", v)}
                 disabled={!!isGroup}
-                className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-70"
               />
               <Button
                 variant="ghost-secondary"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="ml-auto h-8 w-8 shrink-0"
                 onClick={() =>
                   isGroup
                     ? setDeleteGroupSlotConfirmIndex(index)

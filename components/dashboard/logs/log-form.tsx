@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmojiPicker } from "@/components/dashboard/shared/emoji-picker";
 import { TagInput } from "@/components/dashboard/shared/tag-input";
+import { DateTimeWheelPicker } from "@/components/dashboard/shared/datetime-wheel-picker";
 import { toast } from "sonner";
 import type { LogEntry } from "./log-card";
 
@@ -196,12 +197,9 @@ export function LogForm({
         <Label htmlFor="timestamp" className="text-foreground">
           Date & Time
         </Label>
-        <input
-          id="timestamp"
-          type="datetime-local"
+        <DateTimeWheelPicker
           value={timestamp}
-          onChange={(e) => setTimestamp(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          onChange={setTimestamp}
         />
       </div>
 

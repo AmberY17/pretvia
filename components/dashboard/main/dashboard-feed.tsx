@@ -189,9 +189,9 @@ export function DashboardFeed({
             variant="mobile"
             inline
             dateFilter={filters.dateFilter}
-            customDate={filters.customDate}
+            customDates={filters.customDates}
             onDateFilterChange={handlers.setDateFilter}
-            onCustomDateChange={handlers.setCustomDate}
+            onCustomDatesChange={handlers.setCustomDates}
             onClear={handlers.clearDateFilter}
           />
         </div>

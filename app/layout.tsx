@@ -7,6 +7,8 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import "./globals.css";
+import "@ncdai/react-wheel-picker/style.css";
+import "react-day-picker/dist/style.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({

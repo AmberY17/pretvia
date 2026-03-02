@@ -1,8 +1,11 @@
 "use client";
 
-import { X, Calendar } from "lucide-react";
+import * as React from "react";
+import { X } from "lucide-react";
 import { format } from "date-fns";
-import type { DateFilterKey } from "@/lib/date-utils";
+import type { DateFilterKey, CustomDateSelection } from "@/lib/date-utils";
+import { DateMultiplePicker } from "@/components/ui/date-multiple-picker";
+import { cn } from "@/lib/utils";
 
 const DATE_OPTIONS = [
   { key: "all" as const, label: "All Time", mobileLabel: "All" },
@@ -11,11 +14,26 @@ const DATE_OPTIONS = [
   { key: "30d" as const, label: "Last 30 Days", mobileLabel: "30 Days" },
 ] as const;
 
+function toDates(custom: CustomDateSelection | null): Date[] | undefined {
+  if (!custom?.length) return undefined;
+  return custom
+    .map((s) => {
+      const d = new Date(s + "T00:00:00");
+      return Number.isNaN(d.getTime()) ? null : d;
+    })
+    .filter((d): d is Date => d !== null);
+}
+
+function fromDates(dates: Date[] | undefined): CustomDateSelection | null {
+  if (!dates?.length) return null;
+  return dates.map((d) => format(d, "yyyy-MM-dd"));
+}
+
 interface DateFilterProps {
   dateFilter: DateFilterKey;
-  customDate: string;
+  customDates: CustomDateSelection | null;
   onDateFilterChange: (value: DateFilterKey) => void;
-  onCustomDateChange: (value: string) => void;
+  onCustomDatesChange: (value: CustomDateSelection | null) => void;
   onClear: () => void;
   variant?: "sidebar" | "mobile";
   hideHeader?: boolean;
@@ -25,9 +43,9 @@ interface DateFilterProps {
 
 export function DateFilter({
   dateFilter,
-  customDate,
+  customDates,
   onDateFilterChange,
-  onCustomDateChange,
+  onCustomDatesChange,
   onClear,
   variant = "sidebar",
   hideHeader = false,
@@ -40,6 +58,8 @@ export function DateFilter({
     label: isSidebar ? opt.label : opt.mobileLabel,
   }));
 
+  const dates = toDates(customDates);
+
   const buttonBase =
     "text-xs transition-colors " +
     (isSidebar
@@ -51,15 +71,32 @@ export function DateFilter({
     ? "text-muted-foreground hover:bg-secondary hover:text-foreground"
     : "bg-secondary text-muted-foreground hover:text-foreground";
 
+  const handleSelect = (selected: Date[] | undefined) => {
+    const next = fromDates(selected);
+    onCustomDatesChange(next);
+    if (next?.length) onDateFilterChange("custom");
+    else onDateFilterChange("all");
+  };
+
+  const datePicker = (
+    <DateMultiplePicker
+      value={dates}
+      onChange={handleSelect}
+      placeholder="Pick dates"
+      variant="compact"
+      className="rounded-lg"
+    />
+  );
+
   const sidebarContent = (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       {options.map((opt) => (
         <button
           key={opt.key}
           type="button"
           onClick={() => {
             onDateFilterChange(opt.key);
-            onCustomDateChange("");
+            onCustomDatesChange(null);
           }}
           className={`${buttonBase} ${
             dateFilter === opt.key ? buttonActive : buttonInactive
@@ -68,22 +105,7 @@ export function DateFilter({
           {opt.label}
         </button>
       ))}
-      <div className="mt-1 flex items-center gap-2">
-        <input
-          type="date"
-          value={customDate}
-          onChange={(e) => {
-            onCustomDateChange(e.target.value);
-            if (e.target.value) onDateFilterChange("custom");
-            else onDateFilterChange("all");
-          }}
-          className={`w-full rounded-lg border border-border bg-secondary px-2 py-1 text-xs text-foreground ${
-            dateFilter === "custom"
-              ? "border-primary/30 ring-1 ring-primary/20"
-              : ""
-          }`}
-        />
-      </div>
+      <div className="mt-1">{datePicker}</div>
     </div>
   );
 
@@ -95,7 +117,7 @@ export function DateFilter({
       <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Date Range
+            Date
           </h3>
           {dateFilter !== "all" && (
             <button
@@ -113,17 +135,21 @@ export function DateFilter({
     );
   }
 
-  // Mobile pill row — calendar icon replaces the raw date input
-  const formattedDate =
-    customDate
-      ? (() => {
-          try {
-            return format(new Date(customDate + "T00:00:00"), "MMM d");
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+  const mobileDatePicker = (
+    <DateMultiplePicker
+      value={dates}
+      onChange={handleSelect}
+      placeholder="Pick dates"
+      variant="compact"
+      hideIconWhenSelected
+      iconOnlyWhenEmpty
+      numberOfMonths={1}
+      className={cn(
+        "shrink-0 w-auto rounded-full",
+        dateFilter === "custom" ? buttonActive : buttonInactive
+      )}
+    />
+  );
 
   const mobilePills = (
     <>
@@ -133,7 +159,7 @@ export function DateFilter({
           type="button"
           onClick={() => {
             onDateFilterChange(opt.key);
-            onCustomDateChange("");
+            onCustomDatesChange(null);
           }}
           className={`shrink-0 ${buttonBase} ${
             dateFilter === opt.key ? buttonActive : buttonInactive
@@ -142,52 +168,7 @@ export function DateFilter({
           {opt.label}
         </button>
       ))}
-      {/* Calendar icon button backed by a transparent overlay input (sr-only breaks touch on mobile) */}
-      <label
-        className={`relative shrink-0 cursor-pointer ${buttonBase} ${
-          dateFilter === "custom" ? buttonActive : buttonInactive
-        }`}
-        aria-label="Pick a date"
-      >
-        <input
-          type="date"
-          value={customDate}
-          onChange={(e) => {
-            onCustomDateChange(e.target.value);
-            if (e.target.value) onDateFilterChange("custom");
-            else onDateFilterChange("all");
-          }}
-          className="absolute inset-0 size-full cursor-pointer opacity-0"
-        />
-        {formattedDate ? (
-          <span className="pointer-events-none flex items-center gap-1">
-            {formattedDate}
-            <span
-              role="button"
-              tabIndex={0}
-              aria-label="Clear date"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onCustomDateChange("");
-                onDateFilterChange("all");
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onCustomDateChange("");
-                  onDateFilterChange("all");
-                }
-              }}
-              className="pointer-events-auto ml-0.5 rounded-full hover:text-foreground"
-            >
-              <X className="h-3 w-3" />
-            </span>
-          </span>
-        ) : (
-          <Calendar className="pointer-events-none h-3.5 w-3.5" />
-        )}
-      </label>
+      {mobileDatePicker}
     </>
   );
 

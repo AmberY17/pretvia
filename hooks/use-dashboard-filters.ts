@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { DateFilterKey } from "@/lib/date-utils";
+import type {
+  DateFilterKey,
+  CustomDateSelection,
+} from "@/lib/date-utils";
 import {
   useLogsUrl,
   type LogsUrlFilters,
@@ -16,7 +19,7 @@ export type ReviewStatusFilterValue =
 export interface DashboardFiltersState {
   activeTags: string[];
   dateFilter: DateFilterKey;
-  customDate: string;
+  customDates: CustomDateSelection | null;
   filterAthleteId: string | null;
   filterSessionId: string | null;
   filterRoleId: string | null;
@@ -27,7 +30,7 @@ export interface DashboardFiltersHandlers {
   handleToggleTag: (tag: string) => void;
   handleClearTags: () => void;
   setDateFilter: (value: DateFilterKey) => void;
-  setCustomDate: (value: string) => void;
+  setCustomDates: (value: CustomDateSelection | null) => void;
   handleFilterAthlete: (athleteId: string | null) => void;
   setFilterSessionId: (id: string | null | ((prev: string | null) => string | null)) => void;
   setFilterRoleId: (id: string | null | ((prev: string | null) => string | null)) => void;
@@ -40,7 +43,9 @@ export interface DashboardFiltersHandlers {
 export function useDashboardFilters() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilterKey>("all");
-  const [customDate, setCustomDate] = useState<string>("");
+  const [customDates, setCustomDates] = useState<CustomDateSelection | null>(
+    null,
+  );
   const [filterAthleteId, setFilterAthleteId] = useState<string | null>(null);
   const [filterSessionId, setFilterSessionId] = useState<string | null>(null);
   const [filterRoleId, setFilterRoleId] = useState<string | null>(null);
@@ -54,7 +59,7 @@ export function useDashboardFilters() {
     filterRoleId,
     filterReviewStatus,
     dateFilter,
-    customDate,
+    customDates,
   };
 
   const logsUrl = useLogsUrl(filters);
@@ -75,7 +80,7 @@ export function useDashboardFilters() {
 
   const clearDateFilter = useCallback(() => {
     setDateFilter("all");
-    setCustomDate("");
+    setCustomDates(null);
   }, []);
 
   const clearAllOnGroupChange = useCallback(() => {
@@ -88,7 +93,7 @@ export function useDashboardFilters() {
   const clearAllFilters = useCallback(() => {
     setActiveTags([]);
     setDateFilter("all");
-    setCustomDate("");
+    setCustomDates(null);
     setFilterAthleteId(null);
     setFilterSessionId(null);
     setFilterRoleId(null);
@@ -98,7 +103,7 @@ export function useDashboardFilters() {
   const filtersState: DashboardFiltersState = {
     activeTags,
     dateFilter,
-    customDate,
+    customDates,
     filterAthleteId,
     filterSessionId,
     filterRoleId,
@@ -109,7 +114,7 @@ export function useDashboardFilters() {
     handleToggleTag,
     handleClearTags,
     setDateFilter,
-    setCustomDate,
+    setCustomDates,
     handleFilterAthlete,
     setFilterSessionId,
     setFilterRoleId,

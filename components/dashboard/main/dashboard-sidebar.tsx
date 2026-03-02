@@ -90,8 +90,8 @@ export function DashboardSidebar({
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () =>
       user.role === "coach"
-        ? Object.fromEntries(DEFAULT_COACH_ORDER.map((id) => [id, true]))
-        : { tags: true, date: true },
+        ? Object.fromEntries(DEFAULT_COACH_ORDER.map((id) => [id, false]))
+        : { tags: false, date: false },
   );
 
   const handleResetAll = () => {
@@ -174,9 +174,9 @@ export function DashboardSidebar({
         <DateFilter
           variant="sidebar"
           dateFilter={filters.dateFilter}
-          customDate={filters.customDate}
+          customDates={filters.customDates}
           onDateFilterChange={handlers.setDateFilter}
-          onCustomDateChange={handlers.setCustomDate}
+          onCustomDatesChange={handlers.setCustomDates}
           onClear={handlers.clearDateFilter}
           hideHeader
         />
@@ -281,9 +281,9 @@ export function DashboardSidebar({
                   <DateFilter
                     variant="sidebar"
                     dateFilter={filters.dateFilter}
-                    customDate={filters.customDate}
+                    customDates={filters.customDates}
                     onDateFilterChange={handlers.setDateFilter}
-                    onCustomDateChange={handlers.setCustomDate}
+                    onCustomDatesChange={handlers.setCustomDates}
                     onClear={handlers.clearDateFilter}
                     hideHeader
                   />

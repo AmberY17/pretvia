@@ -313,10 +313,10 @@ export default function GroupManagementPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <PageHeader title="Manage Group" />
 
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
         <div className="mx-auto max-w-2xl space-y-8">
           {!user.groupId ? (
             <EmptyStateCard

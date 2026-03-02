@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { getNextPracticeFromSchedule } from "@/lib/next-practice-from-schedule";
+import { DateTimeWheelPicker } from "@/components/dashboard/shared/datetime-wheel-picker";
 
 export interface CheckinItem {
   id: string;
@@ -328,12 +329,10 @@ export function CheckinCard({
                   >
                     Session Date & Time
                   </Label>
-                  <input
-                    id="checkin-date"
-                    type="datetime-local"
+                  <DateTimeWheelPicker
                     value={sessionDate}
-                    onChange={(e) => setSessionDate(e.target.value)}
-                    className="flex h-8 w-full rounded-md border border-border bg-secondary px-3 py-1 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onChange={setSessionDate}
+                    className="h-8 py-1"
                   />
                 </div>
               </div>

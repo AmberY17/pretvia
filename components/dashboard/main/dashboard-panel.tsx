@@ -58,7 +58,7 @@ export function DashboardPanel({
   };
 
   const desktopPanelContent = (
-    <div className="h-full w-[380px] overflow-y-auto scrollbar-hidden p-5">
+    <div className="h-full w-[440px] overflow-y-auto scrollbar-hidden p-5">
       <AnimatePresence mode="wait">
         {panelMode === "new" && user.role !== "coach" && (
           <motion.div
@@ -166,7 +166,7 @@ export function DashboardPanel({
         {isPanelOpen && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 380, opacity: 1 }}
+            animate={{ width: 440, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="hidden shrink-0 overflow-hidden border-l border-border lg:block"
