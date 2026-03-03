@@ -5,12 +5,16 @@ import { ObjectId } from "mongodb"
 import { computeStreak, computeTodaySkipStatus } from "@/lib/streak"
 import type { TrainingSlot } from "@/lib/streak"
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const { searchParams } = new URL(req.url)
+    // "YYYY-MM-DD" string in the user's local timezone, sent by the client.
+    const localDate = searchParams.get("localDate") ?? undefined
 
     const db = await getDb()
     const user = await db.collection("users").findOne({
@@ -25,12 +29,14 @@ export async function GET() {
     const { streak } = await computeStreak(
       db,
       session.userId,
-      trainingSlots
+      trainingSlots,
+      localDate
     )
     const todaySkipStatus = await computeTodaySkipStatus(
       db,
       session.userId,
-      trainingSlots
+      trainingSlots,
+      localDate
     )
 
     return NextResponse.json({

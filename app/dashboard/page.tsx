@@ -80,6 +80,13 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
+  // Build a local-date string in the user's browser timezone so the server can
+  // compare slot day-of-week against the correct calendar day.
+  const localDate = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  })();
+
   const { data: statsData, mutate: mutateStats } = useSWR<{
     totalLogs: number;
     streak: number;
@@ -87,7 +94,7 @@ export default function DashboardPage() {
     canSkipToday: boolean;
     skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null;
   }>(
-    user?.role === "athlete" ? ["/api/stats", user.id] : null,
+    user?.role === "athlete" ? [`/api/stats?localDate=${localDate}`, user.id] : null,
     urlFetcher,
   );
 

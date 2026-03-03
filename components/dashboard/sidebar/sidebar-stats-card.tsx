@@ -56,7 +56,12 @@ export function SidebarStatsCard({
   const [skipReason, setSkipReason] = useState("");
   const [skipping, setSkipping] = useState(false);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // Use local date (not UTC) so the server receives the correct calendar day
+  // even for users in timezones significantly offset from UTC.
+  const todayStr = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  })();
 
   const handleSkip = async () => {
     if (!skipReason.trim()) {

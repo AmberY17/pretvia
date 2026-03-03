@@ -29,8 +29,10 @@ export async function POST(req: Request) {
       time: string
     }[]
 
-    const targetDate = new Date(date)
-    const dayOfWeek = targetDate.getUTCDay()
+    // Parse as local midnight (not UTC midnight) so getDay() returns the correct
+    // local day of week matching the client-supplied date string.
+    const targetDate = new Date(date + "T00:00:00")
+    const dayOfWeek = targetDate.getDay()
 
     const slotsToSkip = trainingSlots.filter((s) => s.dayOfWeek === dayOfWeek)
     if (slotsToSkip.length === 0) {
