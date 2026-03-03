@@ -60,19 +60,24 @@ export function AnnouncementSkeleton() {
 
 export function CheckinSkeleton() {
   return (
-    <div className="mb-6 rounded-2xl border border-border bg-card p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <Skeleton className="h-4 w-4 rounded" />
-        <Skeleton className="h-4 w-32" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between rounded-lg border border-border p-3">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-6 w-16 rounded-full" />
-        </div>
-        <div className="flex items-center justify-between rounded-lg border border-border p-3">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-6 w-16 rounded-full" />
+    <div className="mb-6 rounded-2xl border border-checkin/20 bg-checkin/5 p-4">
+      <div className="flex items-start gap-3">
+        <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-3 w-28" />
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+              <Skeleton className="h-full w-2/3 rounded-full" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
