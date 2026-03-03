@@ -11,7 +11,6 @@ import {
   Loader2,
   Copy,
   Check,
-  Shield,
   ChevronDown,
   User as UserIcon,
 } from "lucide-react";
@@ -19,7 +18,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import type { User } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -161,24 +159,9 @@ export function SidebarProfile({
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {user.displayName || "Athlete"}
-            </p>
-            <Badge
-              variant="secondary"
-              className={`shrink-0 text-xs ${
-                user.role === "coach"
-                  ? "bg-primary/10 text-primary border-primary/20"
-                  : "bg-secondary text-muted-foreground border-border"
-              }`}
-            >
-              {user.role === "coach" ? (
-                <Shield className="mr-1 h-2.5 w-2.5" />
-              ) : null}
-              {user.role === "coach" ? "Coach" : "Athlete"}
-            </Badge>
-          </div>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {user.displayName || "Athlete"}
+          </p>
           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
         </div>
       </div>

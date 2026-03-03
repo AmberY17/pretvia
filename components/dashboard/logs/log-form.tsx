@@ -14,6 +14,7 @@ import type { LogEntry } from "./log-card";
 
 interface LogFormProps {
   onLogCreated: (totalCount?: number) => void;
+  onLogUpdated?: () => void;
   onClose?: () => void;
   editLog?: LogEntry | null;
   existingTags?: string[];
@@ -37,6 +38,7 @@ function toLocalTimestamp(isoString: string) {
 
 export function LogForm({
   onLogCreated,
+  onLogUpdated,
   onClose,
   editLog,
   existingTags = [],
@@ -118,7 +120,7 @@ export function LogForm({
             toast.error(data.error || "Failed to update log");
             return;
           }
-          onLogCreated();
+          onLogUpdated?.();
         } else {
           // POST to create
           const res = await fetch("/api/logs", {
@@ -156,6 +158,7 @@ export function LogForm({
       tags,
       checkinId,
       onLogCreated,
+      onLogUpdated,
       isEditing,
       editLog,
       resetForm,

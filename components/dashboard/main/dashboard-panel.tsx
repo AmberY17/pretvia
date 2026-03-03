@@ -17,6 +17,7 @@ export interface PanelState {
 
 export interface PanelHandlers {
   handleLogCreated: (totalCount?: number) => void;
+  handleLogUpdated?: () => void;
   handleCelebrationDismiss: () => void;
   handleClosePanel: () => void;
   handleCloseEditToView?: () => void;
@@ -41,6 +42,7 @@ export function DashboardPanel({
   const { panelMode, selectedLog, checkinPrefill, celebrationCount, isPanelOpen } = panelState;
   const {
     handleLogCreated,
+    handleLogUpdated,
     handleCelebrationDismiss,
     handleClosePanel,
     handleCloseEditToView,
@@ -51,6 +53,7 @@ export function DashboardPanel({
 
   const formProps = {
     onLogCreated: handleLogCreated,
+    onLogUpdated: handleLogUpdated,
     onClose: handleClosePanel,
     existingTags: tagNames,
     prefillTimestamp: checkinPrefill?.timestamp ?? null,

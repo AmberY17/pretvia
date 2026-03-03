@@ -59,6 +59,13 @@ export function useDashboardPanel({
     [mutateLogs, mutateTags, mutateCheckins, mutateAllCheckins, mutateStats],
   );
 
+  const handleLogUpdated = useCallback(() => {
+    mutateLogs();
+    mutateTags();
+    setPanelMode(null);
+    setSelectedLog(null);
+  }, [mutateLogs, mutateTags]);
+
   const handleCelebrationDismiss = useCallback(() => {
     setCelebrationCount(null);
   }, []);
@@ -135,6 +142,7 @@ export function useDashboardPanel({
       handleCloseEditToView,
       handleCheckinLog,
       handleLogCreated,
+      handleLogUpdated,
       handleCelebrationDismiss,
       handleDeleteLog,
       handleMutateLogs: mutateLogs,
