@@ -67,7 +67,7 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
-  const { data: checkinsData, mutate: mutateCheckins } = useSWR<{
+  const { data: checkinsData, isLoading: checkinsLoading, mutate: mutateCheckins } = useSWR<{
     checkins: CheckinItem[];
   }>(user?.groupId ? ["/api/checkins", user.id, user.groupId] : null, urlFetcher);
 
@@ -87,7 +87,7 @@ export default function DashboardPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   })();
 
-  const { data: statsData, mutate: mutateStats } = useSWR<{
+  const { data: statsData, isLoading: statsLoading, mutate: mutateStats } = useSWR<{
     totalLogs: number;
     streak: number;
     hasTrainingSlots: boolean;
@@ -98,7 +98,7 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
-  const { data: announcementData, mutate: mutateAnnouncement } = useSWR<{
+  const { data: announcementData, isLoading: announcementLoading, mutate: mutateAnnouncement } = useSWR<{
     announcements: {
       id: string;
       text: string;
@@ -228,6 +228,7 @@ export default function DashboardPage() {
           athletes={athletes}
           groupRoles={groupRoles}
           isLoading={tagsLoading}
+          statsLoading={statsLoading}
           stats={
             user.role === "athlete"
               ? {
@@ -259,6 +260,8 @@ export default function DashboardPage() {
           panelMode={panelState.panelMode}
           announcements={announcementData?.announcements ?? []}
           checkins={checkinsData?.checkins ?? []}
+          announcementLoading={announcementLoading}
+          checkinsLoading={checkinsLoading}
           trainingScheduleTemplate={membersData?.trainingScheduleTemplate}
           isLoading={logsLoading}
           hasMoreLogs={hasMoreLogs}

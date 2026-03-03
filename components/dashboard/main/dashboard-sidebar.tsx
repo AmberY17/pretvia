@@ -10,7 +10,7 @@ import { DateFilter } from "@/components/dashboard/filters/date-filter";
 import { AthleteFilter } from "@/components/dashboard/filters/athlete-filter";
 import { RoleFilter } from "@/components/dashboard/filters/role-filter";
 import { ReviewStatusFilter } from "@/components/dashboard/filters/review-status-filter";
-import { SidebarFilterSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
+import { SidebarFilterSkeleton, SidebarStatsCardSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
 import { SidebarStatsCard } from "@/components/dashboard/sidebar/sidebar-stats-card";
 import type { User } from "@/hooks/use-auth";
 import type {
@@ -35,6 +35,7 @@ interface DashboardSidebarProps {
   athletes: Athlete[];
   groupRoles: Role[];
   isLoading?: boolean;
+  statsLoading?: boolean;
   stats?: {
     totalLogs: number;
     streak: number;
@@ -60,6 +61,7 @@ export function DashboardSidebar({
   athletes,
   groupRoles,
   isLoading = false,
+  statsLoading = false,
   stats,
   onMutateStats = () => {},
 }: DashboardSidebarProps) {
@@ -189,16 +191,19 @@ export function DashboardSidebar({
         onGroupChanged={onGroupChanged}
       />
 
-      {user.role === "athlete" && stats && (
-        <SidebarStatsCard
-          totalLogs={stats.totalLogs}
-          streak={stats.streak}
-          hasTrainingSlots={stats.hasTrainingSlots}
-          canSkipToday={stats.canSkipToday}
-          skipDisabledReason={stats.skipDisabledReason}
-          onMutateStats={onMutateStats}
-        />
-      )}
+      {user.role === "athlete" &&
+        (statsLoading ? (
+          <SidebarStatsCardSkeleton />
+        ) : stats ? (
+          <SidebarStatsCard
+            totalLogs={stats.totalLogs}
+            streak={stats.streak}
+            hasTrainingSlots={stats.hasTrainingSlots}
+            canSkipToday={stats.canSkipToday}
+            skipDisabledReason={stats.skipDisabledReason}
+            onMutateStats={onMutateStats}
+          />
+        ) : null)}
 
       {isLoading ? (
         <SidebarFilterSkeleton />

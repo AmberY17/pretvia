@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import useSWR from "swr";
+import { AnimatePresence, motion } from "framer-motion";
 import { urlFetcher } from "@/lib/swr-utils";
 import { Settings } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { ManageGroupPageSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
 import { GroupRolesSection } from "@/components/dashboard/group/group-roles-section";
 import { GroupTrainingScheduleSection } from "@/components/dashboard/group/group-training-schedule-section";
 import { GroupAthletesSection } from "@/components/dashboard/group/group-athletes-section";
@@ -51,7 +53,7 @@ export default function GroupManagementPage() {
   const membersUrl = user?.groupId
     ? `/api/groups?groupId=${user.groupId}`
     : null;
-  const { data: membersData, mutate: mutateMembers } = useSWR<{
+  const { data: membersData, mutate: mutateMembers, isLoading: membersLoading } = useSWR<{
     members: Member[];
     roles: Role[];
   }>(
@@ -80,7 +82,7 @@ export default function GroupManagementPage() {
   const trainingScheduleUrl = user?.groupId
     ? `/api/groups/${user.groupId}/training-schedule`
     : null;
-  const { data: trainingScheduleData } = useSWR<{
+  const { data: trainingScheduleData, isLoading: trainingScheduleLoading } = useSWR<{
     trainingScheduleTemplate: { dayOfWeek: number; time: string }[];
   }>(
     trainingScheduleUrl && user
@@ -291,14 +293,40 @@ export default function GroupManagementPage() {
 
       <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
         <div className="mx-auto max-w-2xl space-y-8">
-          {!user.groupId ? (
-            <EmptyStateCard
-              icon={Settings}
-              message="Join a group to manage it."
-            />
-          ) : (
-            <>
-              <GroupRolesSection
+          <AnimatePresence mode="wait">
+            {!user.groupId ? (
+              <motion.div
+                key="empty-no-group"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <EmptyStateCard
+                  icon={Settings}
+                  message="Join a group to manage it."
+                />
+              </motion.div>
+            ) : user.groupId && (membersLoading || trainingScheduleLoading) ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ManageGroupPageSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-8"
+              >
+                <GroupRolesSection
                 newRoleName={newRoleName}
                 setNewRoleName={setNewRoleName}
                 editingRoleId={editingRoleId}
@@ -349,8 +377,9 @@ export default function GroupManagementPage() {
                 onTransfer={handleTransfer}
                 onRemoveAthlete={handleRemoveAthlete}
               />
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>
