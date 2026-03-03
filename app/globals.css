@@ -14,38 +14,22 @@
   .scrollbar-hidden::-webkit-scrollbar {
     display: none;
   }
-}
 
-/* React Day Picker - use app theme, more spacing for day numbers */
-.rdp {
-  --rdp-cell-size: 44px;
-  --rdp-accent-color: hsl(var(--primary));
-  --rdp-background-color: hsl(var(--accent) / 0.3);
-  --rdp-accent-color-dark: hsl(var(--primary));
-  --rdp-background-color-dark: hsl(var(--accent) / 0.3);
-}
-
-/*
- * Shadow Elevation System
- * Each elevation combines three layers:
- *   1. Ambient  — large, soft, low-opacity spread (fills the whole "shadow cone")
- *   2. Key      — tighter, slightly stronger shadow at a consistent 2:1 x:y ratio (simulates directional light from top-left)
- *   3. Highlight — a 1px inset white-ish line on the top/left edge to sell the "lifted" illusion
- *
- * Pressed state uses inset shadows to push the element into the surface.
- * All shadows reference CSS custom properties so they automatically
- * adapt between light and dark themes.
- *
- * Usage (Tailwind):
- *   shadow-raised-sm   → subtle lift (badges, chips, inputs)
- *   shadow-raised      → default card elevation
- *   shadow-raised-lg   → modals, dropdowns
- *   shadow-raised-xl   → hero cards, featured panels
- *   shadow-pressed     → active/pressed button state
- *   shadow-inset       → inset inputs, recessed wells
- */
-
-@layer utilities {
+  /*
+   * Shadow Elevation System
+   * Three CSS custom properties per theme power all levels:
+   *   --shadow-ambient  : large, diffuse spread (fills the shadow cone)
+   *   --shadow-key      : tighter directional shadow (top-left light source)
+   *   --shadow-highlight: 1px inset top edge highlight (sells the lifted illusion)
+   *
+   * Usage:
+   *   shadow-raised-sm  → chips, badges, inputs
+   *   shadow-raised     → default card
+   *   shadow-raised-lg  → dropdowns, popovers
+   *   shadow-raised-xl  → modals, hero panels
+   *   shadow-pressed    → active/pressed state
+   *   shadow-inset      → input fields, recessed wells
+   */
   .shadow-raised-sm {
     box-shadow:
       0 1px 2px hsl(var(--shadow-ambient)),
@@ -82,11 +66,20 @@
   }
 }
 
+/* React Day Picker - use app theme, more spacing for day numbers */
+.rdp {
+  --rdp-cell-size: 44px;
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-background-color: hsl(var(--accent) / 0.3);
+  --rdp-accent-color-dark: hsl(var(--primary));
+  --rdp-background-color-dark: hsl(var(--accent) / 0.3);
+}
+
 @layer base {
   /* ===== Theme: Green + Amber (default) ===== */
   :root,
   [data-theme="green"] {
-    --background: 0 0% 96%;
+    --background: 0 0% 98%;
     --foreground: 220 15% 15%;
     --card: 0 0% 100%;
     --card-foreground: 220 15% 15%;
