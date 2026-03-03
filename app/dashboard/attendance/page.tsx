@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import useSWR from "swr";
+import { AnimatePresence, motion } from "framer-motion";
 import { urlFetcher } from "@/lib/swr-utils";
 import { ClipboardCheck } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { PageHeader } from "@/components/dashboard/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { AttendancePageSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
 import {
   AttendanceSessionDropdown,
   type CheckinItem,
@@ -42,7 +44,7 @@ export default function AttendancePage() {
       })
     : checkins;
 
-  const { data: checkinsData } = useSWR<{
+  const { data: checkinsData, isLoading: checkinsLoading } = useSWR<{
     checkins: CheckinItem[];
   }>(
     user?.groupId ? ["/api/checkins?mode=all", user.id, user.groupId] : null,
@@ -53,7 +55,7 @@ export default function AttendancePage() {
     user && selectedCheckinId
       ? `/api/attendance?checkinId=${selectedCheckinId}`
       : null;
-  const { data: attendanceData, mutate: mutateAttendance } = useSWR(
+  const { data: attendanceData, mutate: mutateAttendance, isLoading: attendanceLoading } = useSWR(
     attendanceUrl && user ? [attendanceUrl, user.id, user.groupId] : null,
     urlFetcher,
   );
@@ -122,41 +124,76 @@ export default function AttendancePage() {
 
       <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
         <div className="mx-auto max-w-2xl">
-          {!user.groupId ? (
-            <EmptyStateCard
-              icon={ClipboardCheck}
-              message="Join a group to take attendance."
-            />
-          ) : checkins.length === 0 ? (
-            <EmptyStateCard
-              icon={ClipboardCheck}
-              message="Create a check-in session first."
-            />
-          ) : (
-            <>
-              <AttendanceSessionDropdown
-                checkins={checkins}
-                filteredCheckins={filteredCheckins}
-                selectedCheckinId={selectedCheckinId}
-                sessionDropdownOpen={sessionDropdownOpen}
-                sessionSearch={sessionSearch}
-                onSelectedCheckinIdChange={setSelectedCheckinId}
-                onSessionDropdownOpenChange={setSessionDropdownOpen}
-                onSessionSearchChange={setSessionSearch}
-              />
-
-              {selectedCheckin && (
-                <AttendanceSessionCard
-                  selectedCheckin={selectedCheckin}
-                  athletes={athletes}
-                  entries={entries}
-                  saving={saving}
-                  onSetStatus={handleSetStatus}
-                  onSave={handleSave}
+          <AnimatePresence mode="wait">
+            {!user.groupId ? (
+              <motion.div
+                key="empty-no-group"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <EmptyStateCard
+                  icon={ClipboardCheck}
+                  message="Join a group to take attendance."
                 />
-              )}
-            </>
-          )}
+              </motion.div>
+            ) : user.groupId && (checkinsLoading || attendanceLoading) ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <AttendancePageSkeleton />
+              </motion.div>
+            ) : checkins.length === 0 ? (
+              <motion.div
+                key="empty-no-checkins"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <EmptyStateCard
+                  icon={ClipboardCheck}
+                  message="Create a check-in session first."
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-0"
+              >
+                <AttendanceSessionDropdown
+                  checkins={checkins}
+                  filteredCheckins={filteredCheckins}
+                  selectedCheckinId={selectedCheckinId}
+                  sessionDropdownOpen={sessionDropdownOpen}
+                  sessionSearch={sessionSearch}
+                  onSelectedCheckinIdChange={setSelectedCheckinId}
+                  onSessionDropdownOpenChange={setSessionDropdownOpen}
+                  onSessionSearchChange={setSessionSearch}
+                />
+
+                {selectedCheckin && (
+                  <AttendanceSessionCard
+                    selectedCheckin={selectedCheckin}
+                    athletes={athletes}
+                    entries={entries}
+                    saving={saving}
+                    onSetStatus={handleSetStatus}
+                    onSave={handleSave}
+                  />
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>

@@ -15,7 +15,11 @@ import {
   type CheckinItem,
 } from "@/components/dashboard/shared/checkin-card";
 import { LogCard, type LogEntry } from "@/components/dashboard/logs/log-card";
-import { LogCardSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
+import {
+  LogCardSkeleton,
+  AnnouncementSkeleton,
+  CheckinSkeleton,
+} from "@/components/dashboard/main/dashboard-skeletons";
 import type { User } from "@/hooks/use-auth";
 import type {
   DashboardFiltersState,
@@ -45,6 +49,8 @@ interface DashboardFeedProps {
     createdAt: string;
   }[];
   checkins: CheckinItem[];
+  announcementLoading?: boolean;
+  checkinsLoading?: boolean;
   trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
   onMutateAnnouncement: () => void;
   onMutateCheckins: () => void;
@@ -72,6 +78,8 @@ export function DashboardFeed({
   panelMode,
   announcements,
   checkins,
+  announcementLoading = false,
+  checkinsLoading = false,
   trainingScheduleTemplate,
   onMutateAnnouncement,
   onMutateCheckins,
@@ -190,21 +198,72 @@ export function DashboardFeed({
         </div>
 
         {user.groupId && (
-          <AnnouncementBanner
-            announcements={announcements}
-            isCoach={user.role === "coach"}
-            onMutate={onMutateAnnouncement}
-          />
+          <AnimatePresence mode="wait">
+            {announcementLoading ? (
+              <motion.div
+                key="announcement-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <AnnouncementSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="announcement-content"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 0.55,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+              >
+                <AnnouncementBanner
+                  announcements={announcements}
+                  isCoach={user.role === "coach"}
+                  onMutate={onMutateAnnouncement}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
 
         {user.groupId && (
-          <CheckinCard
-            checkins={checkins}
-            isCoach={user.role === "coach"}
-            onCheckinLog={onCheckinLog}
-            onMutate={onMutateCheckins}
-            trainingScheduleTemplate={trainingScheduleTemplate}
-          />
+          <AnimatePresence mode="wait">
+            {checkinsLoading ? (
+              <motion.div
+                key="checkin-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <CheckinSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="checkin-content"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  delay: 0.04,
+                  duration: 0.55,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+              >
+                <CheckinCard
+                  checkins={checkins}
+                  isCoach={user.role === "coach"}
+                  onCheckinLog={onCheckinLog}
+                  onMutate={onMutateCheckins}
+                  trainingScheduleTemplate={trainingScheduleTemplate}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
 
         <div className="mb-6 flex items-center justify-between">

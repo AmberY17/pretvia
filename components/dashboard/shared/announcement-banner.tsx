@@ -234,6 +234,10 @@ export function AnnouncementBanner({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{
+                duration: 0.35,
+                ease: [0.25, 0.46, 0.45, 0.94],
+              }}
             >
               <Button
                 variant="ghost-primary"
@@ -248,9 +252,13 @@ export function AnnouncementBanner({
           ) : (
             <motion.div
               key="form"
-              initial={{ opacity: 0, y: -5 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{
+                duration: 0.45,
+                ease: [0.25, 0.46, 0.45, 0.94],
+              }}
               className="rounded-2xl border border-border bg-card p-4"
             >
               <div className="mb-3 flex items-center gap-2">
