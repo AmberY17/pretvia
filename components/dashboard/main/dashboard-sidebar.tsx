@@ -253,6 +253,7 @@ export function DashboardSidebar({
                     onToggle={handlers.handleToggleTag}
                     onClear={handlers.handleClearTags}
                     hideHeader
+                    variant="sidebar"
                   />
                 </CollapsibleFilterSection>
                 <CollapsibleFilterSection

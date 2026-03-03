@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Tag, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface TagFilterProps {
   tags: { id: string; name: string }[]
@@ -9,6 +10,7 @@ interface TagFilterProps {
   onToggle: (tag: string) => void
   onClear: () => void
   hideHeader?: boolean
+  variant?: "sidebar" | "mobile"
 }
 
 export function TagFilter({
@@ -17,6 +19,7 @@ export function TagFilter({
   onToggle,
   onClear,
   hideHeader = false,
+  variant = "sidebar",
 }: TagFilterProps) {
   const content = tags.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -24,11 +27,15 @@ export function TagFilter({
         </p>
       ) : (
         <div
-          className={
-            hideHeader
-              ? "flex gap-2 overflow-x-auto scrollbar-hidden"
-              : "flex flex-wrap gap-2"
-          }
+          className={cn(
+            hideHeader && variant === "mobile" &&
+              "flex min-w-0 gap-2 overflow-x-auto scrollbar-hidden",
+            hideHeader && variant === "sidebar" &&
+              "flex flex-wrap gap-2",
+            hideHeader && variant === "sidebar" && tags.length > 4 &&
+              "max-h-32 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+            !hideHeader && "flex flex-wrap gap-2"
+          )}
         >
           {tags.map((tag) => {
             const isActive = activeTags.includes(tag.name)

@@ -161,6 +161,7 @@ export function DashboardFeed({
               onToggle={handlers.handleToggleTag}
               onClear={handlers.handleClearTags}
               hideHeader
+              variant="mobile"
             />
           )}
 
