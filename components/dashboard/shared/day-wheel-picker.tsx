@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { DAYS } from "@/lib/constants";
+import { DAYS, DAYS_SHORT } from "@/lib/constants";
 
 const DAY_OPTIONS = DAYS.map((name, i) => ({ value: i, label: name }));
 
@@ -36,12 +36,13 @@ export function DayWheelPicker({ value, onChange, disabled }: DayWheelPickerProp
           disabled={disabled}
           aria-label="Select day of week"
           className={cn(
-            "flex h-9 w-[140px] flex-shrink-0 items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition-colors",
+            "flex h-9 w-[72px] flex-shrink-0 items-center justify-between gap-2 rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground ring-offset-background transition-colors sm:w-[120px] sm:px-3",
             "hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-background"
           )}
         >
-          {DAYS[dayIndex]}
+          <span className="sm:hidden">{DAYS_SHORT[dayIndex]}</span>
+          <span className="hidden sm:inline">{DAYS[dayIndex]}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-2" align="start">

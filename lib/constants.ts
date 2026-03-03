@@ -9,6 +9,17 @@ export const DAYS = [
   "Saturday",
 ] as const;
 
+/** Short day names for compact displays (e.g. mobile) */
+export const DAYS_SHORT = [
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+] as const;
+
 /** localStorage key for coach filter order preference */
 export const COACH_FILTER_ORDER_KEY = "pretvia-coach-filter-order";
 

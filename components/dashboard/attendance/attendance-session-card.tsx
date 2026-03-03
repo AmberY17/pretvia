@@ -59,15 +59,15 @@ export function AttendanceSessionCard({
           athletes.map((athlete) => (
             <div
               key={athlete.id}
-              className="flex items-center justify-between px-4 py-3"
+              className="flex items-center justify-between gap-2 px-4 py-3"
             >
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">
+              <div className="flex min-w-0 items-center gap-3">
+                <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate text-sm font-medium text-foreground">
                   {athlete.displayName || athlete.email}
                 </span>
               </div>
-              <div className="flex gap-1">
+              <div className="flex shrink-0 gap-1">
                 {(
                   [
                     [
@@ -101,8 +101,8 @@ export function AttendanceSessionCard({
                     }`}
                     title={label}
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="hidden sm:inline">{label}</span>
                   </button>
                 ))}
               </div>

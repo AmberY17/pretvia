@@ -50,7 +50,9 @@ export function PageHeader({ title, backHref = "/dashboard" }: PageHeaderProps) 
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <ThemeSwitcher />
+          <div className="hidden sm:block">
+            <ThemeSwitcher />
+          </div>
         </div>
       </div>
     </header>

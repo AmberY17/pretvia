@@ -53,6 +53,10 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
           {/* Coach nav */}
           {isCoachWithGroup && (
             <>
+              {/* Theme first on mobile for coaches; menu second */}
+              <div className="sm:hidden">
+                <ThemeSwitcher />
+              </div>
               {/* Mobile hamburger trigger — xs only */}
               <Button
                 variant="ghost-secondary"
@@ -184,7 +188,13 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
             </>
           )}
 
-          <ThemeSwitcher />
+          {/* Theme shown here for athletes, and for coaches on sm+ */}
+          {!isCoachWithGroup && <ThemeSwitcher />}
+          {isCoachWithGroup && (
+            <div className="hidden sm:block">
+              <ThemeSwitcher />
+            </div>
+          )}
         </div>
       </div>
     </header>

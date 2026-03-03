@@ -294,9 +294,10 @@ export function GroupAthletesSection({
                         setTransferUserId(a.id);
                       }}
                       className="gap-1 text-xs"
+                      title="Transfer"
                     >
                       <ArrowRightLeft className="h-3 w-3" />
-                      Transfer
+                      <span className="hidden sm:inline">Transfer</span>
                     </Button>
                     <Button
                       size="sm"
@@ -304,9 +305,10 @@ export function GroupAthletesSection({
                       onClick={() => setRemoveConfirmUserId(a.id)}
                       disabled={saving}
                       className="gap-1 text-xs"
+                      title="Remove"
                     >
                       <UserMinus className="h-3 w-3" />
-                      Remove
+                      <span className="hidden sm:inline">Remove</span>
                     </Button>
                     <DeleteConfirmDialog
                       open={removeConfirmUserId === a.id}

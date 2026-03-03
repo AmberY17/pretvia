@@ -73,7 +73,7 @@ export function TimeWheelPicker({ value, onChange, disabled }: TimeWheelPickerPr
           disabled={disabled}
           aria-label="Select time"
           className={cn(
-            "flex h-9 w-[140px] flex-shrink-0 items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition-colors",
+            "flex h-9 w-[105px] flex-shrink-0 items-center justify-between gap-1.5 rounded-md border border-border bg-background px-2.5 py-2 text-sm text-foreground ring-offset-background transition-colors sm:w-[140px] sm:gap-2 sm:px-3",
             "hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-background"
           )}
