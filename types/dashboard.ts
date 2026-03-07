@@ -5,6 +5,32 @@ export type Member = {
   email: string;
   role: string;
   roleIds: string[];
+  /** First name (if available) */
+  firstName?: string;
+  /** Last name (if available) */
+  lastName?: string;
+  /** Date of birth ISO string (athletes only) */
+  dateOfBirth?: string;
+  /** True if this row represents a pending invite, not yet a real member */
+  status?: "pending";
+};
+
+/** Pending athlete from an unredeemed invite */
+export type PendingAthlete = {
+  id: string;
+  displayName: string;
+  email: string;
+  status: "pending";
+};
+
+/** Invite type */
+export type InviteType = "under13_parent" | "athlete" | "parent";
+
+/** Linked guardian for an athlete */
+export type Guardian = {
+  id: string;
+  displayName: string;
+  email: string;
 };
 
 /** Custom role within a group */

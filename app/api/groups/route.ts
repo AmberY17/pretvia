@@ -132,6 +132,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "User not found" }, { status: 404 })
       }
 
+      if (user.role === "athlete") {
+        return NextResponse.json(
+          { error: "Athletes must join via an invite link from their coach" },
+          { status: 403 }
+        )
+      }
+
       const group = await db
         .collection("groups")
         .findOne({ code: code.toUpperCase() })
@@ -458,9 +465,37 @@ export async function GET(req: Request) {
       ])
     )
 
+    // Pending athletes from non-expired invites (coach view only)
+    let pendingAthletes: { id: string; displayName: string; email: string; status: "pending" }[] = []
+    if (isCoachOfGroup) {
+      const now = new Date()
+      const invites = await db
+        .collection("invites")
+        .find({
+          groupId,
+          expiresAt: { $gt: now },
+          type: { $in: ["athlete", "under13_parent"] },
+        })
+        .toArray()
+      const inviteList = invites as unknown as {
+        _id: unknown
+        token: string
+        type: string
+        email: string
+        athleteNamePlaceholder?: string
+      }[]
+      pendingAthletes = inviteList.map((inv) => ({
+        id: `pending-${inv.token}`,
+        displayName: inv.athleteNamePlaceholder?.trim() || (inv.type === "athlete" ? inv.email : "Pending"),
+        email: inv.email,
+        status: "pending" as const,
+      }))
+    }
+
     const response: {
-      members: { id: string; displayName: string; email: string; role: string; roleIds: string[] }[]
+      members: { id: string; displayName: string; email: string; role: string; roleIds: string[]; firstName?: string; lastName?: string; dateOfBirth?: string }[]
       roles: unknown[]
+      pendingAthletes?: { id: string; displayName: string; email: string; status: "pending" }[]
       trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
     } = {
       members: members.map((m) => ({
@@ -469,8 +504,12 @@ export async function GET(req: Request) {
         email: m.email,
         role: m.role || "athlete",
         roleIds: roleIdsByUser.get(m._id.toString()) ?? [],
+        firstName: m.firstName,
+        lastName: m.lastName,
+        dateOfBirth: m.dateOfBirth,
       })),
       roles,
+      ...(pendingAthletes.length > 0 && { pendingAthletes }),
     }
     if (isCoachOfGroup && Array.isArray(group?.trainingScheduleTemplate)) {
       response.trainingScheduleTemplate = group.trainingScheduleTemplate as {

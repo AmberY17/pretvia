@@ -1,5 +1,19 @@
 export type DateFilterKey = "all" | "today" | "7d" | "30d" | "custom";
 
+/** Compute age from dateOfBirth (ISO string) and format as "Age: N · MMM d" */
+export function formatAgeAndBirthday(dateOfBirth: string | undefined | null): string | null {
+  if (!dateOfBirth) return null;
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const m = now.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const mmm = monthNames[dob.getMonth()];
+  return `Age: ${age} · ${mmm} ${dob.getDate()}`;
+}
+
 /** Array of ISO date strings (yyyy-MM-dd) for multiple discrete date selection */
 export type CustomDateSelection = string[];
 

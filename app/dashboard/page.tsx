@@ -12,12 +12,14 @@ import { DashboardHeader } from "@/components/dashboard/main/dashboard-header";
 import { DashboardSidebar } from "@/components/dashboard/main/dashboard-sidebar";
 import { DashboardFeed } from "@/components/dashboard/main/dashboard-feed";
 import { DashboardPanel } from "@/components/dashboard/main/dashboard-panel";
+import { GuardianDashboard } from "@/components/dashboard/guardian/guardian-dashboard";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import type { LogEntry } from "@/types/dashboard";
 import type { CheckinItem } from "@/components/dashboard/shared/checkin-card";
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth();
+
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
   const {
@@ -192,6 +194,15 @@ export default function DashboardPage() {
 
   if (authLoading || !user) {
     return <LoadingScreen message="Loading dashboard..." />;
+  }
+
+  if (user.role === "guardian") {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden">
+        <DashboardHeader user={user} onLogout={handleLogout} />
+        <GuardianDashboard user={user} onLogout={handleLogout} />
+      </div>
+    );
   }
 
   const tags = tagsData?.tags ?? [];

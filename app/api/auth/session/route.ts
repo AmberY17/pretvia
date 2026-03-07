@@ -61,6 +61,16 @@ export async function GET() {
       }))
     }
 
+    // For guardians: fetch linked athlete IDs
+    let linkedAthleteIds: string[] = []
+    if (user.role === "guardian") {
+      const links = await db
+        .collection("guardianLinks")
+        .find({ guardianId: user._id.toString() })
+        .toArray()
+      linkedAthleteIds = (links as { athleteId: string }[]).map((l) => l.athleteId)
+    }
+
     return NextResponse.json({
       user: {
         id: user._id.toString(),
@@ -71,6 +81,7 @@ export async function GET() {
         group,
         groups,
         groupIds,
+        linkedAthleteIds: user.role === "guardian" ? linkedAthleteIds : undefined,
         profileComplete: user.profileComplete,
         profileEmoji: user.profileEmoji || null,
         trainingSlots: user.trainingSlots ?? [],

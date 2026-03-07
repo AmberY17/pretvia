@@ -39,7 +39,10 @@ export async function GET(req: Request) {
     const result = await db.collection("users").insertOne({
       email: pending.email,
       password: pending.password,
-      displayName: pending.displayName,
+      displayName: pending.displayName ?? [pending.firstName, pending.lastName].filter(Boolean).join(" "),
+      firstName: pending.firstName,
+      lastName: pending.lastName,
+      dateOfBirth: pending.dateOfBirth ?? null,
       role: pending.role,
       groupId: null,
       profileComplete: true,

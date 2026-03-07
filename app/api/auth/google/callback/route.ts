@@ -139,6 +139,12 @@ export async function GET(req: Request) {
       groupId: user.groupId || undefined,
     })
 
+    const inviteToken = cookieStore.get("oauth_invite")?.value
+    if (inviteToken) {
+      cookieStore.delete("oauth_invite")
+      return NextResponse.redirect(`${APP_URL}/invite/${inviteToken}?from_oauth=1`)
+    }
+
     return NextResponse.redirect(`${APP_URL}/dashboard`)
   } catch (error) {
     console.error("Google callback error:", error)

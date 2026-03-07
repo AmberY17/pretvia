@@ -348,6 +348,26 @@ export function SidebarProfile({
                 onSubmit={handleGroupAction}
                 className="flex flex-col gap-2"
               >
+                {user.role === "athlete" && groupAction === "join" ? (
+                  <div className="space-y-2">
+                    <p className="rounded-lg bg-muted/50 px-2 py-2 text-xs text-muted-foreground">
+                      Athletes need an invite link from their coach. Ask your coach to send you one.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost-secondary"
+                      size="sm"
+                      onClick={() => {
+                        setShowGroupAction(false);
+                        setGroupInput("");
+                      }}
+                      className="h-7 w-full text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <>
                 <Label className="text-xs text-foreground">
                   {groupAction === "create" ? "Group Name" : "Invite Code"}
                 </Label>
@@ -388,6 +408,8 @@ export function SidebarProfile({
                     Cancel
                   </Button>
                 </div>
+                </>
+                )}
               </form>
             </div>
           ) : null}

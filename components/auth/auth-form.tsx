@@ -85,7 +85,9 @@ export function AuthForm() {
   }, [password, isLogin]);
 
   // Signup-only fields
-  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [role, setRole] = useState<"athlete" | "coach">("athlete");
 
   const handleAuth = useCallback(
@@ -114,8 +116,10 @@ export function AuthForm() {
           );
           router.push("/dashboard");
         } else {
-          if (displayName.trim().length < 2) {
-            toast.error("Display name must be at least 2 characters");
+          const fn = firstName.trim();
+          const ln = lastName.trim();
+          if (fn.length < 2 || ln.length < 2) {
+            toast.error("First and last name must be at least 2 characters each");
             setLoading(false);
             return;
           }
@@ -125,7 +129,10 @@ export function AuthForm() {
             body: JSON.stringify({
               email,
               password,
-              displayName: displayName.trim(),
+              firstName: fn,
+              lastName: ln,
+              displayName: `${fn} ${ln}`,
+              dateOfBirth: role === "athlete" && dateOfBirth ? dateOfBirth : undefined,
               role,
             }),
           });
@@ -155,7 +162,7 @@ export function AuthForm() {
         setLoading(false);
       }
     },
-    [email, password, isLogin, displayName, role, router],
+    [email, password, isLogin, firstName, lastName, dateOfBirth, role, router],
   );
 
   const handleForgotPassword = useCallback(
@@ -410,79 +417,103 @@ export function AuthForm() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAuth} className="flex flex-col gap-4">
-                  {/* Signup-only: Display Name */}
-                  {!isLogin && (
+                  {/* Signup-only: Name (coaches only — athletes use invite flow) */}
+                  {!isLogin && role === "coach" && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       className="flex flex-col gap-2"
                     >
-                      <Label htmlFor="displayName" className="text-foreground">
-                        Display Name
-                      </Label>
-                      <Input
-                        id="displayName"
-                        type="text"
-                        placeholder="Your name or alias"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        required={!isLogin}
-                        minLength={2}
-                        className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="firstName" className="text-foreground">
+                            First name
+                          </Label>
+                          <Input
+                            id="firstName"
+                            type="text"
+                            placeholder="First name"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            required={!isLogin && role === "coach"}
+                            minLength={2}
+                            className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName" className="text-foreground">
+                            Last name
+                          </Label>
+                          <Input
+                            id="lastName"
+                            type="text"
+                            placeholder="Last name"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            required={!isLogin && role === "coach"}
+                            minLength={2}
+                            className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                          />
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="email" className="text-foreground">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder={
-                        isLogin ? "you@example.com" : "Gmail, Outlook, or Yahoo"
-                      }
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-foreground">
-                        Password
-                      </Label>
-                      {isLogin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowForgot(true);
-                            setForgotEmail(email);
-                            setForgotSent(false);
-                          }}
-                          className="text-xs text-muted-foreground transition-colors hover:text-primary"
-                        >
-                          Forgot password?
-                        </button>
-                      )}
-                    </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder={
-                        isLogin ? "Enter your password" : "Min. 6 characters"
-                      }
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      ref={passwordInputRef}
-                      className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-                    />
-                  </div>
+                  {/* Email & password: show for login, or for coach signup (hidden for athlete signup) */}
+                  {(isLogin || role === "coach") && (
+                    <>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="email" className="text-foreground">
+                          Email
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder={
+                            isLogin ? "you@example.com" : "Gmail, Outlook, or Yahoo"
+                          }
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password" className="text-foreground">
+                            Password
+                          </Label>
+                          {isLogin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowForgot(true);
+                                setForgotEmail(email);
+                                setForgotSent(false);
+                              }}
+                              className="text-xs text-muted-foreground transition-colors hover:text-primary"
+                            >
+                              Forgot password?
+                            </button>
+                          )}
+                        </div>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder={
+                            isLogin ? "Enter your password" : "Min. 6 characters"
+                          }
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required={isLogin || role === "coach"}
+                          minLength={6}
+                          ref={passwordInputRef}
+                          className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Signup-only: Role Selector */}
                   {!isLogin && (
@@ -519,10 +550,18 @@ export function AuthForm() {
                           Coach
                         </button>
                       </div>
+                      {role === "athlete" && (
+                        <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                          Athletes need an invite from their coach to join. Ask your coach for an invite link.
+                        </p>
+                      )}
                     </motion.div>
                   )}
 
-                  <Button
+                  {/* Hide signup fields when athlete (invite-only) */}
+                  {!(role === "athlete" && !isLogin) && (
+                    <>
+                    <Button
                     type="submit"
                     disabled={loading}
                     className="mt-2 w-full bg-primary text-primary-foreground hover:bg-primary/90"
@@ -579,6 +618,8 @@ export function AuthForm() {
                     </svg>
                     {isLogin ? "Sign in with Google" : "Sign up with Google"}
                   </Button>
+                  </>
+                  )}
                 </form>
                 <div className="mt-6 text-center">
                   <button

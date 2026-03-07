@@ -15,7 +15,7 @@ import { GroupTrainingScheduleSection } from "@/components/dashboard/group/group
 import { GroupAthletesSection } from "@/components/dashboard/group/group-athletes-section";
 import { toast } from "sonner";
 import { useTrainingSlots } from "@/hooks/use-training-slots";
-import type { Member, Role } from "@/types/dashboard";
+import type { Member, PendingAthlete, Role } from "@/types/dashboard";
 
 export default function GroupManagementPage() {
   const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
@@ -56,14 +56,21 @@ export default function GroupManagementPage() {
   const { data: membersData, mutate: mutateMembers, isLoading: membersLoading } = useSWR<{
     members: Member[];
     roles: Role[];
+    pendingAthletes?: PendingAthlete[];
   }>(
     membersUrl && user ? [membersUrl, user.id, user.groupId] : null,
     urlFetcher,
   );
 
-  const allAthletes = (membersData?.members ?? []).filter(
+  const realAthletes = (membersData?.members ?? []).filter(
     (m) => m.role !== "coach",
   );
+  const pending = (membersData?.pendingAthletes ?? []).map((p) => ({
+    ...p,
+    role: "athlete" as const,
+    roleIds: [] as string[],
+  }));
+  const allAthletes: Member[] = [...realAthletes, ...pending];
   const athletes = athleteSearch.trim()
     ? allAthletes.filter(
         (a) =>
@@ -353,10 +360,12 @@ export default function GroupManagementPage() {
                 saving={savingTrainingSchedule}
               />
               <GroupAthletesSection
+                groupId={user.groupId}
                 athletes={athletes}
                 allAthletes={allAthletes}
                 athleteSearch={athleteSearch}
                 setAthleteSearch={setAthleteSearch}
+                onMutateMembers={mutateMembers}
                 roles={roles}
                 roleDropdownAthleteId={roleDropdownAthleteId}
                 setRoleDropdownAthleteId={setRoleDropdownAthleteId}

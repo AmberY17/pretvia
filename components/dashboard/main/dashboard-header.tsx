@@ -26,6 +26,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
   };
 
   const isCoachWithGroup = user.role === "coach" && user.groupId;
+  const isGuardian = user.role === "guardian";
 
   return (
     <header className="relative sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -50,8 +51,34 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Guardian: Theme in header; Account + Sign out hidden on desktop (in sidebar) */}
+          {isGuardian && (
+            <>
+              <ThemeSwitcher />
+              <Button
+                variant="ghost-secondary"
+                size="sm"
+                onClick={() => router.push("/dashboard/account")}
+                className="gap-2 lg:hidden"
+                aria-label="Account settings"
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Account</span>
+              </Button>
+              <Button
+                variant="ghost-secondary"
+                size="sm"
+                onClick={handleSignOut}
+                className="gap-2 lg:hidden"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </Button>
+            </>
+          )}
           {/* Coach nav */}
-          {isCoachWithGroup && (
+          {!isGuardian && isCoachWithGroup && (
             <>
               {/* Theme first on mobile for coaches; menu second */}
               <div className="sm:hidden">
@@ -148,8 +175,8 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
             </>
           )}
 
-          {/* Athlete: New Log button */}
-          {user.role !== "coach" && onNewLog && (
+          {/* Athlete: New Log button (not guardian) */}
+          {!isGuardian && user.role !== "coach" && onNewLog && (
             <Button
               variant="ghost-secondary"
               size="sm"
@@ -165,7 +192,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
               Account uses router.push instead of <Link> so that
               cy.get('a[href="/dashboard/account"]') only matches the sidebar
               link, not this mobile-only header button. */}
-          {!isCoachWithGroup && (
+          {!isGuardian && !isCoachWithGroup && (
             <>
               <Button
                 variant="ghost-secondary"
@@ -188,9 +215,9 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
             </>
           )}
 
-          {/* Theme shown here for athletes, and for coaches on sm+ */}
-          {!isCoachWithGroup && <ThemeSwitcher />}
-          {isCoachWithGroup && (
+          {/* Theme shown here for athletes (guardians have it above) */}
+          {!isGuardian && !isCoachWithGroup && <ThemeSwitcher />}
+          {!isGuardian && isCoachWithGroup && (
             <div className="hidden sm:block">
               <ThemeSwitcher />
             </div>

@@ -3,7 +3,7 @@ import { randomBytes } from "crypto"
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 
-export async function GET() {
+export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/auth/google/callback`
 
@@ -13,6 +13,9 @@ export async function GET() {
       { status: 500 }
     )
   }
+
+  const { searchParams } = new URL(req.url)
+  const inviteToken = searchParams.get("invite")
 
   const state = randomBytes(32).toString("hex")
   const params = new URLSearchParams({
@@ -35,5 +38,14 @@ export async function GET() {
     maxAge: 60 * 10,
     path: "/",
   })
+  if (inviteToken) {
+    response.cookies.set("oauth_invite", inviteToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 10,
+      path: "/",
+    })
+  }
   return response
 }

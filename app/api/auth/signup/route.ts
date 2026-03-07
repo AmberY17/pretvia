@@ -8,11 +8,21 @@ import { sendVerificationEmail } from "@/lib/resend"
 
 export async function POST(req: Request) {
   try {
-    const { email, password, displayName, role } = await req.json()
+    const { email, password, displayName, firstName, lastName, dateOfBirth, role } = await req.json()
 
-    if (!email || !password || !displayName) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Email, password, and display name are required" },
+        { error: "Email and password are required" },
+        { status: 400 }
+      )
+    }
+
+    const fn = (firstName ?? "").trim()
+    const ln = (lastName ?? "").trim()
+    const name = displayName ?? (fn && ln ? `${fn} ${ln}` : fn || ln)
+    if (!name || name.length < 2) {
+      return NextResponse.json(
+        { error: "First and last name (or display name) are required" },
         { status: 400 }
       )
     }
@@ -20,13 +30,6 @@ export async function POST(req: Request) {
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      )
-    }
-
-    if (displayName.trim().length < 2) {
-      return NextResponse.json(
-        { error: "Display name must be at least 2 characters" },
         { status: 400 }
       )
     }
@@ -52,7 +55,10 @@ export async function POST(req: Request) {
       const result = await db.collection("users").insertOne({
         email: normalizedEmail,
         password: hashedPassword,
-        displayName: displayName.trim(),
+        displayName: name,
+        firstName: fn || undefined,
+        lastName: ln || undefined,
+        dateOfBirth: dateOfBirth ?? null,
         role: userRole,
         groupId: null,
         profileComplete: true,
@@ -64,7 +70,7 @@ export async function POST(req: Request) {
       await createSession({
         userId: result.insertedId.toString(),
         email: normalizedEmail,
-        displayName: displayName.trim(),
+        displayName: name,
         role: userRole,
         groupId: undefined,
       })
@@ -74,7 +80,7 @@ export async function POST(req: Request) {
         user: {
           id: result.insertedId.toString(),
           email: normalizedEmail,
-          displayName: displayName.trim(),
+          displayName: name,
           role: userRole,
           groupId: null,
           profileComplete: true,
@@ -93,7 +99,10 @@ export async function POST(req: Request) {
     await db.collection("pending_signups").insertOne({
       email: normalizedEmail,
       password: hashedPassword,
-      displayName: displayName.trim(),
+      displayName: name,
+      firstName: fn || undefined,
+      lastName: ln || undefined,
+      dateOfBirth: dateOfBirth ?? null,
       role: userRole,
       token,
       expiresAt,

@@ -123,33 +123,33 @@ export function SidebarFilterSkeleton() {
 
 export function AttendancePageSkeleton() {
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="min-w-0 space-y-6">
+      <div className="min-w-0">
         <Skeleton className="mb-2 h-3 w-16" />
-        <div className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-secondary px-3">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-3.5 w-3.5 rounded" />
+        <div className="flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-secondary px-3">
+          <Skeleton className="h-4 min-w-0 flex-1 max-w-48" />
+          <Skeleton className="h-3.5 w-3.5 shrink-0 rounded" />
         </div>
       </div>
-      <div className="rounded-2xl border border-border bg-card">
-        <div className="border-b border-border px-4 py-3 space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-40" />
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="space-y-2 border-b border-border px-4 py-3">
+          <Skeleton className="h-4 w-32 max-w-full" />
+          <Skeleton className="h-3 w-40 min-w-0 max-w-full" />
         </div>
         <div className="divide-y divide-border">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="flex items-center justify-between gap-2 px-4 py-3"
+              className="flex min-w-0 items-center justify-between gap-2 px-4 py-3"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 <Skeleton className="h-4 w-4 shrink-0 rounded" />
-                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 min-w-0 flex-1 max-w-24" />
               </div>
-              <div className="flex gap-1">
-                <Skeleton className="h-8 w-20 rounded-full" />
-                <Skeleton className="h-8 w-20 rounded-full" />
-                <Skeleton className="h-8 w-20 rounded-full" />
+              <div className="flex shrink-0 gap-1">
+                <Skeleton className="h-8 w-8 rounded-full sm:w-20" />
+                <Skeleton className="h-8 w-8 rounded-full sm:w-20" />
+                <Skeleton className="h-8 w-8 rounded-full sm:w-20" />
               </div>
             </div>
           ))}
@@ -224,6 +224,56 @@ export function ManageGroupPageSkeleton() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+export function GuardianCalendarSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <Skeleton className="h-9 w-9 shrink-0 rounded" />
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-9 w-9 shrink-0 rounded" />
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div key={i} className="py-1">
+            <Skeleton className="mx-auto h-3 w-8" />
+          </div>
+        ))}
+        {Array.from({ length: 35 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className="min-h-[44px] rounded-lg"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function GuardianCalendarWeeklySkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <Skeleton className="h-9 w-9 shrink-0 rounded" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-9 w-9 shrink-0 rounded" />
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div key={i} className="py-1">
+            <Skeleton className="mx-auto h-3 w-8" />
+          </div>
+        ))}
+        {Array.from({ length: 7 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className="min-h-[48px] rounded-lg sm:min-h-[44px]"
+          />
+        ))}
+      </div>
     </div>
   );
 }

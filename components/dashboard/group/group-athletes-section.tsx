@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
+import useSWR from "swr";
+import { urlFetcher } from "@/lib/swr-utils";
+import { formatAgeAndBirthday } from "@/lib/date-utils";
 import {
   Users,
   Search,
@@ -8,18 +11,30 @@ import {
   Check,
   ArrowRightLeft,
   UserMinus,
+  UserPlus,
+  UsersRound,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { toast } from "sonner";
+import { InviteAthleteModal } from "./invite-athlete-modal";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import type { Member, Role } from "@/types/dashboard";
 
 interface GroupAthletesSectionProps {
+  groupId: string;
   athletes: Member[];
   allAthletes: Member[];
   athleteSearch: string;
   setAthleteSearch: (v: string) => void;
+  onMutateMembers?: () => void;
   roles: Role[];
   roleDropdownAthleteId: string | null;
   setRoleDropdownAthleteId: React.Dispatch<
@@ -46,10 +61,12 @@ interface GroupAthletesSectionProps {
 }
 
 export function GroupAthletesSection({
+  groupId,
   athletes,
   allAthletes,
   athleteSearch,
   setAthleteSearch,
+  onMutateMembers,
   roles,
   roleDropdownAthleteId,
   setRoleDropdownAthleteId,
@@ -72,6 +89,7 @@ export function GroupAthletesSection({
 }: GroupAthletesSectionProps) {
   const transferDropdownRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useClickOutside(transferDropdownRef, transferDropdownOpen, () =>
     setTransferDropdownOpen(false),
@@ -82,10 +100,27 @@ export function GroupAthletesSection({
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
-      <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-        <Users className="h-4 w-4" />
-        Athletes
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <Users className="h-4 w-4" />
+          Athletes
+        </h2>
+        <Button
+          size="sm"
+          variant="ghost-primary"
+          onClick={() => setInviteOpen(true)}
+          className="gap-1 text-xs"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          Invite
+        </Button>
+      </div>
+      <InviteAthleteModal
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        groupId={groupId}
+        onSent={onMutateMembers ?? (() => {})}
+      />
       {allAthletes.length > 0 && (
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -100,7 +135,7 @@ export function GroupAthletesSection({
       )}
       {allAthletes.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No athletes in this group yet. Share the group code to invite them.
+          No athletes in this group yet. Invite athletes by email to add them.
         </p>
       ) : athletes.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -114,19 +149,30 @@ export function GroupAthletesSection({
               : ""
           }`}
         >
-          {athletes.map((a) => (
+          {athletes.map((a) => {
+            const isPending = (a as Member & { status?: string }).status === "pending";
+            return (
             <div
               key={a.id}
               className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="font-medium text-foreground">
-                  {a.displayName || a.email}
+                  {a.displayName || [a.firstName, a.lastName].filter(Boolean).join(" ") || a.email}
+                  {isPending && (
+                    <span className="ml-2 inline-flex items-center rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      Pending
+                    </span>
+                  )}
                 </p>
-                <p className="text-xs text-muted-foreground">{a.email}</p>
+                <p className="text-xs text-muted-foreground">
+                  {!isPending && formatAgeAndBirthday(a.dateOfBirth)
+                    ? formatAgeAndBirthday(a.dateOfBirth)
+                    : a.email}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {roles.length > 0 && (
+                {!isPending && roles.length > 0 && (
                   <div
                     className="relative"
                     ref={
@@ -192,7 +238,7 @@ export function GroupAthletesSection({
                     )}
                   </div>
                 )}
-                {transferUserId === a.id ? (
+                {!isPending && transferUserId === a.id ? (
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <div
                       className="relative"
@@ -284,8 +330,9 @@ export function GroupAthletesSection({
                       Cancel
                     </Button>
                   </div>
-                ) : (
+                ) : !isPending ? (
                   <>
+                    <GuardiansPopover groupId={groupId} athleteId={a.id} athleteName={a.displayName || a.email} athleteEmail={a.email} />
                     <Button
                       size="sm"
                       variant="ghost-primary"
@@ -323,12 +370,113 @@ export function GroupAthletesSection({
                       }
                     />
                   </>
-                )}
+                ) : null}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </section>
+  );
+}
+
+function GuardiansPopover({
+  groupId,
+  athleteId,
+  athleteName,
+  athleteEmail,
+}: {
+  groupId: string;
+  athleteId: string;
+  athleteName: string;
+  athleteEmail: string;
+}) {
+  const [guardianEmail, setGuardianEmail] = useState("")
+  const [sending, setSending] = useState(false)
+  const { data, isLoading, mutate } = useSWR<{ guardians: { id: string; displayName: string; email: string }[] }>(
+    groupId && athleteId ? `/api/groups/${groupId}/members/${athleteId}/guardians` : null,
+    urlFetcher,
+  );
+  const guardians = data?.guardians ?? []
+
+  async function handleInviteGuardian(e: React.FormEvent) {
+    e.preventDefault()
+    const email = guardianEmail.trim().toLowerCase()
+    if (!email) return
+    if (email === athleteEmail.trim().toLowerCase()) {
+      toast.error("Guardian email must be different from athlete email")
+      return
+    }
+    setSending(true)
+    try {
+      const res = await fetch(`/api/groups/${groupId}/invites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          parentOnly: true,
+          parentEmail: email,
+          athleteEmail: athleteEmail.trim().toLowerCase(),
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error ?? "Failed to send invite")
+        return
+      }
+      toast.success(
+        json.message ?? `Guardian invite sent to ${email}`
+      )
+      setGuardianEmail("")
+      mutate()
+    } catch {
+      toast.error("Network error. Please try again.")
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost-primary" className="gap-1 text-xs" title="Guardians">
+          <UsersRound className="h-3 w-3" />
+          <span className="hidden sm:inline">Guardians</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 border-border bg-card p-3" align="start">
+        <p className="mb-2 text-xs font-medium text-muted-foreground">Guardians for {athleteName}</p>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        ) : guardians.length === 0 ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">No guardians linked yet</p>
+            <form onSubmit={handleInviteGuardian} className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="Guardian email"
+                value={guardianEmail}
+                onChange={(e) => setGuardianEmail(e.target.value)}
+                className="flex-1 text-sm"
+                disabled={sending}
+              />
+              <Button type="submit" size="sm" variant="ghost-primary" disabled={sending || !guardianEmail.trim()} className="shrink-0">
+                <Send className="h-3 w-3" />
+              </Button>
+            </form>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {guardians.map((g) => (
+              <li key={g.id} className="text-sm">
+                <span className="font-medium text-foreground">{g.displayName}</span>
+                <br />
+                <span className="text-xs text-muted-foreground">{g.email}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
