@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/popover";
 import { GuardianCalendar } from "./guardian-calendar";
 import { GuardianCalendarWeekly } from "./guardian-calendar-weekly";
-import { GuardianCalendarSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
+import {
+  GuardianCalendarSkeleton,
+  GuardianCalendarWeeklySkeleton,
+} from "@/components/dashboard/main/dashboard-skeletons";
 import type { GuardianPair } from "./guardian-sidebar";
 
 type CalendarData = {
@@ -168,7 +171,11 @@ export function GuardianDashboardContent({
 
         {isLoading ? (
           <div className="space-y-8">
-            <GuardianCalendarSkeleton />
+            {viewMode === "week" ? (
+              <GuardianCalendarWeeklySkeleton />
+            ) : (
+              <GuardianCalendarSkeleton />
+            )}
           </div>
         ) : (
           <div className="space-y-8">

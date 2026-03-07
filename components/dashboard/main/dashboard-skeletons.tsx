@@ -253,6 +253,31 @@ export function GuardianCalendarSkeleton() {
   );
 }
 
+export function GuardianCalendarWeeklySkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <Skeleton className="h-9 w-9 shrink-0 rounded" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-9 w-9 shrink-0 rounded" />
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div key={i} className="py-1">
+            <Skeleton className="mx-auto h-3 w-8" />
+          </div>
+        ))}
+        {Array.from({ length: 7 }).map((_, i) => (
+          <Skeleton
+            key={i}
+            className="min-h-[48px] rounded-lg sm:min-h-[44px]"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SidebarStatsCardSkeleton() {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
