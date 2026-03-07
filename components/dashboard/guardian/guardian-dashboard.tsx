@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from "date-fns";
+import { useState, useCallback, useEffect } from "react";
+import { format, startOfWeek, addWeeks, subWeeks } from "date-fns";
 import useSWR from "swr";
 import { urlFetcher } from "@/lib/swr-utils";
 import { GuardianSidebar, type GuardianPair } from "./guardian-sidebar";
@@ -72,6 +72,12 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
     }
   }, [month, weekStart]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setViewMode("week");
+    }
+  }, []);
+
   const linkedAthleteIds = (user as { linkedAthleteIds?: string[] }).linkedAthleteIds ?? [];
 
   if (linkedAthleteIds.length === 0) {
@@ -98,7 +104,9 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
         onLogout={onLogout}
       />
       <GuardianDashboardContent
+        availablePairs={availablePairs}
         selectedPairs={selectedPairs}
+        onSelectedPairsChange={setSelectedPairs}
         calendars={calendars}
         isLoading={isLoading || isValidating}
         viewMode={viewMode}

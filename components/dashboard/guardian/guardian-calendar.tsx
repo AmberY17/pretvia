@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS_FULL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 
 type AttendanceStatus = "present" | "absent" | "excused";
 
@@ -78,13 +79,15 @@ export function GuardianCalendar({ month, dates, attendanceByDate = {}, training
         </Button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {WEEKDAYS.map((d) => (
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+        {WEEKDAYS_FULL.map((d, i) => (
           <div
-            key={d}
-            className="py-1 text-center text-xs font-medium text-muted-foreground"
+            key={i}
+            className="py-1 text-center text-[10px] font-medium text-muted-foreground sm:text-xs"
+            title={d}
           >
-            {d}
+            <span className="sm:hidden">{WEEKDAYS_SHORT[i]}</span>
+            <span className="hidden sm:inline">{d}</span>
           </div>
         ))}
         {days.map((day) => {
@@ -108,7 +111,7 @@ export function GuardianCalendar({ month, dates, attendanceByDate = {}, training
             <div
               key={key}
               className={cn(
-                "relative flex min-h-[44px] flex-col items-center justify-center rounded-lg border p-1 transition-colors",
+                "relative flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 transition-colors sm:min-h-[44px]",
                 isActive ? "text-foreground" : "opacity-50 text-muted-foreground",
                 today && !attendance && "border-primary/30",
                 attendance && borderColor,

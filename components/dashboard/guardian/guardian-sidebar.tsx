@@ -49,9 +49,8 @@ export function GuardianSidebar({
     }
   };
 
-  return (
-    <aside className="flex w-96 flex-shrink-0 flex-col border-r border-border bg-background/80">
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+  const content = (
+    <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex flex-col items-center text-center">
             <Avatar className="h-14 w-14">
@@ -115,7 +114,12 @@ export function GuardianSidebar({
             </div>
           </CollapsibleFilterSection>
         )}
-      </div>
+    </div>
+  );
+
+  return (
+    <aside className="hidden w-96 flex-shrink-0 flex-col border-r border-border bg-background/80 lg:flex">
+      {content}
     </aside>
   );
 }
