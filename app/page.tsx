@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform, useSpring, AnimatePresence, MotionValue } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChartNoAxesCombined } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,21 +37,15 @@ const trainingLogs = [
 
 // ==================== SECTION COMPONENTS ====================
 
-// Hero Section with its own scroll tracking
+// Hero Section — no target ref needed; uses viewport-level scroll
 function HeroSection() {
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
-  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, 100]);
+  const { scrollY } = useScroll();
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
+  const heroScale = useTransform(scrollY, [0, 400], [1, 0.95]);
+  const heroY = useTransform(scrollY, [0, 400], [0, 100]);
 
   return (
     <motion.section
-      ref={heroRef}
       style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
       className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-16"
     >
@@ -153,7 +147,7 @@ function ProductSection() {
             scale: productScale,
             opacity: productOpacity,
           }}
-          className="perspective-1000 preserve-3d"
+          className="perspective-1000 preserve-3d relative"
         >
           <DeviceFrame
             imageSrc="/screenshots/dashboard-preview.jpg"
@@ -167,26 +161,10 @@ function ProductSection() {
   );
 }
 
-// Growth Tree Section
+// Growth Tree Section — uses whileInView for fruit pop, no target ref needed
 function GrowthTreeSection() {
-  const treeRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: treeRef,
-    offset: ["start end", "end center"],
-  });
-
-  // Fruit reveal thresholds
-  const fruit1Progress = useTransform(scrollYProgress, [0.1, 0.25], [0, 1]);
-  const fruit2Progress = useTransform(scrollYProgress, [0.25, 0.4], [0, 1]);
-  const fruit3Progress = useTransform(scrollYProgress, [0.4, 0.55], [0, 1]);
-  const fruit4Progress = useTransform(scrollYProgress, [0.55, 0.7], [0, 1]);
-  const fruitProgresses = [fruit1Progress, fruit2Progress, fruit3Progress, fruit4Progress];
-
   return (
-    <section
-      ref={treeRef}
-      className="relative min-h-screen flex items-center justify-center px-6 py-32 overflow-hidden"
-    >
+    <section className="relative min-h-screen flex items-center justify-center px-6 py-32 overflow-hidden">
       <div className="relative">
         {/* Tree trunk and branches - stylized SVG */}
         <div className="relative w-[300px] h-[350px] md:w-[400px] md:h-[450px]">
@@ -205,7 +183,7 @@ function GrowthTreeSection() {
               className="text-primary/70"
               initial={{ pathLength: 0 }}
               whileInView={{ pathLength: 1 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 1.5, ease: "easeOut" }}
             />
             {/* Left branches */}
@@ -217,7 +195,7 @@ function GrowthTreeSection() {
               className="text-primary/60"
               initial={{ pathLength: 0 }}
               whileInView={{ pathLength: 1 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
             />
             {/* Right branches */}
@@ -229,7 +207,7 @@ function GrowthTreeSection() {
               className="text-primary/60"
               initial={{ pathLength: 0 }}
               whileInView={{ pathLength: 1 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
             />
             {/* Top branches */}
@@ -241,18 +219,14 @@ function GrowthTreeSection() {
               className="text-primary/50"
               initial={{ pathLength: 0 }}
               whileInView={{ pathLength: 1 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
             />
           </svg>
 
-          {/* Fruits with spring pop animation */}
+          {/* Fruits with staggered spring pop animation via whileInView */}
           {treeFruits.map((fruit, i) => (
-            <FruitWithLabel
-              key={fruit.label}
-              fruit={fruit}
-              progress={fruitProgresses[i]}
-            />
+            <FruitWithLabel key={fruit.label} fruit={fruit} index={i} />
           ))}
         </div>
       </div>
@@ -260,23 +234,26 @@ function GrowthTreeSection() {
   );
 }
 
-// Fruit component with spring pop animation and label
+// Fruit component — spring pop driven by whileInView + stagger delay
 function FruitWithLabel({
   fruit,
-  progress,
+  index,
 }: {
   fruit: (typeof treeFruits)[0];
-  progress: MotionValue<number>;
+  index: number;
 }) {
-  const springProgress = useSpring(progress, { stiffness: 400, damping: 15 });
-  const scale = useTransform(springProgress, [0, 1], [0, 1]);
-  const opacity = useTransform(progress, [0, 0.5], [0, 1]);
-
   return (
     <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      whileInView={{ scale: 1, opacity: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{
+        type: "spring",
+        stiffness: 400,
+        damping: 15,
+        delay: 1.2 + index * 0.3,
+      }}
       style={{
-        scale,
-        opacity,
         position: "absolute",
         left: `calc(50% + ${fruit.position.x}px)`,
         top: `calc(40% + ${fruit.position.y}px)`,
