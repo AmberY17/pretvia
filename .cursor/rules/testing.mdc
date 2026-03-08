@@ -28,6 +28,21 @@ When adding or changing user-facing flows (pages, components, API contracts), ad
 - Use `cy.session()` for login caching; credentials from `cypress.env.json`
 - Run `pnpm seed:test` to create test users if needed
 
+## Locators (Best Practices)
+
+Prefer **user-oriented** or **semantic** locators over brittle selectors:
+
+| Prefer | Avoid |
+|--------|-------|
+| `cy.contains('button', 'Sign In')` | `cy.get('#submit-btn')` |
+| `cy.getByRole('button', { name: 'Sign In' })` (if using @testing-library/cypress) | `cy.get('input#email')` |
+| `cy.get('[data-testid="login-form"]')` for stable targets | `cy.get('.mt-4 > div')` |
+
+- **Text:** `cy.contains('text')` or `cy.contains('button', 'Submit')` — matches what users see
+- **Roles:** Use `data-testid` when no accessible name or role is available
+- **Forms:** Prefer label-associated inputs (`id` + `htmlFor`) or `data-testid`; avoid class-based selectors
+- Add `data-testid` only when necessary for tests; prefer semantic HTML and accessible names
+
 ## Running Tests
 
 After changes that affect user flows, run e2e tests for the modified area:

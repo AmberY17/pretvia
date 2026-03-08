@@ -4,6 +4,11 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 const FROM_DISPLAY = `Pretvia <${FROM_EMAIL}>`
 
+/** When SKIP_EMAIL=1 (e.g. during e2e tests), skip sending and return success. No emails are sent. */
+function shouldSkipEmail(): boolean {
+  return process.env.SKIP_EMAIL === "1"
+}
+
 /** For testing: redirect emails to test recipients to a single address */
 function resolveRecipient(to: string): string {
   const redirect = process.env.TEST_EMAIL_REDIRECT
@@ -20,6 +25,7 @@ export async function sendVerificationEmail(
   to: string,
   token: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")
@@ -81,6 +87,7 @@ export async function sendPasswordResetEmail(
   to: string,
   token: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")
@@ -145,6 +152,7 @@ export async function sendFeedbackEmail(
   message: string,
   metadata?: { email?: string; displayName?: string; page?: string }
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")
@@ -231,6 +239,7 @@ export async function sendAthleteInviteEmail(
   inviteUrl: string,
   groupName: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")
@@ -269,6 +278,7 @@ export async function sendUnder13ParentInviteEmail(
   inviteUrl: string,
   groupName: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")
@@ -307,6 +317,7 @@ export async function sendUnder13ChildVerificationEmail(
   verifyUrl: string,
   groupName: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")
@@ -346,6 +357,7 @@ export async function sendParentInviteEmail(
   groupName: string,
   athleteLabel: string
 ): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     console.error("RESEND_API_KEY is not set")

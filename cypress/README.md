@@ -56,7 +56,9 @@ See `cypress.env.example.json` for the full template.
 | `pnpm dev` | Start the dev server (required for all test commands) |
 | `pnpm cy:open` | Open Cypress interactive GUI (dev server must already be running) |
 | `pnpm cy:run` | Run all tests headlessly (dev server must already be running) |
-| `pnpm e2e:ci` | Start dev server + wait + run tests (single command for CI) |
+| `pnpm e2e:ci` | Start dev server + wait + run tests (single command for CI; skips sending real emails) |
+
+When running tests manually (`pnpm dev` then `pnpm cy:run`), set `SKIP_EMAIL=1` before starting the dev server so no real emails are sent (e.g. forgot-password, verification). Example: `SKIP_EMAIL=1 pnpm dev`. The `e2e:ci` script sets this automatically.
 
 ## Test Structure
 

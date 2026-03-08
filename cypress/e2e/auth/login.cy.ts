@@ -38,6 +38,7 @@ describe("Login", () => {
   it("can switch to sign up", () => {
     cy.contains("Don't have an account? Sign up").click();
     cy.contains("Create your account").should("be.visible");
-    cy.get("input#displayName").should("be.visible");
+    cy.contains("button", "Coach").should("be.visible");
+    cy.contains("button", "Athlete").should("be.visible");
   });
 });

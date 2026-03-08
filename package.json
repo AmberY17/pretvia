@@ -10,7 +10,7 @@
     "cy:open": "cypress open",
     "cy:run": "cypress run",
     "e2e": "cypress open",
-    "e2e:ci": "start-server-and-test dev http://localhost:3000 cy:run",
+    "e2e:ci": "SKIP_EMAIL=1 start-server-and-test dev http://localhost:3000 cy:run",
     "seed:test": "tsx --env-file=.env.local scripts/seed-test-users.ts"
   },
   "dependencies": {
