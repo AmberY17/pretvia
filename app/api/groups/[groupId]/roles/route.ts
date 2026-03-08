@@ -177,8 +177,8 @@ export async function DELETE(
     // Remove roleId from all groupMemberships
     await db.collection("groupMemberships").updateMany(
       { groupId },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { $pull: { roleIds: roleId } } as any
+      // @ts-expect-error -- MongoDB $pull typing doesn't infer array element type
+      { $pull: { roleIds: roleId } }
     )
 
     return NextResponse.json({ success: true })

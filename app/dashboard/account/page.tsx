@@ -41,7 +41,7 @@ export default function AccountPage() {
     removeSlot: removeTrainingSlot,
     updateSlot: updateTrainingSlot,
   } = useTrainingSlots();
-  const [savingSlots, setSavingSlots] = useState(false);
+  const [, setSavingSlots] = useState(false);
   const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] =
     useState<number | null>(null);
   const [syncingSchedule, setSyncingSchedule] = useState(false);
@@ -151,7 +151,7 @@ export default function AccountPage() {
 
   async function saveTrainingSlotsToServer(
     slots: { dayOfWeek: number; time: string; sourceGroupId?: string }[],
-    options?: { silent?: boolean },
+    _options?: { silent?: boolean },
   ) {
     setSavingSlots(true);
     try {

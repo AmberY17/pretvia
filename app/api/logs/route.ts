@@ -5,6 +5,13 @@ import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { removeRedundantSkipsForLog } from "@/lib/streak"
 import type { TrainingSlot } from "@/lib/streak"
+import {
+  buildVisibilityFilter,
+  applyDateFilter,
+  applyCursorFilter,
+  buildReviewStatusMap,
+  fetchUserDisplayNames,
+} from "@/lib/log-filters"
 
 export async function GET(req: Request) {
   try {
@@ -15,12 +22,12 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const tags = searchParams.getAll("tag")
-    const filterUserId = searchParams.get("userId") // Filter by specific athlete
-    const filterRoleId = searchParams.get("roleId") // Filter by group role
+    const filterUserId = searchParams.get("userId")
+    const filterRoleId = searchParams.get("roleId")
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
-    const datesParam = searchParams.get("dates") // comma-separated yyyy-MM-dd
-    const filterCheckinId = searchParams.get("checkinId") // Filter by check-in session
+    const datesParam = searchParams.get("dates")
+    const filterCheckinId = searchParams.get("checkinId")
     const filterReviewStatus = searchParams.get("reviewStatus") as
       | "pending"
       | "reviewed"
@@ -34,124 +41,29 @@ export async function GET(req: Request) {
 
     const db = await getDb()
 
-    // Fetch current user to get groupId
     const currentUser = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
     const userGroupId = currentUser?.groupId || null
 
-    // Build filter: own logs + group logs (non-private) from same group
-    let filter: Record<string, unknown>
-
-    if (userGroupId) {
-      // Get all members of the same group (support both old groupId and new groupIds)
-      const groupMembers = await db
-        .collection("users")
-        .find({ $or: [{ groupIds: userGroupId }, { groupId: userGroupId }] })
-        .project({ _id: 1 })
-        .toArray()
-      let memberIds = groupMembers.map((m) => m._id.toString())
-
-      // Filter by role: restrict to athletes with that roleId
-      if (filterRoleId && currentUser?.role === "coach") {
-        const withRole = await db
-          .collection("groupMemberships")
-          .find({ groupId: userGroupId, roleIds: filterRoleId })
-          .project({ userId: 1 })
-          .toArray()
-        const roleMemberIds = (withRole as { userId: string }[]).map((m) => m.userId)
-        memberIds = memberIds.filter((id) => roleMemberIds.includes(id))
-      }
-
-      if (filterUserId && currentUser?.role === "coach" && memberIds.includes(filterUserId)) {
-        // Coach filtering by specific athlete: show logs shared with coach
-        // Support both new visibility field and legacy isGroup field
-        filter = {
-          userId: filterUserId,
-          $or: [
-            { visibility: "coach" },
-            { visibility: { $exists: false }, isGroup: true },
-          ],
-        }
-      } else if (currentUser?.role === "coach") {
-        // Coach sees: own logs + group members' coach-shared logs
-        filter = {
-          $or: [
-            { userId: session.userId },
-            {
-              userId: { $in: memberIds },
-              $or: [
-                { visibility: "coach" },
-                { visibility: { $exists: false }, isGroup: true },
-              ],
-            },
-          ],
-        }
-      } else {
-        // Athlete sees only their own logs (all visibilities)
-        filter = { userId: session.userId }
-      }
-    } else {
-      filter = { userId: session.userId }
-    }
+    // Build filter pipeline
+    let filter = await buildVisibilityFilter(db, {
+      userId: session.userId,
+      userRole: currentUser?.role,
+      userGroupId,
+      filterUserId,
+      filterRoleId,
+    })
 
     if (tags.length > 0) {
       filter.tags = { $all: tags }
     }
-
-    // Check-in session filtering
     if (filterCheckinId) {
       filter.checkinId = filterCheckinId
     }
 
-    // Date filtering
-    if (datesParam) {
-      const dateStrs = datesParam.split(",").map((s) => s.trim()).filter(Boolean)
-      if (dateStrs.length > 0) {
-        const dayConditions = dateStrs
-          .map((d) => {
-            const [y, m, day] = d.split("-").map(Number)
-            if (!y || !m || !day) return null
-            const start = new Date(y, m - 1, day, 0, 0, 0, 0)
-            const end = new Date(y, m - 1, day, 23, 59, 59, 999)
-            return { timestamp: { $gte: start, $lte: end } }
-          })
-          .filter(Boolean) as Record<string, unknown>[]
-        if (dayConditions.length > 0) {
-          filter = { $and: [filter, { $or: dayConditions }] }
-        }
-      }
-    } else if (dateFrom || dateTo) {
-      const timestampFilter: Record<string, Date> = {}
-      if (dateFrom) timestampFilter.$gte = new Date(dateFrom)
-      if (dateTo) timestampFilter.$lte = new Date(dateTo)
-      filter.timestamp = timestampFilter
-    }
-
-    // Cursor-based pagination: fetch documents before cursor (timestamp|id)
-    if (cursor) {
-      try {
-        const sep = cursor.indexOf("|")
-        const tsStr = sep >= 0 ? cursor.slice(0, sep) : ""
-        const idStr = sep >= 0 ? cursor.slice(sep + 1) : ""
-        const cursorTs = new Date(tsStr)
-        const cursorId = safeObjectId(idStr)
-        if (!Number.isNaN(cursorTs.getTime()) && cursorId) {
-          const cursorCondition = {
-            $or: [
-              { timestamp: { $lt: cursorTs } },
-              {
-                timestamp: cursorTs,
-                _id: { $lt: cursorId },
-              },
-            ],
-          }
-          filter = { $and: [filter, cursorCondition] }
-        }
-      } catch {
-        // Invalid cursor, ignore
-      }
-    }
+    filter = applyDateFilter(filter, dateFrom, dateTo, datesParam)
+    filter = applyCursorFilter(filter, cursor)
 
     let logs = await db
       .collection("logs")
@@ -168,32 +80,20 @@ export async function GET(req: Request) {
     }
 
     // Coach-only: fetch review status and optionally filter by it
-    let reviewMap = new Map<string, string>()
+    const reviewMap = new Map<string, string>()
     if (currentUser?.role === "coach") {
       const logIds = logs.map((l) => l._id.toString())
-      const reviews = await db
-        .collection("log_reviews")
-        .find({
-          logId: { $in: logIds },
-          coachId: session.userId,
-        })
-        .toArray()
-      for (const r of reviews) {
-        reviewMap.set(r.logId, r.status)
-      }
+      const map = await buildReviewStatusMap(db, logIds, session.userId)
+      for (const [k, v] of map) reviewMap.set(k, v)
 
-      // Filter by review status when requested
       if (
         filterReviewStatus &&
         ["pending", "reviewed", "revisit"].includes(filterReviewStatus)
       ) {
         logs = logs.filter((log) => {
-          const logId = log._id.toString()
-          const status = reviewMap.get(logId) ?? "pending"
+          const status = reviewMap.get(log._id.toString()) ?? "pending"
           return status === filterReviewStatus
         })
-        // Only set nextCursor when we return a full page; otherwise client would
-        // infinite-loop on empty pages when most logs don't match the filter
         if (logs.length < limit) {
           nextCursor = null
         } else {
@@ -203,16 +103,8 @@ export async function GET(req: Request) {
       }
     }
 
-    // Fetch display names for all user IDs in the results
     const userIds = [...new Set(logs.map((l) => l.userId))]
-    const users = await db
-      .collection("users")
-      .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
-      .project({ displayName: 1 })
-      .toArray()
-    const userMap = new Map(
-      users.map((u) => [u._id.toString(), u.displayName || "Unknown"])
-    )
+    const userMap = await fetchUserDisplayNames(db, userIds)
 
     return NextResponse.json({
       logs: logs.map((log) => {
@@ -225,7 +117,6 @@ export async function GET(req: Request) {
           id: logId,
           emoji: log.emoji,
           timestamp: log.timestamp,
-          // Normalize: new visibility field, with backward compat for legacy isGroup
           visibility: log.visibility || (log.isGroup ? "coach" : "private"),
           notes: log.notes,
           tags: log.tags || [],
@@ -243,7 +134,7 @@ export async function GET(req: Request) {
     console.error("Get logs error:", error)
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -260,7 +151,7 @@ export async function POST(req: Request) {
     if (!emoji) {
       return NextResponse.json(
         { error: "An emoji is required" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -269,7 +160,6 @@ export async function POST(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    // Determine visibility: prefer new visibility field, fall back to isGroup for backward compat
     const resolvedVisibility = visibility || (isGroup ? "coach" : "private")
 
     const logEntry: Record<string, unknown> = {
@@ -282,7 +172,6 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     }
 
-    // Link to check-in session if provided (ignore invalid IDs)
     if (checkinId && typeof checkinId === "string") {
       const oid = safeObjectId(checkinId)
       if (oid) logEntry.checkinId = checkinId
@@ -296,12 +185,7 @@ export async function POST(req: Request) {
 
     const logTimestamp = logEntry.timestamp as Date
     const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
-    await removeRedundantSkipsForLog(
-      db,
-      session.userId,
-      logTimestamp,
-      trainingSlots
-    )
+    await removeRedundantSkipsForLog(db, session.userId, logTimestamp, trainingSlots)
 
     const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []
 
@@ -326,7 +210,7 @@ export async function POST(req: Request) {
     console.error("Create log error:", error)
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -350,7 +234,6 @@ export async function PUT(req: Request) {
 
     const db = await getDb()
 
-    // Only allow editing own logs
     const existing = await db.collection("logs").findOne({
       _id: logOid,
       userId: session.userId,
@@ -359,7 +242,7 @@ export async function PUT(req: Request) {
     if (!existing) {
       return NextResponse.json(
         { error: "Log not found or not authorized" },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
@@ -371,17 +254,14 @@ export async function PUT(req: Request) {
     if (notes !== undefined) update.notes = notes
     if (tags !== undefined) update.tags = Array.isArray(tags) ? tags : []
 
-    await db.collection("logs").updateOne(
-      { _id: logOid },
-      { $set: update }
-    )
+    await db.collection("logs").updateOne({ _id: logOid }, { $set: update })
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Update log error:", error)
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -399,7 +279,7 @@ export async function DELETE(req: Request) {
     if (!logId) {
       return NextResponse.json(
         { error: "Log ID is required" },
-        { status: 400 }
+        { status: 400 },
       )
     }
     const deleteLogOid = safeObjectId(logId)
@@ -416,15 +296,14 @@ export async function DELETE(req: Request) {
     if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: "Log not found or not authorized" },
-        { status: 404 }
+        { status: 404 },
       )
     }
 
-    const logIdStr = logId
     await Promise.all([
-      db.collection("comments").deleteMany({ logId: logIdStr }),
-      db.collection("comment_reads").deleteMany({ logId: logIdStr }),
-      db.collection("log_reviews").deleteMany({ logId: logIdStr }),
+      db.collection("comments").deleteMany({ logId }),
+      db.collection("comment_reads").deleteMany({ logId }),
+      db.collection("log_reviews").deleteMany({ logId }),
     ])
 
     return NextResponse.json({ success: true })
@@ -432,7 +311,7 @@ export async function DELETE(req: Request) {
     console.error("Delete log error:", error)
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

@@ -34,7 +34,7 @@ interface DateMultiplePickerProps {
 export function DateMultiplePicker({
   value,
   onChange,
-  onClose,
+  onClose: _onClose,
   placeholder = "Pick dates",
   className,
   id,

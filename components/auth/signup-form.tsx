@@ -26,7 +26,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [dateOfBirth] = useState("");
   const [role, setRole] = useState<Role>("athlete");
   const [loading, setLoading] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);

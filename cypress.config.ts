@@ -8,7 +8,7 @@ export default defineConfig({
     defaultCommandTimeout: 10000,
     video: false,
     retries: { runMode: 2, openMode: 0 },
-    setupNodeEvents(on, config) {
+    setupNodeEvents(_on, _config) {
       // implement node event listeners here
     },
     supportFile: "cypress/support/e2e.ts",

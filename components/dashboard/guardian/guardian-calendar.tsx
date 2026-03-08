@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,6 @@ export function GuardianCalendar({ month, dates, attendanceByDate = {}, training
           const key = format(day, "yyyy-MM-dd");
           const emoji = dates[key];
           const attendance = attendanceByDate[key];
-          const inMonth = isSameMonth(day, current);
           const today = isToday(day);
           const hasEmoji = !!emoji;
           const isActive = hasEmoji || !!attendance || !!trainingDayDates[key];

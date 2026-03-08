@@ -44,7 +44,7 @@ export async function POST(
       return NextResponse.json({ error: "Group not found" }, { status: 404 })
     }
 
-    const session = await getSession()
+    await getSession()
     const body = await req.json()
 
     if (type === "under13_parent") {

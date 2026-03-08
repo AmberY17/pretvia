@@ -14,7 +14,7 @@ interface AccountDeleteSectionProps {
 export function AccountDeleteSection({
   deleteConfirmOpen,
   setDeleteConfirmOpen,
-  deleting,
+  deleting: _deleting,
   onDeleteAccount,
 }: AccountDeleteSectionProps) {
   return (

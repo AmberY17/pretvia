@@ -48,16 +48,16 @@ export async function GET(req: Request) {
       session.userId,
       trainingSlots,
       localDate,
-      prefetchedLogs,
-      prefetchedSkips
+      prefetchedLogs as { timestamp: Date | string }[],
+      prefetchedSkips as { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
     )
     const todaySkipStatus = await computeTodaySkipStatus(
       db,
       session.userId,
       trainingSlots,
       localDate,
-      prefetchedLogs,
-      prefetchedSkips
+      prefetchedLogs as { timestamp: Date | string }[],
+      prefetchedSkips as { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
     )
 
     return NextResponse.json({
