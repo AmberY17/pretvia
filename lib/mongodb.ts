@@ -33,7 +33,16 @@ if (process.env.NODE_ENV === "development") {
 
 export default clientPromise;
 
+let _indexesBootstrapped = false;
+
 export async function getDb(): Promise<Db> {
   const client = await clientPromise;
-  return client.db("pretvia");
+  const db = client.db("pretvia");
+  // Ensure indexes once per process lifetime — imported lazily to avoid a
+  // circular dependency between mongodb.ts and ensure-indexes.ts.
+  if (!_indexesBootstrapped) {
+    _indexesBootstrapped = true;
+    import("@/lib/ensure-indexes").then(({ ensureIndexes }) => ensureIndexes()).catch(() => {});
+  }
+  return db;
 }

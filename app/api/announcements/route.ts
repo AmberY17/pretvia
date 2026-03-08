@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
 
 // GET: fetch all announcements for the user's group
 export async function GET() {
@@ -24,12 +25,15 @@ export async function GET() {
       .collection("announcements")
       .find({ groupId: user.groupId })
       .sort({ createdAt: -1 })
+      .limit(100)
       .toArray()
 
-    const coachIds = [...new Set(docs.map((d) => d.coachId as string))]
+    const coachIdStrs = [...new Set(docs.map((d) => d.coachId).filter(Boolean))] as string[]
+    const coachOids = coachIdStrs.map((id) => safeObjectId(id)).filter((id): id is ObjectId => id !== null)
     const coaches = await db
       .collection("users")
-      .find({ _id: { $in: coachIds.map((id) => new ObjectId(id)) } })
+      .find({ _id: { $in: coachOids } })
+      .project({ displayName: 1 })
       .toArray()
     const coachMap = new Map(
       coaches.map((c) => [c._id.toString(), c.displayName || "Coach"])
@@ -167,6 +171,7 @@ export async function DELETE(req: Request) {
     const announcement = await db.collection("announcements").findOne({
       _id: oid,
       groupId: user.groupId,
+      coachId: session.userId,
     })
     if (!announcement) {
       return NextResponse.json(
@@ -246,6 +251,7 @@ export async function PATCH(req: Request) {
     const announcement = await db.collection("announcements").findOne({
       _id: oid,
       groupId: user.groupId,
+      coachId: session.userId,
     })
     if (!announcement) {
       return NextResponse.json(

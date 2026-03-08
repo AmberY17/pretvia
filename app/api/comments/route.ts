@@ -30,9 +30,10 @@ export async function GET(req: Request) {
     const db = await getDb()
 
     // Verify the log exists
-    const log = await db.collection("logs").findOne({
-      _id: logOid,
-    })
+    const log = await db.collection("logs").findOne(
+      { _id: logOid },
+      { projection: { userId: 1, visibility: 1 } }
+    )
 
     if (!log) {
       return NextResponse.json({ error: "Log not found" }, { status: 404 })
@@ -78,14 +79,16 @@ export async function GET(req: Request) {
       .collection("comments")
       .find({ logId })
       .sort({ createdAt: 1 })
+      .limit(500)
       .toArray()
 
     // Fetch display names
-    const authorIds = [...new Set(comments.map((c) => c.authorId))]
+    const authorIdStrs = [...new Set(comments.map((c) => c.authorId).filter(Boolean))] as string[]
+    const authorOids = authorIdStrs.map((id) => safeObjectId(id)).filter((oid): oid is ObjectId => oid !== null)
     const authors = await db
       .collection("users")
-      .find({ _id: { $in: authorIds.map((id) => new ObjectId(id)) } })
-      .project({ password: 0 })
+      .find({ _id: { $in: authorOids } })
+      .project({ displayName: 1, role: 1, profileEmoji: 1 })
       .toArray()
     const authorMap = new Map(
       authors.map((a) => [

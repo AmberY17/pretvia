@@ -51,10 +51,9 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Guardian: Theme in header; Account + Sign out hidden on desktop (in sidebar) */}
+          {/* Guardian: Account + Sign out hidden on desktop (in sidebar); Theme rightmost */}
           {isGuardian && (
             <>
-              <ThemeSwitcher />
               <Button
                 variant="ghost-secondary"
                 size="sm"
@@ -75,6 +74,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Sign out</span>
               </Button>
+              <ThemeSwitcher />
             </>
           )}
           {/* Coach nav */}
@@ -215,13 +215,9 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
             </>
           )}
 
-          {/* Theme shown here for athletes (guardians have it above) */}
+          {/* Theme rightmost for all roles */}
           {!isGuardian && !isCoachWithGroup && <ThemeSwitcher />}
-          {!isGuardian && isCoachWithGroup && (
-            <div className="hidden sm:block">
-              <ThemeSwitcher />
-            </div>
-          )}
+          {!isGuardian && isCoachWithGroup && <ThemeSwitcher />}
         </div>
       </div>
     </header>

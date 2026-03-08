@@ -91,6 +91,11 @@ export function DashboardFeed({
 }: DashboardFeedProps) {
   const scrollRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    if (!isLoadingMore) loadingTriggeredRef.current = false;
+  }, [isLoadingMore]);
 
   useEffect(() => {
     if (!hasMoreLogs || !onLoadMore || isLoadingMore) return;
@@ -100,7 +105,9 @@ export function DashboardFeed({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) onLoadMore();
+        if (!entries[0]?.isIntersecting || loadingTriggeredRef.current) return;
+        loadingTriggeredRef.current = true;
+        onLoadMore();
       },
       { root: scrollEl, rootMargin: "200px", threshold: 0 },
     );

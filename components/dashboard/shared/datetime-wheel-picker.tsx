@@ -1,5 +1,6 @@
 "use client";
 
+import "@ncdai/react-wheel-picker/style.css";
 import { useState, useMemo } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { CalendarClock } from "lucide-react";

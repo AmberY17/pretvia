@@ -8,12 +8,22 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { urlFetcher, logsInfiniteFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPanel } from "@/hooks/use-dashboard-panel";
+import dynamic from "next/dynamic";
 import { DashboardHeader } from "@/components/dashboard/main/dashboard-header";
-import { DashboardSidebar } from "@/components/dashboard/main/dashboard-sidebar";
-import { DashboardFeed } from "@/components/dashboard/main/dashboard-feed";
-import { DashboardPanel } from "@/components/dashboard/main/dashboard-panel";
-import { GuardianDashboard } from "@/components/dashboard/guardian/guardian-dashboard";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+
+const DashboardSidebar = dynamic(() =>
+  import("@/components/dashboard/main/dashboard-sidebar").then((m) => m.DashboardSidebar)
+);
+const DashboardFeed = dynamic(() =>
+  import("@/components/dashboard/main/dashboard-feed").then((m) => m.DashboardFeed)
+);
+const DashboardPanel = dynamic(() =>
+  import("@/components/dashboard/main/dashboard-panel").then((m) => m.DashboardPanel)
+);
+const GuardianDashboard = dynamic(() =>
+  import("@/components/dashboard/guardian/guardian-dashboard").then((m) => m.GuardianDashboard)
+);
 import type { LogEntry } from "@/types/dashboard";
 import type { CheckinItem } from "@/components/dashboard/shared/checkin-card";
 

@@ -34,12 +34,15 @@ export async function applyGroupTrainingScheduleToAllMembers(
 ) {
   if (!template.length) return
 
-  const cursor = db
+  const members = await db
     .collection("users")
     .find({ $or: [{ groupIds: groupId }, { groupId }] })
+    .project({ _id: 1, trainingSlots: 1 })
+    .toArray()
 
-  // eslint-disable-next-line no-await-in-loop
-  for await (const user of cursor) {
+  if (!members.length) return
+
+  const bulkOps = members.map((user) => {
     const currentSlots = Array.isArray(user.trainingSlots)
       ? (user.trainingSlots as { dayOfWeek: number; time: string; sourceGroupId?: string }[])
       : []
@@ -68,11 +71,15 @@ export async function applyGroupTrainingScheduleToAllMembers(
       })
     }
 
-    await db.collection("users").updateOne(
-      { _id: user._id },
-      { $set: { trainingSlots: updatedSlots } }
-    )
-  }
+    return {
+      updateOne: {
+        filter: { _id: user._id },
+        update: { $set: { trainingSlots: updatedSlots } },
+      },
+    }
+  })
+
+  await db.collection("users").bulkWrite(bulkOps, { ordered: false })
 }
 
 export async function applyGroupTrainingScheduleToUser(

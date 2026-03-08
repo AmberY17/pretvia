@@ -37,6 +37,7 @@ export async function GET(req: Request) {
       .collection("checkins")
       .find(filter)
       .sort({ sessionDate: -1 })
+      .limit(200)
       .toArray()
 
     // Count athletes in the group (exclude coaches)

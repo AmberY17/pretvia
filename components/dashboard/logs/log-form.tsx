@@ -6,7 +6,11 @@ import { Loader2, Eye, Lock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { EmojiPicker } from "@/components/dashboard/shared/emoji-picker";
+import dynamic from "next/dynamic";
+const EmojiPicker = dynamic(
+  () => import("@/components/dashboard/shared/emoji-picker").then((m) => m.EmojiPicker),
+  { ssr: false }
+);
 import { TagInput } from "@/components/dashboard/shared/tag-input";
 import { DateTimeWheelPicker } from "@/components/dashboard/shared/datetime-wheel-picker";
 import { toast } from "sonner";

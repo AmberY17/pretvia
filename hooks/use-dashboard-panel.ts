@@ -11,9 +11,15 @@ export interface CheckinPrefill {
   checkinId: string;
 }
 
+type LogsPage = { logs: LogEntry[]; nextCursor: string | null };
+type MutateLogs = (
+  updater?: (pages: LogsPage[] | undefined) => LogsPage[] | undefined,
+  opts?: { revalidate?: boolean }
+) => void;
+
 export interface UseDashboardPanelParams {
   userId?: string;
-  mutateLogs: () => void;
+  mutateLogs: MutateLogs;
   mutateTags: () => void;
   mutateCheckins?: () => void;
   mutateAllCheckins?: () => void;
@@ -72,20 +78,35 @@ export function useDashboardPanel({
 
   const handleDeleteLog = useCallback(
     async (id: string) => {
+      // Optimistically remove from the local cache immediately so the UI
+      // doesn't re-fetch and flash a loading state.
+      mutateLogs(
+        (pages) =>
+          pages?.map((page) => ({
+            ...page,
+            logs: page.logs.filter((l) => l.id !== id),
+          })),
+        { revalidate: false }
+      );
+
+      if (selectedLog?.id === id) {
+        setPanelMode("new");
+        setSelectedLog(null);
+      }
+
       try {
         const res = await fetch(`/api/logs?id=${id}`, { method: "DELETE" });
         if (!res.ok) {
           toast.error("Failed to delete log");
+          // Roll back by revalidating
+          mutateLogs(undefined, { revalidate: true });
           return;
         }
-        mutateLogs();
+        // Revalidate tags in the background so the filter dropdown stays accurate
         mutateTags();
-        if (selectedLog?.id === id) {
-          setPanelMode("new");
-          setSelectedLog(null);
-        }
       } catch {
         toast.error("Network error");
+        mutateLogs(undefined, { revalidate: true });
       }
     },
     [mutateLogs, mutateTags, selectedLog],

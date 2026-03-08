@@ -192,6 +192,14 @@ export async function GET(req: Request) {
           const status = reviewMap.get(logId) ?? "pending"
           return status === filterReviewStatus
         })
+        // Only set nextCursor when we return a full page; otherwise client would
+        // infinite-loop on empty pages when most logs don't match the filter
+        if (logs.length < limit) {
+          nextCursor = null
+        } else {
+          const lastFiltered = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
+          nextCursor = `${lastFiltered.timestamp.toISOString()}|${lastFiltered._id.toString()}`
+        }
       }
     }
 
@@ -200,7 +208,7 @@ export async function GET(req: Request) {
     const users = await db
       .collection("users")
       .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
-      .project({ password: 0 })
+      .project({ displayName: 1 })
       .toArray()
     const userMap = new Map(
       users.map((u) => [u._id.toString(), u.displayName || "Unknown"])
@@ -274,9 +282,10 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     }
 
-    // Link to check-in session if provided
-    if (checkinId) {
-      logEntry.checkinId = checkinId
+    // Link to check-in session if provided (ignore invalid IDs)
+    if (checkinId && typeof checkinId === "string") {
+      const oid = safeObjectId(checkinId)
+      if (oid) logEntry.checkinId = checkinId
     }
 
     const result = await db.collection("logs").insertOne(logEntry)
@@ -294,20 +303,7 @@ export async function POST(req: Request) {
       trainingSlots
     )
 
-    // Save any new tags for the user
     const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []
-    if (logTags.length > 0) {
-      for (const tag of logTags) {
-        await db.collection("tags").updateOne(
-          { userId: session.userId, name: tag },
-          {
-            $set: { name: tag, userId: session.userId },
-            $setOnInsert: { createdAt: new Date() },
-          },
-          { upsert: true }
-        )
-      }
-    }
 
     return NextResponse.json({
       success: true,
@@ -380,20 +376,6 @@ export async function PUT(req: Request) {
       { $set: update }
     )
 
-    // Upsert any new tags
-    if (Array.isArray(tags) && tags.length > 0) {
-      for (const tag of tags) {
-        await db.collection("tags").updateOne(
-          { userId: session.userId, name: tag },
-          {
-            $set: { name: tag, userId: session.userId },
-            $setOnInsert: { createdAt: new Date() },
-          },
-          { upsert: true }
-        )
-      }
-    }
-
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Update log error:", error)
@@ -426,10 +408,24 @@ export async function DELETE(req: Request) {
     }
 
     const db = await getDb()
-    await db.collection("logs").deleteOne({
+
+    const result = await db.collection("logs").deleteOne({
       _id: deleteLogOid,
       userId: session.userId,
     })
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { error: "Log not found or not authorized" },
+        { status: 404 }
+      )
+    }
+
+    const logIdStr = logId
+    await Promise.all([
+      db.collection("comments").deleteMany({ logId: logIdStr }),
+      db.collection("comment_reads").deleteMany({ logId: logIdStr }),
+      db.collection("log_reviews").deleteMany({ logId: logIdStr }),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {
