@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+// useScroll + useTransform retained for HeroSection window-level scroll transforms
 import { ArrowRight, ChartNoAxesCombined } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -126,27 +127,16 @@ function HeroSection() {
   );
 }
 
-// Product Section with 3D mockup
+// Product Section with 3D mockup — uses whileInView to avoid target ref issues
 function ProductSection() {
-  const productRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: productRef,
-    offset: ["start end", "end start"],
-  });
-
-  const productRotateX = useTransform(scrollYProgress, [0, 0.4], [15, 0]);
-  const productScale = useTransform(scrollYProgress, [0, 0.4], [0.85, 1]);
-  const productOpacity = useTransform(scrollYProgress, [0, 0.25], [0, 1]);
-
   return (
-    <section ref={productRef} className="relative px-6 py-32">
+    <section className="relative px-6 py-32">
       <div className="mx-auto max-w-5xl">
         <motion.div
-          style={{
-            rotateX: productRotateX,
-            scale: productScale,
-            opacity: productOpacity,
-          }}
+          initial={{ rotateX: 15, scale: 0.85, opacity: 0 }}
+          whileInView={{ rotateX: 0, scale: 1, opacity: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="perspective-1000 preserve-3d relative"
         >
           <DeviceFrame
@@ -301,37 +291,37 @@ function ConfettiParticle({ index }: { index: number }) {
   );
 }
 
-// Staircase card component
+// Staircase card — pure whileInView with stagger, no MotionValue needed
 function StaircaseCard({
   log,
   index,
-  progress,
 }: {
   log: (typeof trainingLogs)[0];
   index: number;
-  progress: MotionValue<number>;
 }) {
-  const x = useTransform(
-    progress,
-    [0, 1],
-    [index % 2 === 0 ? -300 : 300, 0]
-  );
-  const opacity = useTransform(progress, [0, 0.5, 1], [0, 0.5, 1]);
-  const rotate = useTransform(
-    progress,
-    [0, 1],
-    [index % 2 === 0 ? -15 : 15, 0]
-  );
-
   return (
     <motion.div
+      initial={{
+        x: index % 2 === 0 ? -300 : 300,
+        opacity: 0,
+        rotate: index % 2 === 0 ? -12 : 12,
+      }}
+      whileInView={{
+        x: 0,
+        opacity: 1,
+        rotate: 0,
+      }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{
+        type: "spring",
+        stiffness: 200,
+        damping: 22,
+        delay: index * 0.18,
+      }}
       style={{
-        x,
-        opacity,
-        rotate,
         position: "absolute",
-        bottom: `${index * 50}px`,
-        left: `${index * 20}px`,
+        bottom: `${index * 44}px`,
+        left: `${index * 18}px`,
         zIndex: index,
       }}
       className="w-[280px] rounded-xl border border-border bg-card p-4 shadow-lg"
@@ -347,43 +337,32 @@ function StaircaseCard({
   );
 }
 
-// Staircase Section
+// Staircase Section — no target ref, badge triggered by IntersectionObserver
 function StaircaseSection() {
-  const staircaseRef = useRef<HTMLElement>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [badgeRevealed, setBadgeRevealed] = useState(false);
+  const badgeTriggerRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress } = useScroll({
-    target: staircaseRef,
-    offset: ["start end", "end center"],
-  });
-
-  // Staircase card reveals
-  const card0Progress = useTransform(scrollYProgress, [0, 0.15], [0, 1]);
-  const card1Progress = useTransform(scrollYProgress, [0.15, 0.30], [0, 1]);
-  const card2Progress = useTransform(scrollYProgress, [0.30, 0.45], [0, 1]);
-  const card3Progress = useTransform(scrollYProgress, [0.45, 0.60], [0, 1]);
-  const card4Progress = useTransform(scrollYProgress, [0.60, 0.75], [0, 1]);
-  const cardProgresses = [card0Progress, card1Progress, card2Progress, card3Progress, card4Progress];
-
-  // Trigger confetti when all cards are stacked
   useEffect(() => {
-    const unsubscribe = scrollYProgress.on("change", (v) => {
-      if (v > 0.85 && !badgeRevealed) {
-        setBadgeRevealed(true);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
-      }
-    });
-    return unsubscribe;
-  }, [scrollYProgress, badgeRevealed]);
+    const el = badgeTriggerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !badgeRevealed) {
+          setBadgeRevealed(true);
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 3000);
+        }
+      },
+      { threshold: 0.8 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [badgeRevealed]);
 
   return (
-    <section
-      ref={staircaseRef}
-      className="relative min-h-[150vh] px-6 py-32"
-    >
-      <div className="sticky top-32 mx-auto max-w-4xl">
+    <section className="relative px-6 py-32">
+      <div className="mx-auto max-w-4xl">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -404,20 +383,17 @@ function StaircaseSection() {
 
         {/* Staircase container */}
         <div className="relative h-[400px] flex items-end justify-center">
-          {/* Stacked log cards */}
           <div className="relative">
             {trainingLogs.map((log, i) => (
-              <StaircaseCard
-                key={i}
-                log={log}
-                index={i}
-                progress={cardProgresses[i]}
-              />
+              <StaircaseCard key={i} log={log} index={i} />
             ))}
           </div>
         </div>
 
-        {/* Confetti and Badge */}
+        {/* Invisible trigger for badge + confetti — appears after all cards */}
+        <div ref={badgeTriggerRef} className="h-1" />
+
+        {/* Confetti */}
         <AnimatePresence>
           {showConfetti && (
             <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
@@ -428,21 +404,17 @@ function StaircaseSection() {
           )}
         </AnimatePresence>
 
+        {/* Badge */}
         <AnimatePresence>
           {badgeRevealed && (
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-                delay: 0.3,
-              }}
+              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.3 }}
               className="mt-12 flex justify-center"
             >
               <div className="flex flex-col items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-8 py-6">
-                <span className="text-4xl">🏆</span>
+                <span className="text-4xl">&#127942;</span>
                 <span className="font-semibold text-primary text-lg">Moment Ready</span>
               </div>
             </motion.div>
