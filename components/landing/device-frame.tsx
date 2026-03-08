@@ -12,13 +12,51 @@ interface DeviceFrameProps {
   animate?: boolean;
 }
 
-export function DeviceFrame({
+// Static device frame (no scroll animations)
+function StaticDeviceFrame({
   children,
   imageSrc,
   imageAlt = "Product screenshot",
   className = "",
-  animate = true,
-}: DeviceFrameProps) {
+}: Omit<DeviceFrameProps, "animate">) {
+  const content = imageSrc ? (
+    <Image
+      src={imageSrc}
+      alt={imageAlt}
+      fill
+      className="object-cover object-top"
+      priority
+    />
+  ) : (
+    children
+  );
+
+  return (
+    <div className={`relative overflow-hidden rounded-xl border border-border bg-card shadow-2xl ${className}`}>
+      {/* Browser chrome */}
+      <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/50 px-3">
+        <div className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+        <div className="h-2.5 w-2.5 rounded-full bg-checkin/60" />
+        <div className="h-2.5 w-2.5 rounded-full bg-primary/60" />
+        <div className="ml-3 flex-1">
+          <div className="mx-auto h-4 w-48 max-w-full rounded-md bg-secondary" />
+        </div>
+      </div>
+      {/* Content */}
+      <div className="relative aspect-[16/10]">
+        {content}
+      </div>
+    </div>
+  );
+}
+
+// Animated device frame with scroll-linked transforms
+function AnimatedDeviceFrame({
+  children,
+  imageSrc,
+  imageAlt = "Product screenshot",
+  className = "",
+}: Omit<DeviceFrameProps, "animate">) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -41,26 +79,6 @@ export function DeviceFrame({
     children
   );
 
-  if (!animate) {
-    return (
-      <div className={`relative overflow-hidden rounded-xl border border-border bg-card shadow-2xl ${className}`}>
-        {/* Browser chrome */}
-        <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/50 px-3">
-          <div className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
-          <div className="h-2.5 w-2.5 rounded-full bg-checkin/60" />
-          <div className="h-2.5 w-2.5 rounded-full bg-primary/60" />
-          <div className="ml-3 flex-1">
-            <div className="mx-auto h-4 w-48 max-w-full rounded-md bg-secondary" />
-          </div>
-        </div>
-        {/* Content */}
-        <div className="relative aspect-[16/10]">
-          {content}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <motion.div
       ref={ref}
@@ -82,6 +100,16 @@ export function DeviceFrame({
       </div>
     </motion.div>
   );
+}
+
+export function DeviceFrame({
+  animate = true,
+  ...props
+}: DeviceFrameProps) {
+  if (!animate) {
+    return <StaticDeviceFrame {...props} />;
+  }
+  return <AnimatedDeviceFrame {...props} />;
 }
 
 interface PhoneFrameProps {
