@@ -5,7 +5,7 @@ describe("Account Page", () => {
 
   it("can navigate to Account", () => {
     cy.visit("/dashboard");
-    cy.get('a[href="/dashboard/account"]').first().click();
+    cy.findByRole("link", { name: /account/i }).click();
     cy.url().should("include", "/dashboard/account");
   });
 

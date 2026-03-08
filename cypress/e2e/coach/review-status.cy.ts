@@ -1,6 +1,16 @@
 describe("Coach Review Status", () => {
   before(() => {
     cy.loginAsAthlete();
+    cy.request("/api/logs").then((res) => {
+      const logs = res.body.logs ?? [];
+      const e2e = logs.filter(
+        (l: { notes?: string }) => l.notes === "E2E coach review test"
+      );
+      e2e.forEach((l: { id: string }) => {
+        cy.request("DELETE", `/api/logs?id=${l.id}`);
+      });
+    });
+    cy.loginAsAthlete();
     cy.request({
       method: "POST",
       url: "/api/logs",
@@ -27,8 +37,15 @@ describe("Coach Review Status", () => {
   });
 
   it("can change status via dropdown", () => {
-    cy.contains("Pending").first().click();
+    cy.contains("E2E coach review test").parent().parent().within(() => {
+      cy.contains("Pending").click();
+    });
     cy.contains("Reviewed").click();
-    cy.contains("Reviewed").should("be.visible");
+    cy.contains("E2E coach review test")
+      .parent()
+      .parent()
+      .within(() => {
+        cy.contains("Reviewed").should("be.visible");
+      });
   });
 });

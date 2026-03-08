@@ -6,7 +6,9 @@ describe("Coach Filters", () => {
 
   it("filters by review status", () => {
     cy.contains("Pending").click();
-    cy.get('button[aria-label="Reset all filters"]').should("be.visible");
+    cy.findByRole("button", { name: "Reset all filters" }).should(
+      "be.visible"
+    );
   });
 
   it("filters by date", () => {
@@ -16,7 +18,7 @@ describe("Coach Filters", () => {
 
   it("Reset clears all filters", () => {
     cy.contains("Pending").click();
-    cy.get('button[aria-label="Reset all filters"]').click();
+    cy.findByRole("button", { name: "Reset all filters" }).click();
     cy.contains("All").should("have.class", "bg-primary/10");
   });
 });

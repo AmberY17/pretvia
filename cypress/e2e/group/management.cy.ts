@@ -5,7 +5,7 @@ describe("Group Management (Coach)", () => {
 
   it("can navigate to Manage Group", () => {
     cy.visit("/dashboard");
-    cy.contains("Manage Group").click();
+    cy.findByRole("link", { name: "Manage Group" }).click();
     cy.url().should("include", "/dashboard/group");
   });
 

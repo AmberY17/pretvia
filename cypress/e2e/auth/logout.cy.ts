@@ -3,7 +3,7 @@ describe("Logout", () => {
     cy.loginAsAthlete();
     cy.visit("/dashboard");
     cy.contains("Training Feed").should("be.visible");
-    cy.contains("button", "Sign Out").click();
+    cy.findByRole("button", { name: "Sign Out" }).click();
     cy.url().should("eq", Cypress.config().baseUrl + "/");
   });
 
@@ -11,7 +11,7 @@ describe("Logout", () => {
     cy.loginAsAthlete();
     cy.visit("/dashboard");
     cy.contains("Training Feed").should("be.visible");
-    cy.contains("button", "Sign Out").click();
+    cy.findByRole("button", { name: "Sign Out" }).click();
     cy.visit("/dashboard");
     cy.url().should("include", "/auth");
   });

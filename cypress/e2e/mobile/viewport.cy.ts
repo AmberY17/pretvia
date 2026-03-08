@@ -13,13 +13,13 @@ describe("Mobile Viewport", () => {
   it("coach sees hamburger menu", () => {
     cy.loginAsCoach();
     cy.visit("/dashboard");
-    cy.get('button[aria-label="Open menu"]').should("be.visible");
+    cy.findByRole("button", { name: "Open menu" }).should("be.visible");
   });
 
   it("coach hamburger opens nav popover", () => {
     cy.loginAsCoach();
     cy.visit("/dashboard");
-    cy.get('button[aria-label="Open menu"]').click();
+    cy.findByRole("button", { name: "Open menu" }).click();
     cy.contains("Manage Group").should("be.visible");
     cy.contains("Attendance").should("be.visible");
     cy.contains("Sign out").should("be.visible");

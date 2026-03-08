@@ -15,10 +15,10 @@ describe("Athlete Feed", () => {
 
   it("shows feed content (empty state or log entries)", () => {
     cy.contains("Training Feed").should("be.visible");
-    cy.get("main").should("be.visible");
+    cy.findByRole("main").should("be.visible");
   });
 
   it("shows New Log button", () => {
-    cy.contains("button", "New Log").should("be.visible");
+    cy.findByRole("button", { name: "New Log" }).should("be.visible");
   });
 });

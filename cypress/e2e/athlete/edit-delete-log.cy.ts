@@ -21,14 +21,17 @@ describe("Athlete Edit and Delete Log", () => {
   });
 
   it("opens log panel when clicking a log card", () => {
-    cy.contains("E2E edit-delete test").should("be.visible");
+    cy.get("main").should("contain", "E2E edit-delete test");
     cy.contains("E2E edit-delete test").click();
-    cy.contains(/Edit Log|E2E edit-delete test/).should("be.visible");
+    cy.contains("Edit Log").should("be.visible");
   });
 
   it("shows edit and delete on hover for own log", () => {
     cy.contains("E2E edit-delete test").parent().trigger("mouseover");
-    cy.get('button[aria-label="Edit log"]').should("be.visible");
-    cy.get('button[aria-label="Delete log"]').should("be.visible");
+    // Scope to the log card (notes and edit/delete share a common ancestor)
+    cy.contains("E2E edit-delete test").parent().parent().within(() => {
+      cy.get('button[aria-label="Edit log"]').should("be.visible");
+      cy.get('button[aria-label="Delete log"]').should("be.visible");
+    });
   });
 });

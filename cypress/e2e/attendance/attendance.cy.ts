@@ -5,7 +5,7 @@ describe("Attendance (Coach)", () => {
 
   it("can navigate to Attendance", () => {
     cy.visit("/dashboard");
-    cy.contains("Attendance").click();
+    cy.findByRole("link", { name: "Attendance" }).click();
     cy.url().should("include", "/dashboard/attendance");
   });
 

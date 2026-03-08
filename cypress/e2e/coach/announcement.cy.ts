@@ -1,4 +1,19 @@
 describe("Coach Announcement", () => {
+  before(() => {
+    cy.loginAsCoach();
+    cy.request("/api/announcements").then((res) => {
+      const announcements = res.body.announcements ?? [];
+      const e2e = announcements.filter(
+        (a: { text?: string }) =>
+          a.text?.includes("E2E announcement - delete me") ||
+          a.text?.includes("E2E announcement updated")
+      );
+      e2e.forEach((a: { id: string }) => {
+        cy.request("DELETE", `/api/announcements?id=${a.id}`);
+      });
+    });
+  });
+
   beforeEach(() => {
     cy.loginAsCoach();
     cy.visit("/dashboard");
@@ -10,19 +25,31 @@ describe("Coach Announcement", () => {
 
   it("can post, edit in place, and delete announcement", () => {
     cy.contains("button", "New Announcement").click();
-    cy.get("textarea[placeholder*='announcement']").type(
+    cy.findByPlaceholderText(/announcement/).type(
       "E2E announcement - delete me"
     );
-    cy.contains("button", "Post").click();
-    cy.contains("E2E announcement - delete me").should("be.visible");
+    cy.findByRole("button", { name: "Post" }).click();
+    cy.get("main").should("contain", "E2E announcement - delete me");
 
-    cy.get('button[aria-label="Edit announcement"]').first().click({ force: true });
-    cy.get("textarea").first().clear().type("E2E announcement updated");
-    cy.contains("button", "Save").click();
-    cy.contains("E2E announcement updated").should("be.visible");
+    cy.contains("E2E announcement - delete me")
+      .parent()
+      .within(() => {
+        cy.findByRole("button", { name: "Edit announcement" }).click({
+          force: true,
+        });
+      });
+    cy.findByRole("textbox").first().clear().type("E2E announcement updated");
+    cy.findByRole("button", { name: "Save" }).click();
+    cy.get("main").should("contain", "E2E announcement updated");
 
-    cy.get('button[aria-label="Remove announcement"]').first().click({ force: true });
-    cy.contains("button", "Delete").click();
-    cy.contains("E2E announcement updated").should("not.exist");
+    cy.contains("E2E announcement updated")
+      .parent()
+      .within(() => {
+        cy.findByRole("button", { name: "Remove announcement" }).click({
+          force: true,
+        });
+      });
+    cy.findByRole("button", { name: "Delete" }).click();
+    cy.get("main").should("not.contain", "E2E announcement updated");
   });
 });

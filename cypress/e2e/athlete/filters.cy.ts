@@ -2,10 +2,11 @@ describe("Athlete Filters", () => {
   beforeEach(() => {
     cy.loginAsAthlete();
     cy.visit("/dashboard");
+    // Date filter pills and Reset are in lg:hidden (mobile only)
+    cy.viewport(375, 667);
   });
 
   it("shows tag filter pills", () => {
-    cy.viewport(375, 667);
     cy.contains("Filter by").should("be.visible");
   });
 
@@ -18,12 +19,12 @@ describe("Athlete Filters", () => {
 
   it("has Reset button when filters are active", () => {
     cy.contains("Today").click();
-    cy.get('button[aria-label="Reset all filters"]').should("be.visible");
+    cy.findByRole("button", { name: "Reset all filters" }).should("be.visible");
   });
 
   it("Reset clears filters", () => {
     cy.contains("Today").click();
-    cy.get('button[aria-label="Reset all filters"]').click();
+    cy.findByRole("button", { name: "Reset all filters" }).click();
     cy.contains("All").should("have.class", "bg-primary/10");
   });
 });
