@@ -78,21 +78,25 @@ export default function LandingPage() {
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
+    layoutEffect: false,
   });
 
   const { scrollYProgress: productProgress } = useScroll({
     target: productRef,
     offset: ["start end", "end start"],
+    layoutEffect: false,
   });
 
   const { scrollYProgress: treeProgress } = useScroll({
     target: treeRef,
     offset: ["start end", "end center"],
+    layoutEffect: false,
   });
 
   const { scrollYProgress: staircaseProgress } = useScroll({
     target: staircaseRef,
     offset: ["start end", "end center"],
+    layoutEffect: false,
   });
 
   const heroOpacity = useTransform(heroProgress, [0, 0.5], [1, 0]);
