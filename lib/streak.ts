@@ -17,10 +17,18 @@ const WINDOW_MS = DAY_MS // 24-hour window to log after slot
 /**
  * Derive day-of-week (0=Sunday) from a "YYYY-MM-DD" string without any
  * timezone ambiguity — purely a calendar calculation.
+ * Returns 0 (Sunday) for invalid/malformed input.
  */
 function dayOfWeekFromDateStr(dateStr: string): number {
-  const [y, m, d] = dateStr.split("-").map(Number)
-  return new Date(y, m - 1, d).getDay()
+  if (!dateStr || typeof dateStr !== "string") return 0
+  const match = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (!match) return 0
+  const y = Number(match[1])
+  const m = Number(match[2]) - 1
+  const d = Number(match[3])
+  const date = new Date(y, m, d)
+  if (Number.isNaN(date.getTime())) return 0
+  return date.getDay()
 }
 
 function getLastOccurrenceOfDay(refDate: Date, dayOfWeek: number): Date {
@@ -138,11 +146,13 @@ export async function computeStreak(
     .sort({ timestamp: 1 })
     .toArray()
 
-  const skips = prefetchedSkips ?? await db
-    .collection("skippedDays")
-    .find({ userId })
-    .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
-    .toArray()
+  const skips =
+    prefetchedSkips ??
+    (await db
+      .collection("skippedDays")
+      .find({ userId, date: { $gte: lookbackDate } })
+      .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
+      .toArray())
 
   const skipRecords = skips.map((s) => ({
     date: s.date instanceof Date ? s.date : new Date(s.date),
@@ -206,7 +216,8 @@ export async function computeTodaySkipStatus(
   userId: string,
   trainingSlots: TrainingSlot[],
   localDate?: string,
-  prefetchedLogs?: { timestamp: Date | string }[]
+  prefetchedLogs?: { timestamp: Date | string }[],
+  prefetchedSkips?: { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
 ): Promise<TodaySkipStatus> {
   const now = new Date()
 
@@ -220,11 +231,16 @@ export async function computeTodaySkipStatus(
     return { canSkipToday: false, skipDisabledReason: "no_training" }
   }
 
-  const skips = await db
-    .collection("skippedDays")
-    .find({ userId, dayOfWeek: todayDay })
-    .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
-    .toArray()
+  const skips = prefetchedSkips
+    ? prefetchedSkips.filter((s) => {
+        const d = s.date instanceof Date ? s.date : new Date(s.date)
+        return d.toISOString().slice(0, 10) === todayDateStr
+      })
+    : await db
+        .collection("skippedDays")
+        .find({ userId, dayOfWeek: todayDay })
+        .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
+        .toArray()
   const skipDates = new Set(
     skips.map((s) => {
       const d = s.date instanceof Date ? s.date : new Date(s.date)

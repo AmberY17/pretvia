@@ -192,6 +192,14 @@ export async function GET(req: Request) {
           const status = reviewMap.get(logId) ?? "pending"
           return status === filterReviewStatus
         })
+        // Only set nextCursor when we return a full page; otherwise client would
+        // infinite-loop on empty pages when most logs don't match the filter
+        if (logs.length < limit) {
+          nextCursor = null
+        } else {
+          const lastFiltered = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
+          nextCursor = `${lastFiltered.timestamp.toISOString()}|${lastFiltered._id.toString()}`
+        }
       }
     }
 
@@ -274,9 +282,10 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     }
 
-    // Link to check-in session if provided
-    if (checkinId) {
-      logEntry.checkinId = checkinId
+    // Link to check-in session if provided (ignore invalid IDs)
+    if (checkinId && typeof checkinId === "string") {
+      const oid = safeObjectId(checkinId)
+      if (oid) logEntry.checkinId = checkinId
     }
 
     const result = await db.collection("logs").insertOne(logEntry)
@@ -399,10 +408,24 @@ export async function DELETE(req: Request) {
     }
 
     const db = await getDb()
-    await db.collection("logs").deleteOne({
+
+    const result = await db.collection("logs").deleteOne({
       _id: deleteLogOid,
       userId: session.userId,
     })
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { error: "Log not found or not authorized" },
+        { status: 404 }
+      )
+    }
+
+    const logIdStr = logId
+    await Promise.all([
+      db.collection("comments").deleteMany({ logId: logIdStr }),
+      db.collection("comment_reads").deleteMany({ logId: logIdStr }),
+      db.collection("log_reviews").deleteMany({ logId: logIdStr }),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {

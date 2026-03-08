@@ -26,7 +26,12 @@ export interface User {
   trainingSlots: { dayOfWeek: number; time: string; sourceGroupId?: string }[]
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = async (url: string) => {
+  const r = await fetch(url)
+  const data = await r.json()
+  if (!r.ok) throw new Error(data?.error ?? "Request failed")
+  return data
+}
 
 export function useAuth() {
   const { data, error, isLoading, mutate } = useSWR<{ user: User | null }>(

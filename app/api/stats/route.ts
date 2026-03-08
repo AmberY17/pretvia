@@ -38,7 +38,7 @@ export async function GET(req: Request) {
         .toArray(),
       db
         .collection("skippedDays")
-        .find({ userId: session.userId })
+        .find({ userId: session.userId, date: { $gte: lookbackDate } })
         .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
         .toArray(),
     ])
@@ -56,7 +56,8 @@ export async function GET(req: Request) {
       session.userId,
       trainingSlots,
       localDate,
-      prefetchedLogs
+      prefetchedLogs,
+      prefetchedSkips
     )
 
     return NextResponse.json({
