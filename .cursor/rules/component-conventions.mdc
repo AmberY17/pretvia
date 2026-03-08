@@ -24,6 +24,10 @@ Import from `@/types/dashboard` — never define these locally:
 `Athlete`, `Role`, `SessionItem`, `TrainingSlot`, `TrainingSlotItem`,
 `ReviewStatus`, `ReviewStatusFilterValue`, `LogEntry`, `Member`, `AttendanceStatus`
 
+## Refactoring
+
+When building or updating a component, always consider refactoring: extract subcomponents, use shared components (`DeleteConfirmDialog`, `VisibilityBadge`, `TagPill`), and avoid large files.
+
 ## Reusable Components — Use Instead of Inlining
 
 | Pattern | Use this component |

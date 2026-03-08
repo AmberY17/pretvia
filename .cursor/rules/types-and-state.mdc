@@ -11,7 +11,8 @@ alwaysApply: false
 All shared domain types live in `types/dashboard.ts` — never duplicate them:
 
 `Athlete`, `Member`, `Role`, `SessionItem`, `TrainingSlot`, `TrainingSlotItem`,
-`ReviewStatus`, `ReviewStatusFilterValue`, `AttendanceStatus`, `LogEntry`
+`ReviewStatus`, `ReviewStatusFilterValue`, `AttendanceStatus`, `LogEntry`,
+`PendingAthlete`, `InviteType`, `Guardian`
 
 When adding a new shared type, add it to `types/dashboard.ts`.
 
@@ -29,6 +30,9 @@ When adding a new shared type, add it to `types/dashboard.ts`.
 | `useTrainingSlots()` | CRUD state for training slot arrays |
 | `useDashboardFilters()` | Filter state for the main dashboard feed |
 | `useClickOutside()` | Close dropdowns/popovers on outside click |
+| `useDashboardPanel()` | Dashboard panel open/close state |
+| `useLogsUrl()` | Sync filter state to URL query params |
+| `useMediaQuery()` | Responsive breakpoint detection |
 
 ## Auth Guards
 

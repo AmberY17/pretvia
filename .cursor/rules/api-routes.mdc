@@ -12,11 +12,11 @@ Every protected endpoint starts with:
 
 ```ts
 const session = await getSession();
-if (!session) return apiError("Not authenticated", 401);
+if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 ```
 
 - `getSession()` from `@/lib/auth`
-- `apiError()` / `apiSuccess()` from `@/lib/api-utils`
+- `NextResponse.json()` from `next/server` for all responses
 
 ## Authorization
 
@@ -24,7 +24,7 @@ For coach-gated group endpoints, use:
 
 ```ts
 const allowed = await canManageGroup(db, session.id, groupId);
-if (!allowed) return apiError("Not authorized", 403);
+if (!allowed) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 ```
 
 - `canManageGroup()` from `@/lib/api-auth`
@@ -39,7 +39,7 @@ if (!allowed) return apiError("Not authorized", 403);
 Always return `{ error: string }` with an appropriate HTTP status:
 
 ```ts
-return apiError("Group not found", 404);
+return NextResponse.json({ error: "Group not found" }, { status: 404 });
 ```
 
 ## Error Handling
@@ -51,6 +51,6 @@ try {
   // ...handler logic
 } catch (err) {
   console.error("POST /api/example:", err);
-  return apiError("Internal server error", 500);
+  return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 }
 ```

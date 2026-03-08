@@ -1,0 +1,37 @@
+---
+description: Cypress e2e — add/update tests and run for modified areas
+alwaysApply: false
+---
+
+# E2E Testing
+
+## Test Structure
+
+E2E tests live in `cypress/e2e/` by feature:
+
+- `auth/` — login, logout, signup, forgot-password, reset-password
+- `athlete/` — feed, create-log, filters, edit-delete-log
+- `coach/` — feed, review-status, announcement, filters
+- `group/` — group management
+- `attendance/` — attendance page
+- `account/` — account settings
+- `shared/` — protected routes (unauthenticated redirect)
+- `mobile/` — viewport-specific behaviour
+- `edge-cases/` — misc edge cases
+
+See `cypress/README.md` for setup and structure.
+
+## Adding or Updating Tests
+
+When adding or changing user-facing flows (pages, components, API contracts), add or update Cypress specs in the relevant folder.
+
+- Use `cy.session()` for login caching; credentials from `cypress.env.json`
+- Run `pnpm seed:test` to create test users if needed
+
+## Running Tests
+
+After changes that affect user flows, run e2e tests for the modified area:
+
+- Full suite: `pnpm cy:run`
+- Specific area: `pnpm cy:run --spec "cypress/e2e/<area>/**/*.cy.ts"`
+- Dev server must be running (`pnpm dev`) before running tests

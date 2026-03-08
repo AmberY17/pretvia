@@ -1,0 +1,9 @@
+---
+description: Meta-workflow — propose rule updates at end of conversation when appropriate
+alwaysApply: true
+---
+
+# Workflow
+
+- Always verify work to ensure there are no bugs.
+- At the end of each conversation, if changes were made to patterns, conventions, or architecture, propose a plan to update `.cursor/rules/` (new rules or edits to existing ones) when appropriate.

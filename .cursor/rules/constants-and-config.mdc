@@ -15,8 +15,10 @@ App-wide constants live in `lib/constants.ts`:
 
 ## Time Parsing
 
-Use `parseTime()` from `@/lib/time-utils` to convert `"HH:mm"` strings.
-Never write a local time parser.
+Use `parseTime()` from `@/lib/time-utils` to convert `"HH:mm"` strings for schedule/business logic.
+Never write a local time parser for that purpose.
+
+Note: The time-wheel-picker and datetime-wheel-picker components have display-only parsers that return `{ hour12, minute, ampm }` for the 12-hour UI — that’s fine; the rule applies to schedule logic.
 
 ```ts
 import { parseTime } from "@/lib/time-utils";
@@ -31,7 +33,6 @@ const { hours, minutes } = parseTime("09:30");
 ## API Authorization Helpers
 
 - `lib/api-auth.ts` — `canManageGroup(db, userId, groupId)` checks coach access
-- `lib/api-utils.ts` — `apiError(message, status)` and `apiSuccess(data)` for consistent responses
 
 ## SWR Fetchers
 
