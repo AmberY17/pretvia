@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ClipboardList,
   Users,
   MessageCircle,
   Calendar,
@@ -11,9 +10,11 @@ import {
   Megaphone,
   Heart,
   EyeOff,
-  Clock,
   Smile,
-  CheckCircle,
+  ClipboardCheck,
+  Settings,
+  Flame,
+  PartyPopper,
   Shield,
   type LucideIcon,
 } from "lucide-react";
@@ -34,6 +35,7 @@ interface RoleData {
   features: Feature[];
 }
 
+// Mirrors features page — titles only, no descriptions
 const roles: RoleData[] = [
   {
     id: "coach",
@@ -41,36 +43,12 @@ const roles: RoleData[] = [
     subtitle: "Lead your team with clarity",
     color: "primary",
     features: [
-      {
-        icon: Users,
-        title: "Multiple Groups",
-        description: "Manage different training groups with separate rosters, schedules, and settings.",
-      },
-      {
-        icon: MessageCircle,
-        title: "1-on-1 Feedback",
-        description: "Provide personalized feedback directly on each athlete's training logs.",
-      },
-      {
-        icon: CheckCircle,
-        title: "Attendance Tracking",
-        description: "Create session check-ins and track who showed up with a visual progress bar.",
-      },
-      {
-        icon: ClipboardList,
-        title: "Group Management",
-        description: "Assign roles, set training schedules, invite athletes, and manage guardians.",
-      },
-      {
-        icon: Filter,
-        title: "Smart Filtering",
-        description: "Filter logs by athlete, date range, tags, or emojis to find exactly what you need.",
-      },
-      {
-        icon: Megaphone,
-        title: "Announcements",
-        description: "Pin important updates that appear at the top of everyone's feed.",
-      },
+      { icon: Users, title: "Multiple Groups", description: "" },
+      { icon: MessageCircle, title: "1-on-1 Feedback", description: "" },
+      { icon: ClipboardCheck, title: "Session Check-Ins", description: "" },
+      { icon: Settings, title: "Group Management", description: "" },
+      { icon: Filter, title: "Smart Filtering", description: "" },
+      { icon: Megaphone, title: "Announcements", description: "" },
     ],
   },
   {
@@ -79,26 +57,12 @@ const roles: RoleData[] = [
     subtitle: "Log sessions your way",
     color: "checkin",
     features: [
-      {
-        icon: Smile,
-        title: "Easy Emoji Logging",
-        description: "Capture how your session felt with a single tap. No complicated forms.",
-      },
-      {
-        icon: MessageCircle,
-        title: "Coach Feedback",
-        description: "Receive personalized insights from your coach directly on your logs.",
-      },
-      {
-        icon: EyeOff,
-        title: "Private or Shared",
-        description: "Keep logs completely private, or share them with your coach for guidance.",
-      },
-      {
-        icon: Clock,
-        title: "Quick Check-ins",
-        description: "Log sessions in seconds when your coach creates a check-in card.",
-      },
+      { icon: Smile, title: "Easy Emoji Logging", description: "" },
+      { icon: MessageCircle, title: "Coach Feedback", description: "" },
+      { icon: EyeOff, title: "Private or Shared", description: "" },
+      { icon: Flame, title: "Streaks", description: "" },
+      { icon: PartyPopper, title: "Celebration", description: "" },
+      { icon: Calendar, title: "Custom Training Schedule", description: "" },
     ],
   },
   {
@@ -107,21 +71,9 @@ const roles: RoleData[] = [
     subtitle: "Stay connected with their journey",
     color: "chart-3",
     features: [
-      {
-        icon: Calendar,
-        title: "Emoji Calendar",
-        description: "See your child's training sessions displayed as emojis on a monthly calendar.",
-      },
-      {
-        icon: Heart,
-        title: "Conversation Starters",
-        description: "Each emoji tells a story. Ask them about that star or cloud they logged!",
-      },
-      {
-        icon: Shield,
-        title: "Respectful Access",
-        description: "View training moods without reading private details. Trust builds together.",
-      },
+      { icon: Calendar, title: "Emoji Calendar", description: "" },
+      { icon: Heart, title: "Conversation Starters", description: "" },
+      { icon: Shield, title: "Respectful Access", description: "" },
     ],
   },
 ];
@@ -184,12 +136,7 @@ export function RoleCards() {
                 <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
                   <feature.icon className="h-5 w-5" />
                 </div>
-                <h4 className="mb-1.5 font-semibold text-foreground">
-                  {feature.title}
-                </h4>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
+                <h4 className="font-semibold text-foreground">{feature.title}</h4>
               </motion.div>
             ))}
           </div>

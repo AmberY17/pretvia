@@ -30,6 +30,7 @@ export async function GET() {
     const coaches = await db
       .collection("users")
       .find({ _id: { $in: coachIds.map((id) => new ObjectId(id)) } })
+      .project({ displayName: 1 })
       .toArray()
     const coachMap = new Map(
       coaches.map((c) => [c._id.toString(), c.displayName || "Coach"])

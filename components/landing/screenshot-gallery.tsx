@@ -58,6 +58,7 @@ export function ScreenshotGallery({
               src={screenshot.src}
               alt={screenshot.alt}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 400px"
               className="object-cover object-top transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent p-4 pt-8">

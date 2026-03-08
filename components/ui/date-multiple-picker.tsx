@@ -1,5 +1,6 @@
 "use client";
 
+import "react-day-picker/dist/style.css";
 import * as React from "react";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";

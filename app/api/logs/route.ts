@@ -200,7 +200,7 @@ export async function GET(req: Request) {
     const users = await db
       .collection("users")
       .find({ _id: { $in: userIds.map((id) => new ObjectId(id)) } })
-      .project({ password: 0 })
+      .project({ displayName: 1 })
       .toArray()
     const userMap = new Map(
       users.map((u) => [u._id.toString(), u.displayName || "Unknown"])
@@ -294,20 +294,7 @@ export async function POST(req: Request) {
       trainingSlots
     )
 
-    // Save any new tags for the user
     const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []
-    if (logTags.length > 0) {
-      for (const tag of logTags) {
-        await db.collection("tags").updateOne(
-          { userId: session.userId, name: tag },
-          {
-            $set: { name: tag, userId: session.userId },
-            $setOnInsert: { createdAt: new Date() },
-          },
-          { upsert: true }
-        )
-      }
-    }
 
     return NextResponse.json({
       success: true,
@@ -379,20 +366,6 @@ export async function PUT(req: Request) {
       { _id: logOid },
       { $set: update }
     )
-
-    // Upsert any new tags
-    if (Array.isArray(tags) && tags.length > 0) {
-      for (const tag of tags) {
-        await db.collection("tags").updateOne(
-          { userId: session.userId, name: tag },
-          {
-            $set: { name: tag, userId: session.userId },
-            $setOnInsert: { createdAt: new Date() },
-          },
-          { upsert: true }
-        )
-      }
-    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

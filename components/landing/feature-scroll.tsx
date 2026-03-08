@@ -94,6 +94,7 @@ export function FeatureScroll() {
             index={index}
             total={features.length}
             progress={scrollYProgress}
+            containerProgress={scrollYProgress}
           />
         ))}
       </div>
@@ -116,29 +117,30 @@ export function FeatureScroll() {
 function FeatureScrollItem({
   feature,
   index,
+  containerProgress,
 }: {
   feature: FeatureItem;
   index: number;
   total: number;
   progress: ReturnType<typeof useScroll>["scrollYProgress"];
+  containerProgress: ReturnType<typeof useScroll>["scrollYProgress"];
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "center center"],
-  });
+  // Each item occupies 1/features.length of the container scroll range
+  const segmentSize = 1 / features.length;
+  const segmentStart = index * segmentSize;
+  const segmentMid = segmentStart + segmentSize * 0.5;
+  const segmentEnd = segmentStart + segmentSize;
 
-  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.3, 1, 1]);
+  const opacity = useTransform(containerProgress, [segmentStart, segmentMid, segmentEnd], [0.3, 1, 1]);
   const x = useTransform(
-    scrollYProgress,
-    [0, 1],
+    containerProgress,
+    [segmentStart, segmentEnd],
     [index % 2 === 0 ? -50 : 50, 0]
   );
-  const scale = useTransform(scrollYProgress, [0, 1], [0.9, 1]);
+  const scale = useTransform(containerProgress, [segmentStart, segmentEnd], [0.9, 1]);
 
   return (
     <motion.div
-      ref={ref}
       style={{ opacity, x, scale }}
       className={`flex items-center gap-8 ${
         index % 2 === 0 ? "flex-row" : "flex-row-reverse"

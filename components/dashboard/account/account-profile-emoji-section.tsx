@@ -2,7 +2,11 @@
 
 import { User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EmojiPicker } from "@/components/dashboard/shared/emoji-picker";
+import dynamic from "next/dynamic";
+const EmojiPicker = dynamic(
+  () => import("@/components/dashboard/shared/emoji-picker").then((m) => m.EmojiPicker),
+  { ssr: false }
+);
 
 interface AccountProfileEmojiSectionProps {
   profileEmoji: string;

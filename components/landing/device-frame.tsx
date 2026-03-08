@@ -24,6 +24,7 @@ function StaticDeviceFrame({
       src={imageSrc}
       alt={imageAlt}
       fill
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
       className="object-cover object-top"
       priority
     />
@@ -72,6 +73,7 @@ function AnimatedDeviceFrame({
       src={imageSrc}
       alt={imageAlt}
       fill
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
       className="object-cover object-top"
       priority
     />
@@ -130,7 +132,9 @@ export function PhoneFrame({
       src={imageSrc}
       alt={imageAlt}
       fill
+      sizes="(max-width: 480px) 100vw, 40vw"
       className="object-cover object-top"
+      priority
     />
   ) : (
     children

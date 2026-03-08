@@ -19,18 +19,29 @@ import {
   Heart,
   Shield,
   ChartNoAxesCombined,
+  X,
+  Maximize2,
+  Flame,
+  PartyPopper,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ScreenshotGallery } from "@/components/landing/screenshot-gallery";
 
 // Feature data structure
+interface FeatureScreenshot {
+  src: string;
+  alt: string;
+  title: string;
+  description?: string;
+}
+
 interface Feature {
   icon: LucideIcon;
   title: string;
   description: string;
   details?: string[];
+  screenshot?: FeatureScreenshot;
 }
 
 interface RoleSection {
@@ -39,12 +50,6 @@ interface RoleSection {
   subtitle: string;
   description: string;
   features: Feature[];
-  screenshots: {
-    src: string;
-    alt: string;
-    title: string;
-    description?: string;
-  }[];
 }
 
 const roleSections: RoleSection[] = [
@@ -66,6 +71,12 @@ const roleSections: RoleSection[] = [
           "Manage roles and permissions per group",
           "Transfer athletes between groups easily",
         ],
+        screenshot: {
+          src: "/screenshots/coach-group-switcher.png",
+          alt: "Multiple Groups - Group switcher",
+          title: "Multiple Groups",
+          description: "Switch between training groups and see overview",
+        },
       },
       {
         icon: MessageCircle,
@@ -78,6 +89,12 @@ const roleSections: RoleSection[] = [
           "Track feedback history over time",
           "Build stronger coach-athlete relationships",
         ],
+        screenshot: {
+          src: "/screenshots/coach-1-on-1.png",
+          alt: "1-on-1 Feedback",
+          title: "1-on-1 Feedback",
+          description: "Provide personalized coaching feedback on training logs",
+        },
       },
       {
         icon: ClipboardCheck,
@@ -90,6 +107,12 @@ const roleSections: RoleSection[] = [
           "Automatic reminders for athletes",
           "Historical attendance tracking",
         ],
+        screenshot: {
+          src: "/screenshots/coach-check-in.png",
+          alt: "Session Check-Ins",
+          title: "Session Check-Ins",
+          description: "Track attendance with visual progress",
+        },
       },
       {
         icon: Settings,
@@ -102,6 +125,12 @@ const roleSections: RoleSection[] = [
           "Invite athletes via email",
           "Guardian/parent linking",
         ],
+        screenshot: {
+          src: "/screenshots/coach-manage-group.png",
+          alt: "Group Management",
+          title: "Group Management",
+          description: "Manage athletes, roles, and training schedules",
+        },
       },
       {
         icon: Filter,
@@ -114,6 +143,12 @@ const roleSections: RoleSection[] = [
           "Tag-based filtering",
           "Emoji mood filtering",
         ],
+        screenshot: {
+          src: "/screenshots/coach-filters-expanded.png",
+          alt: "Smart Filtering",
+          title: "Smart Filtering",
+          description: "Filter by athlete, date, tags, or mood",
+        },
       },
       {
         icon: Megaphone,
@@ -126,26 +161,12 @@ const roleSections: RoleSection[] = [
           "Easy create and remove",
           "Keep team informed instantly",
         ],
-      },
-    ],
-    screenshots: [
-      {
-        src: "/screenshots/coach-dashboard.jpg",
-        alt: "Coach Dashboard",
-        title: "Coach Dashboard",
-        description: "Overview of all your groups and recent activity",
-      },
-      {
-        src: "/screenshots/group-management.jpg",
-        alt: "Group Management",
-        title: "Group Management",
-        description: "Manage athletes, roles, and training schedules",
-      },
-      {
-        src: "/screenshots/checkin-session.jpg",
-        alt: "Check-in Session",
-        title: "Session Check-Ins",
-        description: "Track attendance with visual progress",
+        screenshot: {
+          src: "/screenshots/coach-announcement.png",
+          alt: "Announcements",
+          title: "Announcements",
+          description: "Pin important updates at the top of the feed",
+        },
       },
     ],
   },
@@ -167,6 +188,12 @@ const roleSections: RoleSection[] = [
           "Custom tags for categorization",
           "Quick and intuitive interface",
         ],
+        screenshot: {
+          src: "/screenshots/athlete-log-emoji.png",
+          alt: "Easy Emoji Logging",
+          title: "Easy Emoji Logging",
+          description: "Log your session with emojis and optional notes",
+        },
       },
       {
         icon: MessageCircle,
@@ -179,6 +206,12 @@ const roleSections: RoleSection[] = [
           "Build on your progress",
           "Notification when coach responds",
         ],
+        screenshot: {
+          src: "/screenshots/coach-1-on-1-purple.png",
+          alt: "Coach Feedback",
+          title: "Coach Feedback",
+          description: "See your logs and coach feedback in one place",
+        },
       },
       {
         icon: EyeOff,
@@ -191,32 +224,66 @@ const roleSections: RoleSection[] = [
           "Coach sees only what you allow",
           "Full privacy control",
         ],
+        screenshot: {
+          src: "/screenshots/athlete-visibility.png",
+          alt: "Private or Shared",
+          title: "Private or Shared",
+          description: "Control log visibility and privacy",
+        },
       },
       {
-        icon: Clock,
-        title: "Quick Check-Ins",
+        icon: Flame,
+        title: "Streaks",
         description:
-          "When your coach creates a session, log your attendance with a single tap.",
+          "Build consistency with visual streak tracking. See how many sessions you've logged in a row and stay motivated.",
         details: [
-          "Session notifications",
-          "One-tap check-in",
-          "Automatic date/time",
-          "Seamless flow to logging",
+          "Visual streak counter",
+          "Track consecutive training days",
+          "Stay motivated to keep showing up",
+          "Celebrate your consistency",
         ],
-      },
-    ],
-    screenshots: [
-      {
-        src: "/screenshots/athlete-log.jpg",
-        alt: "Athlete Logging",
-        title: "Easy Logging",
-        description: "Log your session with emojis and optional notes",
+        screenshot: {
+          src: "/screenshots/athlete-streaks.png",
+          alt: "Streaks",
+          title: "Streaks",
+          description: "Track your consecutive training days",
+        },
       },
       {
-        src: "/screenshots/athlete-feed.jpg",
-        alt: "Athlete Feed",
-        title: "Your Training Feed",
-        description: "See your logs and coach feedback in one place",
+        icon: PartyPopper,
+        title: "Celebration",
+        description:
+          "Moments worth celebrating. Get a little confetti and recognition when you hit milestones or keep your streak alive.",
+        details: [
+          "Confetti when you hit milestones",
+          "Moment Ready when fully prepared",
+          "Recognition for your hard work",
+          "Feel the win",
+        ],
+        screenshot: {
+          src: "/screenshots/athlete-celebration.png",
+          alt: "Celebration",
+          title: "Celebration",
+          description: "Celebrate milestones and achievements",
+        },
+      },
+      {
+        icon: Calendar,
+        title: "Custom Training Schedule",
+        description:
+          "Set your own training days and times. Plan when you train so you stay on track and never miss a session.",
+        details: [
+          "Define your weekly schedule",
+          "Flexible days and times",
+          "See when you're due to log",
+          "Works with or without coach sessions",
+        ],
+        screenshot: {
+          src: "/screenshots/athlete-custom-schedule.png",
+          alt: "Custom Training Schedule",
+          title: "Custom Training Schedule",
+          description: "Plan your training days and times",
+        },
       },
     ],
   },
@@ -238,6 +305,12 @@ const roleSections: RoleSection[] = [
           "Attendance tracking",
           "Multiple children support",
         ],
+        screenshot: {
+          src: "/screenshots/parent-month.png",
+          alt: "Emoji Calendar",
+          title: "Emoji Calendar",
+          description: "See training moods at a glance",
+        },
       },
       {
         icon: Heart,
@@ -250,6 +323,12 @@ const roleSections: RoleSection[] = [
           "Celebrate good days",
           "Support tough sessions",
         ],
+        screenshot: {
+          src: "/screenshots/parent-week-purple.png",
+          alt: "Conversation Starters",
+          title: "Conversation Starters",
+          description: "Week view for natural talking points",
+        },
       },
       {
         icon: Shield,
@@ -264,20 +343,15 @@ const roleSections: RoleSection[] = [
         ],
       },
     ],
-    screenshots: [
-      {
-        src: "/screenshots/guardian-calendar.jpg",
-        alt: "Guardian Calendar",
-        title: "Emoji Calendar",
-        description: "See training moods at a glance",
-      },
-    ],
   },
 ];
 
 export default function FeaturesPage() {
   const [activeTab, setActiveTab] = useState<string>("coach");
-  const activeSection = roleSections.find((s) => s.id === activeTab) || roleSections[0];
+  const [lightboxScreenshot, setLightboxScreenshot] =
+    useState<FeatureScreenshot | null>(null);
+  const activeSection =
+    roleSections.find((s) => s.id === activeTab) || roleSections[0];
 
   return (
     <main className="min-h-screen">
@@ -309,12 +383,12 @@ export default function FeaturesPage() {
                 Home
               </Button>
             </Link>
-            <ThemeSwitcher />
             <Link href="/auth">
               <Button variant="ghost-secondary" size="sm" className="gap-2">
                 Sign In
               </Button>
             </Link>
+            <ThemeSwitcher />
           </div>
         </div>
       </nav>
@@ -334,7 +408,8 @@ export default function FeaturesPage() {
             </span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Explore how Pretvia helps coaches, athletes, and guardians work together.
+            Explore how Pretvia helps coaches, athletes, and guardians work
+            together.
           </p>
         </motion.div>
       </section>
@@ -359,7 +434,9 @@ export default function FeaturesPage() {
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
-              <span className="relative z-10">{section.title.replace("For ", "")}</span>
+              <span className="relative z-10">
+                {section.title.replace("For ", "")}
+              </span>
             </button>
           ))}
         </div>
@@ -389,57 +466,150 @@ export default function FeaturesPage() {
               </p>
             </div>
 
-            {/* Features Grid */}
-            <div className="mb-20 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {activeSection.features.map((feature, i) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="group rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-                    <feature.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold text-foreground">
-                    {feature.title}
-                  </h3>
-                  <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                  {feature.details && (
-                    <ul className="space-y-1.5">
-                      {feature.details.map((detail) => (
-                        <li
-                          key={detail}
-                          className="flex items-start gap-2 text-xs text-muted-foreground"
+            {/* Feature cards — elongated, alternating left/right */}
+            <div className="space-y-12 md:space-y-20">
+              {activeSection.features.map((feature, i) => {
+                const alignRight = feature.screenshot && i % 2 === 1;
+                return (
+                  <motion.article
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className={`flex flex-col gap-8 md:flex-row md:items-center md:gap-12 ${
+                      alignRight ? "md:flex-row-reverse" : ""
+                    } ${!feature.screenshot ? "md:max-w-2xl" : ""}`}
+                  >
+                    <div
+                      className={`flex-1 ${feature.screenshot ? "md:flex-[1.2]" : ""} ${
+                        alignRight ? "md:text-right" : ""
+                      }`}
+                    >
+                      <div
+                        className={`mb-4 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ${
+                          alignRight ? "md:ml-auto" : ""
+                        }`}
+                      >
+                        <feature.icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="mb-3 text-xl font-semibold text-foreground md:text-2xl">
+                        {feature.title}
+                      </h3>
+                      <p className="mb-4 text-muted-foreground md:text-base">
+                        {feature.description}
+                      </p>
+                      {feature.details && (
+                        <ul
+                          className={`space-y-2 ${
+                            alignRight ? "md:flex md:flex-col md:items-end" : ""
+                          }`}
                         >
-                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary/50" />
-                          {detail}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </motion.div>
-              ))}
+                          {feature.details.map((detail) => (
+                            <li
+                              key={detail}
+                              className="flex items-start gap-2 text-sm text-muted-foreground"
+                            >
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/50" />
+                              {detail}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    {feature.screenshot ? (
+                      <div className="flex-1 md:flex-[0.9]">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLightboxScreenshot(feature.screenshot!)
+                          }
+                          className="group relative block w-full overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          <div className="relative aspect-video">
+                            <Image
+                              src={feature.screenshot.src}
+                              alt={feature.screenshot.alt}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 45vw"
+                              className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-background/0 transition-colors group-hover:bg-background/10">
+                              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                                <Maximize2 className="h-5 w-5" />
+                              </span>
+                            </div>
+                          </div>
+                          <div className="border-t border-border bg-card/50 px-4 py-3">
+                            <p className="text-sm font-medium text-foreground">
+                              {feature.screenshot.title}
+                            </p>
+                            {feature.screenshot.description && (
+                              <p className="text-xs text-muted-foreground">
+                                {feature.screenshot.description}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      </div>
+                    ) : null}
+                  </motion.article>
+                );
+              })}
             </div>
 
-            {/* Screenshots Section */}
-            {activeSection.screenshots.length > 0 && (
-              <div>
-                <h3 className="mb-8 text-center text-xl font-semibold text-foreground">
-                  See it in action
-                </h3>
-                <ScreenshotGallery
-                  screenshots={activeSection.screenshots}
-                  columns={activeSection.screenshots.length === 1 ? 2 : 3}
-                />
-                <p className="mt-4 text-center text-xs text-muted-foreground">
-                  Click any screenshot to view full size
-                </p>
-              </div>
-            )}
+            {/* Lightbox for screenshot full-size view */}
+            <AnimatePresence>
+              {lightboxScreenshot && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4 backdrop-blur-xl"
+                  onClick={() => setLightboxScreenshot(null)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setLightboxScreenshot(null)}
+                    className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground transition-colors hover:bg-secondary/80"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative max-h-[85vh] max-w-[90vw] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex h-8 items-center gap-1.5 border-b border-border bg-secondary/50 px-3">
+                      <div className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-checkin/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-primary/60" />
+                    </div>
+                    <div className="relative">
+                      <Image
+                        src={lightboxScreenshot.src}
+                        alt={lightboxScreenshot.alt}
+                        width={1280}
+                        height={720}
+                        className="h-auto max-h-[calc(85vh-80px)] w-auto object-contain"
+                      />
+                    </div>
+                    <div className="border-t border-border bg-card p-4">
+                      <p className="font-medium text-foreground">
+                        {lightboxScreenshot.title}
+                      </p>
+                      {lightboxScreenshot.description && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {lightboxScreenshot.description}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.section>
       </AnimatePresence>
@@ -447,24 +617,18 @@ export default function FeaturesPage() {
       {/* CTA Section */}
       <section className="border-t border-border px-6 py-24">
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl rounded-3xl border border-border bg-card p-12 text-center"
+          className="flex justify-center"
         >
-          <h2 className="text-balance text-2xl font-bold text-foreground md:text-3xl">
-            Ready to get started?
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            Create your free account and start logging in under a minute.
-          </p>
-          <Link href="/auth" className="mt-8 inline-block">
+          <Link href="/auth">
             <Button
               size="lg"
               className="gap-2 bg-primary px-8 text-primary-foreground hover:bg-primary/90"
             >
-              Get Started Free
+              Get started for free
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

@@ -111,7 +111,9 @@ export async function computeStreak(
   db: Db,
   userId: string,
   trainingSlots: TrainingSlot[],
-  localDate?: string
+  localDate?: string,
+  prefetchedLogs?: { timestamp: Date | string }[],
+  prefetchedSkips?: { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
 ): Promise<StreakResult> {
   const totalLogs = await db
     .collection("logs")
@@ -122,18 +124,24 @@ export async function computeStreak(
   }
 
   const now = new Date()
-  const slotInstances = getSlotInstances(trainingSlots, now)
+  // Only need logs from the last ~13 weeks — streaks cannot exceed 52 * max-slots-per-week
+  // and the slot window is checked per-day going backwards for at most 365 days.
+  // In practice a contiguous streak won't exceed ~90 days without a miss, so 90 days of
+  // logs is sufficient. We use 100 days for a small safety margin.
+  const lookbackDate = new Date(now)
+  lookbackDate.setDate(lookbackDate.getDate() - 100)
 
-  const logs = await db
+  const logs = prefetchedLogs ?? await db
     .collection("logs")
-    .find({ userId })
+    .find({ userId, timestamp: { $gte: lookbackDate } })
     .project({ timestamp: 1 })
     .sort({ timestamp: 1 })
     .toArray()
 
-  const skips = await db
+  const skips = prefetchedSkips ?? await db
     .collection("skippedDays")
     .find({ userId })
+    .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
     .toArray()
 
   const skipRecords = skips.map((s) => ({
@@ -197,7 +205,8 @@ export async function computeTodaySkipStatus(
   db: Db,
   userId: string,
   trainingSlots: TrainingSlot[],
-  localDate?: string
+  localDate?: string,
+  prefetchedLogs?: { timestamp: Date | string }[]
 ): Promise<TodaySkipStatus> {
   const now = new Date()
 
@@ -214,6 +223,7 @@ export async function computeTodaySkipStatus(
   const skips = await db
     .collection("skippedDays")
     .find({ userId, dayOfWeek: todayDay })
+    .project({ date: 1, dayOfWeek: 1, scheduledTime: 1 })
     .toArray()
   const skipDates = new Set(
     skips.map((s) => {
@@ -225,11 +235,20 @@ export async function computeTodaySkipStatus(
     return { canSkipToday: false, skipDisabledReason: "already_skipped" }
   }
 
-  const logs = await db
-    .collection("logs")
-    .find({ userId })
-    .project({ timestamp: 1 })
-    .toArray()
+  // Reuse prefetched logs (from computeStreak) — only need today's window so
+  // filter to today to avoid scanning more than necessary.
+  const todayStart = new Date(todayDateStr + "T00:00:00.000Z")
+  const todayEnd = new Date(todayDateStr + "T23:59:59.999Z")
+  const logs = prefetchedLogs
+    ? prefetchedLogs.filter((l) => {
+        const ts = l.timestamp instanceof Date ? l.timestamp : new Date(l.timestamp)
+        return ts >= todayStart && ts <= todayEnd
+      })
+    : await db
+        .collection("logs")
+        .find({ userId, timestamp: { $gte: todayStart, $lte: todayEnd } })
+        .project({ timestamp: 1 })
+        .toArray()
 
   // Use localDate as the reference so we find today's slot occurrence correctly.
   const refDate = localDate ? new Date(localDate + "T00:00:00.000Z") : now

@@ -48,6 +48,7 @@ export async function GET(req: Request) {
     const links = await db
       .collection("guardianLinks")
       .find({ guardianId: session.userId })
+      .project({ athleteId: 1 })
       .toArray()
     const athleteIds = (links as { athleteId: string }[]).map((l) => l.athleteId)
 
