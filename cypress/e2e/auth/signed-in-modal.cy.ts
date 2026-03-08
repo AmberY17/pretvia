@@ -10,7 +10,7 @@ describe("Signed-in modal (arrive at /auth while logged in)", () => {
   it("Continue as navigates to dashboard", () => {
     cy.loginAsAthlete();
     cy.visit("/auth");
-    cy.contains("button", /Continue as/).click();
+    cy.findByRole("button", { name: /Continue as/ }).click();
     cy.url().should("include", "/dashboard");
     cy.contains("Training Feed").should("be.visible");
   });
@@ -18,9 +18,11 @@ describe("Signed-in modal (arrive at /auth while logged in)", () => {
   it("Sign in with different account clears session and shows form", () => {
     cy.loginAsAthlete();
     cy.visit("/auth");
-    cy.contains("button", "Sign in with different account").click();
+    cy.findByRole("button", {
+      name: "Sign in with different account",
+    }).click();
     cy.contains("Welcome back").should("be.visible");
-    cy.get("input#email").should("be.visible");
+    cy.findByLabelText("Email").should("be.visible");
     cy.visit("/dashboard");
     cy.url().should("include", "/auth");
   });

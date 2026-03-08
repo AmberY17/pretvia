@@ -1,57 +1,57 @@
 describe("Sign Up", () => {
   beforeEach(() => {
     cy.visit("/auth");
-    cy.contains("Don't have an account? Sign up").click();
+    cy.findByRole("button", { name: /don't have an account/i }).click();
     cy.contains("Create your account").should("be.visible");
-    cy.contains("button", "Coach").click();
+    cy.findByRole("button", { name: "Coach" }).click();
   });
 
   it("shows signup form with all fields", () => {
-    cy.get("input#firstName").should("be.visible");
-    cy.get("input#lastName").should("be.visible");
-    cy.get("input#email").should("be.visible");
-    cy.get("input#password").should("be.visible");
-    cy.contains("button", "Athlete").should("be.visible");
-    cy.contains("button", "Coach").should("be.visible");
-    cy.contains("button", "Create Account").should("be.visible");
+    cy.findByLabelText("First name").should("be.visible");
+    cy.findByLabelText("Last name").should("be.visible");
+    cy.findByLabelText("Email").should("be.visible");
+    cy.findByLabelText("Password").should("be.visible");
+    cy.findByRole("button", { name: "Athlete" }).should("be.visible");
+    cy.findByRole("button", { name: "Coach" }).should("be.visible");
+    cy.findByRole("button", { name: "Create Account" }).should("be.visible");
   });
 
   it("shows error when first and last name are too short", () => {
-    cy.get("input#firstName").type("A");
-    cy.get("input#lastName").type("B");
-    cy.get("input#email").type("newuser@test.pretvia.com");
-    cy.get("input#password").type("TestPass123!", { log: false });
-    cy.contains("button", "Create Account").click();
+    cy.findByLabelText("First name").type("A");
+    cy.findByLabelText("Last name").type("B");
+    cy.findByLabelText("Email").type("newuser@test.pretvia.com");
+    cy.findByLabelText("Password").type("TestPass123!", { log: false });
+    cy.findByRole("button", { name: "Create Account" }).click();
     cy.contains("First and last name must be at least 2 characters each").should(
       "be.visible"
     );
   });
 
   it("shows error when password is too short", () => {
-    cy.get("input#firstName").type("New");
-    cy.get("input#lastName").type("User");
-    cy.get("input#email").type("newuser@test.pretvia.com");
-    cy.get("input#password").type("12345", { log: false });
-    cy.contains("button", "Create Account").click();
-    cy.get("input#password").then(($el) => {
+    cy.findByLabelText("First name").type("New");
+    cy.findByLabelText("Last name").type("User");
+    cy.findByLabelText("Email").type("newuser@test.pretvia.com");
+    cy.findByLabelText("Password").type("12345", { log: false });
+    cy.findByRole("button", { name: "Create Account" }).click();
+    cy.findByLabelText("Password").then(($el) => {
       expect(($el[0] as HTMLInputElement).validity.valid).to.be.false;
     });
   });
 
   it("shows error when email already exists", () => {
-    cy.get("input#firstName").type("E2E");
-    cy.get("input#lastName").type("Athlete");
-    cy.get("input#email").type("athlete@test.pretvia.com");
-    cy.get("input#password").type("TestPass123!", { log: false });
-    cy.contains("button", "Create Account").click();
+    cy.findByLabelText("First name").type("E2E");
+    cy.findByLabelText("Last name").type("Athlete");
+    cy.findByLabelText("Email").type("athlete@test.pretvia.com");
+    cy.findByLabelText("Password").type("TestPass123!", { log: false });
+    cy.findByRole("button", { name: "Create Account" }).click();
     cy.contains("An account with this email already exists").should(
       "be.visible"
     );
   });
 
   it("can switch back to sign in", () => {
-    cy.contains("Already have an account? Sign in").click();
+    cy.findByRole("button", { name: /already have an account/i }).click();
     cy.contains("Welcome back").should("be.visible");
-    cy.contains("button", "Sign In").should("be.visible");
+    cy.findByRole("button", { name: "Sign In" }).should("be.visible");
   });
 });

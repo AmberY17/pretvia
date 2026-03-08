@@ -1,3 +1,4 @@
+import "@testing-library/cypress/add-commands";
 import "./commands";
 
 // Suppress React hydration mismatch errors that Next.js throws in dev mode.
