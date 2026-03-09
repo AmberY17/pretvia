@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
-import { getSession, createSession } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import {
-  ensureGroupIds,
-  generateUniqueGroupCode,
-  addUserToGroup,
-} from "@/lib/group-actions"
+  handleCreate,
+  handleJoin,
+  handleSwitch,
+  handleLeave,
+} from "./post-handlers"
 
 // POST: create a group (coach only), join a group, switch group, or leave a group
 export async function POST(req: Request) {
@@ -21,197 +22,10 @@ export async function POST(req: Request) {
     const { action } = body
     const db = await getDb()
 
-    if (action === "create") {
-      const user = await ensureGroupIds(db, session.userId)
-      if (!user || user.role !== "coach") {
-        return NextResponse.json(
-          { error: "Only coaches can create groups" },
-          { status: 403 },
-        )
-      }
-
-      const { name } = body
-      if (!name || name.trim().length < 2) {
-        return NextResponse.json(
-          { error: "Group name must be at least 2 characters" },
-          { status: 400 },
-        )
-      }
-
-      const code = await generateUniqueGroupCode(db)
-
-      const result = await db.collection("groups").insertOne({
-        name: name.trim(),
-        code,
-        coachId: session.userId,
-        coachIds: [session.userId],
-        roles: [],
-        createdAt: new Date(),
-      })
-
-      const groupId = result.insertedId.toString()
-
-      await db.collection("users").updateOne(
-        { _id: new ObjectId(session.userId) },
-        { $set: { groupId }, $addToSet: { groupIds: groupId } },
-      )
-
-      await db.collection("groupMemberships").insertOne({
-        userId: session.userId,
-        groupId,
-        roleIds: [],
-      })
-
-      await createSession({ ...session, groupId })
-
-      return NextResponse.json({
-        success: true,
-        group: { id: groupId, name: name.trim(), code },
-      })
-    }
-
-    if (action === "join") {
-      const { code } = body
-      if (!code) {
-        return NextResponse.json(
-          { error: "Group code is required" },
-          { status: 400 },
-        )
-      }
-
-      const user = await ensureGroupIds(db, session.userId)
-      if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
-      }
-
-      if (user.role === "athlete") {
-        return NextResponse.json(
-          { error: "Athletes must join via an invite link from their coach" },
-          { status: 403 },
-        )
-      }
-
-      const group = await db
-        .collection("groups")
-        .findOne({ code: code.toUpperCase() })
-
-      if (!group) {
-        return NextResponse.json({ error: "Invalid group code" }, { status: 404 })
-      }
-
-      const groupId = group._id.toString()
-
-      // Already a member — just switch
-      if (user.groupIds?.includes(groupId)) {
-        await db.collection("users").updateOne(
-          { _id: new ObjectId(session.userId) },
-          { $set: { groupId } },
-        )
-        if (user.role === "coach") {
-          await db.collection("groups").updateOne(
-            { _id: group._id },
-            { $addToSet: { coachIds: session.userId } },
-          )
-        }
-        await createSession({ ...session, groupId })
-        return NextResponse.json({
-          success: true,
-          group: { id: groupId, name: group.name, code: group.code },
-        })
-      }
-
-      await addUserToGroup(db, session, groupId, group, user.role)
-
-      return NextResponse.json({
-        success: true,
-        group: { id: groupId, name: group.name, code: group.code },
-      })
-    }
-
-    if (action === "switch") {
-      const { groupId } = body
-      if (!groupId) {
-        return NextResponse.json(
-          { error: "Group ID is required" },
-          { status: 400 },
-        )
-      }
-
-      const user = await ensureGroupIds(db, session.userId)
-      if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
-      }
-
-      if (!user.groupIds?.includes(groupId)) {
-        return NextResponse.json(
-          { error: "You are not a member of this group" },
-          { status: 403 },
-        )
-      }
-
-      const group = await db
-        .collection("groups")
-        .findOne({ _id: new ObjectId(groupId) })
-
-      if (!group) {
-        return NextResponse.json({ error: "Group not found" }, { status: 404 })
-      }
-
-      await db.collection("users").updateOne(
-        { _id: new ObjectId(session.userId) },
-        { $set: { groupId } },
-      )
-      await createSession({ ...session, groupId })
-
-      return NextResponse.json({
-        success: true,
-        group: { id: groupId, name: group.name, code: group.code },
-      })
-    }
-
-    if (action === "leave") {
-      const user = await ensureGroupIds(db, session.userId)
-      if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 })
-      }
-
-      const currentGroupId = user.groupId
-      if (!currentGroupId) {
-        return NextResponse.json({ error: "Not in a group" }, { status: 400 })
-      }
-
-      const updatedGroupIds = (user.groupIds || []).filter(
-        (id: string) => id !== currentGroupId,
-      )
-
-      if (user.role === "coach") {
-        await db.collection("groups").updateOne(
-          { _id: new ObjectId(currentGroupId) },
-          // @ts-expect-error -- MongoDB $pull typing doesn't infer array element type
-          { $pull: { coachIds: session.userId } },
-        )
-      }
-
-      await db.collection("groupMemberships").deleteOne({
-        userId: session.userId,
-        groupId: currentGroupId,
-      })
-
-      const newActiveGroupId =
-        updatedGroupIds.length > 0 ? updatedGroupIds[0] : null
-
-      await db.collection("users").updateOne(
-        { _id: new ObjectId(session.userId) },
-        { $set: { groupId: newActiveGroupId, groupIds: updatedGroupIds } },
-      )
-
-      await createSession({
-        ...session,
-        groupId: newActiveGroupId || undefined,
-      })
-
-      return NextResponse.json({ success: true, newActiveGroupId })
-    }
+    if (action === "create") return handleCreate(db, session, body)
+    if (action === "join") return handleJoin(db, session, body)
+    if (action === "switch") return handleSwitch(db, session, body)
+    if (action === "leave") return handleLeave(db, session)
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (error) {

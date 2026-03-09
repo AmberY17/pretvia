@@ -1,31 +1,11 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import useSWR from "swr";
-import { urlFetcher } from "@/lib/swr-utils";
-import { formatAgeAndBirthday } from "@/lib/date-utils";
-import {
-  Users,
-  Search,
-  ChevronDown,
-  Check,
-  ArrowRightLeft,
-  UserMinus,
-  UserPlus,
-  UsersRound,
-  Send,
-} from "lucide-react";
+import React, { useState } from "react";
+import { Users, Search, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
-import { toast } from "sonner";
 import { InviteAthleteModal } from "./invite-athlete-modal";
-import { useClickOutside } from "@/hooks/use-click-outside";
+import { AthleteRow } from "./athlete-row";
 import type { Member, Role } from "@/types/dashboard";
 
 interface GroupAthletesSectionProps {
@@ -87,16 +67,7 @@ export function GroupAthletesSection({
   onTransfer,
   onRemoveAthlete,
 }: GroupAthletesSectionProps) {
-  const transferDropdownRef = useRef<HTMLDivElement>(null);
-  const roleDropdownRef = useRef<HTMLDivElement>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
-
-  useClickOutside(transferDropdownRef, transferDropdownOpen, () =>
-    setTransferDropdownOpen(false),
-  );
-  useClickOutside(roleDropdownRef, !!roleDropdownAthleteId, () =>
-    setRoleDropdownAthleteId(null),
-  );
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -149,334 +120,34 @@ export function GroupAthletesSection({
               : ""
           }`}
         >
-          {athletes.map((a) => {
-            const isPending = (a as Member & { status?: string }).status === "pending";
-            return (
-            <div
+          {athletes.map((a) => (
+            <AthleteRow
               key={a.id}
-              className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-medium text-foreground">
-                  {a.displayName || [a.firstName, a.lastName].filter(Boolean).join(" ") || a.email}
-                  {isPending && (
-                    <span className="ml-2 inline-flex items-center rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                      Pending
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {!isPending && formatAgeAndBirthday(a.dateOfBirth)
-                    ? formatAgeAndBirthday(a.dateOfBirth)
-                    : a.email}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {!isPending && roles.length > 0 && (
-                  <div
-                    className="relative"
-                    ref={
-                      roleDropdownAthleteId === a.id ? roleDropdownRef : undefined
-                    }
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRoleDropdownAthleteId((prev) =>
-                          prev === a.id ? null : a.id,
-                        )
-                      }
-                      className="flex min-w-[120px] items-center justify-between gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary/80 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <span className="truncate">
-                        {a.roleIds.length === 0
-                          ? "No roles"
-                          : a.roleIds.length <= 2
-                            ? a.roleIds
-                                .map(
-                                  (rid) =>
-                                    roles.find((r) => r.id === rid)?.name ??
-                                    rid,
-                                )
-                                .join(", ")
-                            : `${a.roleIds.length} roles`}
-                      </span>
-                      <ChevronDown
-                        className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${roleDropdownAthleteId === a.id ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                    {roleDropdownAthleteId === a.id && (
-                      <div className="absolute left-0 top-full z-50 mt-1 flex min-w-[160px] flex-col rounded-lg border border-border bg-card p-1 shadow-lg">
-                        <div
-                          className={`flex flex-col gap-0.5 ${
-                            roles.length > 5
-                              ? "max-h-32 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                              : ""
-                          }`}
-                        >
-                          {roles.map((r) => (
-                            <label
-                              key={r.id}
-                              className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition-colors hover:bg-secondary"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={a.roleIds.includes(r.id)}
-                                onChange={(e) => {
-                                  const next = e.target.checked
-                                    ? [...a.roleIds, r.id]
-                                    : a.roleIds.filter((id) => id !== r.id);
-                                  onAssignRoles(a.id, next);
-                                }}
-                                className="rounded border-border"
-                              />
-                              {r.name}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {!isPending && transferUserId === a.id ? (
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <div
-                      className="relative"
-                      ref={transferDropdownRef}
-                    >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setTransferDropdownOpen((prev) => !prev)
-                        }
-                        className="flex min-w-[160px] items-center justify-between gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary/80 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                      >
-                        <span className="flex items-center gap-2 truncate">
-                          <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                          {transferGroupId
-                            ? (transferableGroups.find(
-                                (g) => g.id === transferGroupId,
-                              )?.name ?? "Select group")
-                            : "Select group"}
-                        </span>
-                        <ChevronDown
-                          className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${transferDropdownOpen ? "rotate-180" : ""}`}
-                        />
-                      </button>
-                      {transferDropdownOpen && (
-                        <div className="absolute left-0 top-full z-50 mt-1 flex max-h-48 min-w-[200px] flex-col gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
-                          {transferableGroups.length >= 5 && (
-                            <input
-                              type="text"
-                              value={transferSearch}
-                              onChange={(e) => setTransferSearch(e.target.value)}
-                              placeholder="Search groups..."
-                              className="mx-1 rounded-md border border-border bg-secondary px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                            />
-                          )}
-                          {filteredTransferGroups.length === 0 ? (
-                            <p className="px-2.5 py-2 text-xs text-muted-foreground">
-                              No groups match
-                            </p>
-                          ) : (
-                            <div className="max-h-36 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                              {filteredTransferGroups.map((g) => (
-                                <button
-                                  key={g.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setTransferGroupId(g.id);
-                                    setTransferDropdownOpen(false);
-                                    setTransferSearch("");
-                                  }}
-                                  className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors ${
-                                    transferGroupId === g.id
-                                      ? "bg-primary/10 font-medium text-primary"
-                                      : "text-foreground hover:bg-secondary"
-                                  }`}
-                                >
-                                  <Users className="h-3 w-3 shrink-0" />
-                                  <span className="flex-1 truncate">
-                                    {g.name}
-                                  </span>
-                                  {transferGroupId === g.id && (
-                                    <Check className="h-3 w-3 shrink-0 text-primary" />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost-primary"
-                      onClick={() => onTransfer()}
-                      disabled={!transferGroupId || saving}
-                    >
-                      Transfer
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost-primary"
-                      onClick={() => {
-                        setTransferUserId(null);
-                        setTransferGroupId("");
-                        setTransferDropdownOpen(false);
-                        setTransferSearch("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : !isPending ? (
-                  <>
-                    <GuardiansPopover groupId={groupId} athleteId={a.id} athleteName={a.displayName || a.email} athleteEmail={a.email} />
-                    <Button
-                      size="sm"
-                      variant="ghost-primary"
-                      onClick={() => {
-                        setRoleDropdownAthleteId(null);
-                        setTransferUserId(a.id);
-                      }}
-                      className="gap-1 text-xs"
-                      title="Transfer"
-                    >
-                      <ArrowRightLeft className="h-3 w-3" />
-                      <span className="hidden sm:inline">Transfer</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost-destructive"
-                      onClick={() => setRemoveConfirmUserId(a.id)}
-                      disabled={saving}
-                      className="gap-1 text-xs"
-                      title="Remove"
-                    >
-                      <UserMinus className="h-3 w-3" />
-                      <span className="hidden sm:inline">Remove</span>
-                    </Button>
-                    <DeleteConfirmDialog
-                      open={removeConfirmUserId === a.id}
-                      onOpenChange={(open) =>
-                        !open && setRemoveConfirmUserId(null)
-                      }
-                      title="Are you sure you want to remove?"
-                      description="This athlete will be removed from the group."
-                      onConfirm={() =>
-                        removeConfirmUserId &&
-                        onRemoveAthlete(removeConfirmUserId)
-                      }
-                    />
-                  </>
-                ) : null}
-              </div>
-            </div>
-          );
-          })}
+              athlete={a}
+              groupId={groupId}
+              roles={roles}
+              roleDropdownAthleteId={roleDropdownAthleteId}
+              setRoleDropdownAthleteId={setRoleDropdownAthleteId}
+              transferUserId={transferUserId}
+              setTransferUserId={setTransferUserId}
+              transferGroupId={transferGroupId}
+              setTransferGroupId={setTransferGroupId}
+              transferDropdownOpen={transferDropdownOpen}
+              setTransferDropdownOpen={setTransferDropdownOpen}
+              transferSearch={transferSearch}
+              setTransferSearch={setTransferSearch}
+              transferableGroups={transferableGroups}
+              filteredTransferGroups={filteredTransferGroups}
+              removeConfirmUserId={removeConfirmUserId}
+              setRemoveConfirmUserId={setRemoveConfirmUserId}
+              saving={saving}
+              onAssignRoles={onAssignRoles}
+              onTransfer={onTransfer}
+              onRemoveAthlete={onRemoveAthlete}
+            />
+          ))}
         </div>
       )}
     </section>
-  );
-}
-
-function GuardiansPopover({
-  groupId,
-  athleteId,
-  athleteName,
-  athleteEmail,
-}: {
-  groupId: string;
-  athleteId: string;
-  athleteName: string;
-  athleteEmail: string;
-}) {
-  const [guardianEmail, setGuardianEmail] = useState("")
-  const [sending, setSending] = useState(false)
-  const { data, isLoading, mutate } = useSWR<{ guardians: { id: string; displayName: string; email: string }[] }>(
-    groupId && athleteId ? `/api/groups/${groupId}/members/${athleteId}/guardians` : null,
-    urlFetcher,
-  );
-  const guardians = data?.guardians ?? []
-
-  async function handleInviteGuardian(e: React.FormEvent) {
-    e.preventDefault()
-    const email = guardianEmail.trim().toLowerCase()
-    if (!email) return
-    if (email === athleteEmail.trim().toLowerCase()) {
-      toast.error("Guardian email must be different from athlete email")
-      return
-    }
-    setSending(true)
-    try {
-      const res = await fetch(`/api/groups/${groupId}/invites`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          parentOnly: true,
-          parentEmail: email,
-          athleteEmail: athleteEmail.trim().toLowerCase(),
-        }),
-      })
-      const json = await res.json()
-      if (!res.ok) {
-        toast.error(json.error ?? "Failed to send invite")
-        return
-      }
-      toast.success(
-        json.message ?? `Guardian invite sent to ${email}`
-      )
-      setGuardianEmail("")
-      mutate()
-    } catch {
-      toast.error("Network error. Please try again.")
-    } finally {
-      setSending(false)
-    }
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost-primary" className="gap-1 text-xs" title="Guardians">
-          <UsersRound className="h-3 w-3" />
-          <span className="hidden sm:inline">Guardians</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 border-border bg-card p-3" align="start">
-        <p className="mb-2 text-xs font-medium text-muted-foreground">Guardians for {athleteName}</p>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : guardians.length === 0 ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">No guardians linked yet</p>
-            <form onSubmit={handleInviteGuardian} className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Guardian email"
-                value={guardianEmail}
-                onChange={(e) => setGuardianEmail(e.target.value)}
-                className="flex-1 text-sm"
-                disabled={sending}
-              />
-              <Button type="submit" size="sm" variant="ghost-primary" disabled={sending || !guardianEmail.trim()} className="shrink-0">
-                <Send className="h-3 w-3" />
-              </Button>
-            </form>
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {guardians.map((g) => (
-              <li key={g.id} className="text-sm">
-                <span className="font-medium text-foreground">{g.displayName}</span>
-                <br />
-                <span className="text-xs text-muted-foreground">{g.email}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </PopoverContent>
-    </Popover>
   );
 }

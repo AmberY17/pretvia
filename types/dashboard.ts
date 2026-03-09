@@ -77,6 +77,28 @@ export type ReviewStatusFilterValue = ReviewStatus | null;
 /** Attendance status for a session */
 export type AttendanceStatus = "present" | "absent" | "excused" | null;
 
+/** Check-in session card */
+export type CheckinItem = {
+  id: string;
+  groupId: string;
+  coachId: string;
+  title: string | null;
+  sessionDate: string;
+  createdAt: string;
+  expiresAt: string;
+  checkedInCount: number;
+  totalAthletes: number;
+  hasUserLogged: boolean;
+};
+
+/** Announcement from a coach */
+export type Announcement = {
+  id: string;
+  text: string;
+  coachName: string;
+  createdAt: string;
+};
+
 /** Training log entry (from logs API) */
 export type LogEntry = {
   id: string;

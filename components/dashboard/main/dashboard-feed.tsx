@@ -2,30 +2,19 @@
 
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, RotateCcw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TagFilter } from "@/components/dashboard/filters/tag-filter";
-import { DateFilter } from "@/components/dashboard/filters/date-filter";
-import { AthleteFilter } from "@/components/dashboard/filters/athlete-filter";
-import { RoleFilter } from "@/components/dashboard/filters/role-filter";
-import { ReviewStatusFilter } from "@/components/dashboard/filters/review-status-filter";
-import { AnnouncementBanner } from "@/components/dashboard/shared/announcement-banner";
-import {
-  CheckinCard,
-  type CheckinItem,
-} from "@/components/dashboard/shared/checkin-card";
 import { LogCard, type LogEntry } from "@/components/dashboard/logs/log-card";
-import {
-  LogCardSkeleton,
-  AnnouncementSkeleton,
-  CheckinSkeleton,
-} from "@/components/dashboard/main/dashboard-skeletons";
+import { LogCardSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
+import { MobileFilters } from "@/components/dashboard/main/dashboard-feed/mobile-filters";
+import { FeedAnnouncementSection } from "@/components/dashboard/main/dashboard-feed/feed-announcement-section";
+import { FeedCheckinSection } from "@/components/dashboard/main/dashboard-feed/feed-checkin-section";
 import type { User } from "@/hooks/use-auth";
 import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
 } from "@/hooks/use-dashboard-filters";
-import type { Athlete, Role } from "@/types/dashboard";
+import type { Athlete, Role, Announcement, CheckinItem } from "@/types/dashboard";
 
 interface DashboardFeedProps {
   user: User;
@@ -42,12 +31,7 @@ interface DashboardFeedProps {
   onNewLog: () => void;
   onClosePanel: () => void;
   panelMode: "new" | "view" | "edit" | null;
-  announcements: {
-    id: string;
-    text: string;
-    coachName: string;
-    createdAt: string;
-  }[];
+  announcements: Announcement[];
   checkins: CheckinItem[];
   announcementLoading?: boolean;
   checkinsLoading?: boolean;
@@ -143,136 +127,33 @@ export function DashboardFeed({
       tabIndex={user.role === "coach" && panelMode === "view" ? 0 : undefined}
     >
       <div className="mx-auto max-w-2xl">
-        {/* Mobile filter section — unified for consistent gap-2 spacing */}
-        <div className="mb-4 flex flex-col gap-2 lg:hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Filter by
-            </span>
-            {isFiltered && (
-              <button
-                type="button"
-                onClick={handlers.clearAllFilters}
-                className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Reset all filters"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+        <MobileFilters
+          user={user}
+          tags={tags}
+          groupRoles={groupRoles}
+          athletes={athletes}
+          filters={filters}
+          handlers={handlers}
+          isFiltered={!!isFiltered}
+        />
 
-          {user.role !== "coach" && (
-            <TagFilter
-              tags={tags}
-              activeTags={filters.activeTags}
-              onToggle={handlers.handleToggleTag}
-              onClear={handlers.handleClearTags}
-              hideHeader
-              variant="mobile"
-            />
-          )}
+        <FeedAnnouncementSection
+          show={!!user.groupId}
+          loading={announcementLoading}
+          announcements={announcements}
+          isCoach={user.role === "coach"}
+          onMutate={onMutateAnnouncement}
+        />
 
-          {user.role === "coach" && (
-            <>
-              <RoleFilter
-                variant="mobile"
-                roles={groupRoles}
-                filterRoleId={filters.filterRoleId}
-                onFilter={(id) => handlers.setFilterRoleId(id)}
-              />
-              <AthleteFilter
-                variant="mobile"
-                athletes={athletes}
-                filterAthleteId={filters.filterAthleteId}
-                onFilter={handlers.handleFilterAthlete}
-              />
-              <ReviewStatusFilter
-                variant="mobile"
-                filterReviewStatus={filters.filterReviewStatus}
-                onFilter={handlers.setFilterReviewStatus}
-              />
-            </>
-          )}
-
-          <DateFilter
-            variant="mobile"
-            inline
-            dateFilter={filters.dateFilter}
-            customDates={filters.customDates}
-            onDateFilterChange={handlers.setDateFilter}
-            onCustomDatesChange={handlers.setCustomDates}
-            onClear={handlers.clearDateFilter}
-          />
-        </div>
-
-        {user.groupId && (
-          <AnimatePresence mode="wait">
-            {announcementLoading ? (
-              <motion.div
-                key="announcement-skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <AnnouncementSkeleton />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="announcement-content"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: 0.55,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
-              >
-                <AnnouncementBanner
-                  announcements={announcements}
-                  isCoach={user.role === "coach"}
-                  onMutate={onMutateAnnouncement}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-
-        {user.groupId && (
-          <AnimatePresence mode="wait">
-            {checkinsLoading ? (
-              <motion.div
-                key="checkin-skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                <CheckinSkeleton />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="checkin-content"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  delay: 0.04,
-                  duration: 0.55,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
-              >
-                <CheckinCard
-                  checkins={checkins}
-                  isCoach={user.role === "coach"}
-                  onCheckinLog={onCheckinLog}
-                  onMutate={onMutateCheckins}
-                  trainingScheduleTemplate={trainingScheduleTemplate}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
+        <FeedCheckinSection
+          show={!!user.groupId}
+          loading={checkinsLoading}
+          checkins={checkins}
+          isCoach={user.role === "coach"}
+          onCheckinLog={onCheckinLog}
+          onMutate={onMutateCheckins}
+          trainingScheduleTemplate={trainingScheduleTemplate}
+        />
 
         <div className="mb-6 flex items-center justify-between">
           <div>

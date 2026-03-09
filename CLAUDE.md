@@ -67,10 +67,15 @@ Some documents have both singular and array versions of relationship fields:
 After editing or adding a feature, update or add the related E2E and/or unit tests.
 See `cypress/CLAUDE.md` for E2E conventions.
 
-## Large Files (refactoring candidates)
-- `app/api/groups/route.ts` (528 lines)
-- `app/api/invites/[token]/redeem/route.ts` (497 lines)
-- `app/api/logs/route.ts` (438 lines)
-- `components/dashboard/group/group-athletes-section.tsx` (482 lines)
-- `components/dashboard/sidebar/sidebar-profile.tsx` (436 lines)
-- `components/dashboard/logs/comment-section.tsx` (408 lines)
+## Refactored Modules
+
+Large route handlers are split into colocated helper files:
+- `app/api/groups/post-handlers.ts` — `handleCreate`, `handleJoin`, `handleSwitch`, `handleLeave`
+- `app/api/invites/[token]/redeem/type-handlers.ts` — `handleUnder13ParentInvite`, `handleAthleteInvite`, `handleParentInvite`
+
+Component sub-components:
+- `components/dashboard/group/athlete-row.tsx` — per-athlete row (role dropdown, transfer, remove)
+- `components/dashboard/group/guardians-popover.tsx` — guardian list + invite popover
+- `components/dashboard/logs/comment-item.tsx` — individual comment bubble (exports `Comment` type)
+- `components/dashboard/sidebar/group-switcher.tsx` — group switcher dropdown
+- `components/dashboard/sidebar/group-action-form.tsx` — join/create group form (`forceOpen` prop for "Join Another" flow)
