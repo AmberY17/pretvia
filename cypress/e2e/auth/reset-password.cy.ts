@@ -12,4 +12,15 @@ describe("Reset Password", () => {
     cy.findByRole("button", { name: "Update password" }).click();
     cy.contains("Invalid or expired").should("be.visible");
   });
+
+  context("Mobile viewport", () => {
+    it("shows reset password form on small screen", () => {
+      cy.viewport(375, 667);
+      cy.visit("/auth/reset-password?token=invalid-token-123");
+      cy.contains("Set new password").should("be.visible");
+      cy.findByLabelText("New password").should("be.visible");
+      cy.findByLabelText("Confirm password").should("be.visible");
+      cy.findByRole("button", { name: "Update password" }).should("be.visible");
+    });
+  });
 });

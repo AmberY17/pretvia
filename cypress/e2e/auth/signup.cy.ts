@@ -54,4 +54,36 @@ describe("Sign Up", () => {
     cy.contains("Welcome back").should("be.visible");
     cy.findByRole("button", { name: "Sign In" }).should("be.visible");
   });
+
+  context("Mobile viewport", () => {
+    beforeEach(() => {
+      cy.viewport(375, 667);
+      cy.visit("/auth");
+      cy.findByRole("button", { name: /don't have an account/i }).click();
+      cy.contains("Create your account").should("be.visible");
+      cy.findByRole("button", { name: "Coach" }).click();
+    });
+
+    it("shows signup form with all fields on small screen", () => {
+      cy.findByLabelText("First name").should("be.visible");
+      cy.findByLabelText("Last name").should("be.visible");
+      cy.findByLabelText("Email").should("be.visible");
+      cy.findByLabelText("Password").should("be.visible");
+      cy.findByRole("button", { name: "Create Account" }).should("be.visible");
+    });
+
+    it("shows validation error on small screen", () => {
+      cy.findByLabelText("First name").type("A");
+      cy.findByLabelText("Last name").type("B");
+      cy.findByLabelText("Email").type("newuser@test.pretvia.com");
+      cy.findByLabelText("Password").type("TestPass123!", { log: false });
+      cy.findByRole("button", { name: "Create Account" }).click();
+      cy.contains("First and last name must be at least 2 characters each").should("be.visible");
+    });
+
+    it("can switch back to sign in on small screen", () => {
+      cy.findByRole("button", { name: /already have an account/i }).click();
+      cy.contains("Welcome back").should("be.visible");
+    });
+  });
 });

@@ -41,4 +41,34 @@ describe("Login", () => {
     cy.findByRole("button", { name: "Coach" }).should("be.visible");
     cy.findByRole("button", { name: "Athlete" }).should("be.visible");
   });
+
+  context("Mobile viewport", () => {
+    beforeEach(() => {
+      cy.viewport(375, 667);
+      cy.visit("/auth");
+    });
+
+    it("shows login form on small screen", () => {
+      cy.contains("Welcome back").should("be.visible");
+      cy.findByLabelText("Email").should("be.visible");
+      cy.findByLabelText("Password").should("be.visible");
+      cy.findByRole("button", { name: "Sign In" }).should("be.visible");
+    });
+
+    it("redirects to dashboard on valid credentials from mobile", () => {
+      const email = Cypress.env("ATHLETE_EMAIL") ?? "athlete@test.pretvia.com";
+      const password = Cypress.env("ATHLETE_PASSWORD") ?? "TestPass123!";
+      cy.findByLabelText("Email").type(email);
+      cy.findByLabelText("Password").type(password, { log: false });
+      cy.findByRole("button", { name: "Sign In" }).click();
+      cy.url().should("include", "/dashboard");
+      cy.contains("Training Feed").should("be.visible");
+    });
+
+    it("can switch to sign up on small screen", () => {
+      cy.findByRole("button", { name: /don't have an account/i }).click();
+      cy.contains("Create your account").should("be.visible");
+      cy.findByRole("button", { name: "Create Account" }).should("be.visible");
+    });
+  });
 });

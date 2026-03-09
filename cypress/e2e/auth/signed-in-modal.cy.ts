@@ -26,4 +26,26 @@ describe("Signed-in modal (arrive at /auth while logged in)", () => {
     cy.visit("/dashboard");
     cy.url().should("include", "/auth");
   });
+
+  context("Mobile viewport", () => {
+    beforeEach(() => {
+      cy.viewport(375, 667);
+    });
+
+    it("shows signed-in modal on small screen", () => {
+      cy.loginAsAthlete();
+      cy.visit("/auth");
+      cy.contains("You're signed in").should("be.visible");
+      cy.findByRole("button", { name: /Continue as/ }).should("be.visible");
+      cy.findByRole("button", { name: "Sign in with different account" }).should("be.visible");
+    });
+
+    it("Continue as navigates to dashboard on mobile", () => {
+      cy.loginAsAthlete();
+      cy.visit("/auth");
+      cy.findByRole("button", { name: /Continue as/ }).click();
+      cy.url().should("include", "/dashboard");
+      cy.contains("Training Feed").should("be.visible");
+    });
+  });
 });

@@ -15,4 +15,23 @@ describe("Logout", () => {
     cy.visit("/dashboard");
     cy.url().should("include", "/auth");
   });
+
+  context("Mobile viewport — Coach", () => {
+    // Coach Sign Out on mobile is via the hamburger menu popover.
+    // Full navigation flow (including Sign Out) is covered in mobile/navigation.cy.ts.
+    // This context verifies the session is cleared after signing out via hamburger.
+    beforeEach(() => {
+      cy.loginAsCoach();
+      cy.viewport(375, 667);
+      cy.visit("/dashboard");
+    });
+
+    it("signing out via hamburger menu clears session", () => {
+      cy.findByRole("button", { name: "Open menu" }).click();
+      cy.contains("Sign out").click();
+      cy.url().should("include", "/auth");
+      cy.visit("/dashboard");
+      cy.url().should("include", "/auth");
+    });
+  });
 });

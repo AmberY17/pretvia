@@ -5,7 +5,7 @@
  * Requires:
  * - MONGODB_URI in env
  * - TEST_ACCOUNT_EMAILS in .env.local including:
- *   athlete@test.pretvia.com,coach@test.pretvia.com
+ *   athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com
  */
 
 import { MongoClient, ObjectId } from "mongodb";
@@ -15,6 +15,8 @@ const ATHLETE_EMAIL = "athlete@test.pretvia.com";
 const ATHLETE_PASSWORD = "TestPass123!";
 const COACH_EMAIL = "coach@test.pretvia.com";
 const COACH_PASSWORD = "TestPass123!";
+const DELETE_TEST_EMAIL = "deletetest@test.pretvia.com";
+const DELETE_TEST_PASSWORD = "TestPass123!";
 
 async function seed() {
   const uri = process.env.MONGODB_URI;
@@ -150,16 +152,102 @@ async function seed() {
     { upsert: true },
   );
 
+  // Create or update delete-test account (for account deletion E2E tests)
+  const deleteHash = await bcrypt.hash(DELETE_TEST_PASSWORD, 12);
+  const deleteExists = await users.findOne({ email: DELETE_TEST_EMAIL });
+  if (!deleteExists) {
+    await users.insertOne({
+      _id: new ObjectId(),
+      email: DELETE_TEST_EMAIL,
+      password: deleteHash,
+      displayName: "E2E Delete Test",
+      role: "athlete",
+      groupId: null,
+      groupIds: [],
+      profileComplete: true,
+      authProvider: "email",
+      emailVerified: true,
+      createdAt: new Date(),
+    });
+    console.log("Created delete-test account:", DELETE_TEST_EMAIL);
+  } else {
+    await users.updateOne(
+      { email: DELETE_TEST_EMAIL },
+      { $set: { password: deleteHash, emailVerified: true } },
+    );
+    console.log("Updated delete-test account:", DELETE_TEST_EMAIL);
+  }
+
+  // Seed static invite tokens for invite redemption tests
+  // Tokens are long-lived (365 days) and reseeded on each run
+  const invites = db.collection("invites");
+  const inviteExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+  await invites.updateOne(
+    { token: "e2e-invite-athlete" },
+    {
+      $set: {
+        token: "e2e-invite-athlete",
+        groupId: coachGroupId,
+        type: "athlete",
+        email: "e2e-invited@test.pretvia.com",
+        createdBy: coachId,
+        expiresAt: inviteExpiry,
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+  console.log("Seeded invite token: e2e-invite-athlete");
+
+  await invites.updateOne(
+    { token: "e2e-invite-parent" },
+    {
+      $set: {
+        token: "e2e-invite-parent",
+        groupId: coachGroupId,
+        type: "parent",
+        email: "e2e-parent@test.pretvia.com",
+        athleteEmail: ATHLETE_EMAIL,
+        createdBy: coachId,
+        expiresAt: inviteExpiry,
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+  console.log("Seeded invite token: e2e-invite-parent");
+
+  await invites.updateOne(
+    { token: "e2e-invite-under13" },
+    {
+      $set: {
+        token: "e2e-invite-under13",
+        groupId: coachGroupId,
+        type: "under13_parent",
+        email: "e2e-under13parent@test.pretvia.com",
+        athleteNamePlaceholder: "E2E Child",
+        createdBy: coachId,
+        expiresAt: inviteExpiry,
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+  console.log("Seeded invite token: e2e-invite-under13");
+
   await client.close();
   console.log("\nDone. Add to .env.local:");
   console.log(
-    "TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com",
+    "TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com",
   );
   console.log("\nOptional for Cypress (or use cypress.env.json):");
   console.log("CYPRESS_ATHLETE_EMAIL=athlete@test.pretvia.com");
   console.log("CYPRESS_ATHLETE_PASSWORD=TestPass123!");
   console.log("CYPRESS_COACH_EMAIL=coach@test.pretvia.com");
   console.log("CYPRESS_COACH_PASSWORD=TestPass123!");
+  console.log("CYPRESS_DELETE_TEST_EMAIL=deletetest@test.pretvia.com");
+  console.log("CYPRESS_DELETE_TEST_PASSWORD=TestPass123!");
 }
 
 seed().catch((err) => {
