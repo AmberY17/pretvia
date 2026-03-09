@@ -31,7 +31,7 @@ export interface CheckinItem {
   expiresAt: string;
   checkedInCount: number;
   totalAthletes: number;
-  hasUserLoggged: boolean;
+  hasUserLogged: boolean;
 }
 
 interface CheckinCardProps {
@@ -176,7 +176,7 @@ export function CheckinCard({
                   {/* Athlete action */}
                   {!isCoach && (
                     <div className="mt-3">
-                      {checkin.hasUserLoggged ? (
+                      {checkin.hasUserLogged ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                           <CheckCircle2 className="h-3 w-3" />
                           Logged

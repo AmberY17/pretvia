@@ -27,12 +27,11 @@ pnpm seed:test    # Seed test users
 - Test accounts (env `TEST_ACCOUNT_EMAILS`) bypass email verification
 
 ### API Route Patterns
-- Every protected endpoint: `getSession()` check first → 401 if missing
-- Coach-gated endpoints: `canManageGroup(db, userId, groupId)` from `lib/api-auth.ts` → 403
-- DB access: `const db = await getDb()` from `lib/mongodb.ts`
-- ObjectId validation: `safeObjectId(id)` from `lib/objectid.ts` → returns null for invalid
+See `app/api/CLAUDE.md` for full detail. Short version:
+- Every protected endpoint: `getSession()` → 401 if missing
+- Coach-gated: `canManageGroup(db, userId, groupId)` from `lib/api-auth.ts` → 403
+- DB: `const db = await getDb()` — ObjectIds: `safeObjectId(id)` → null if invalid
 - Error shape: always `{ error: string }` with appropriate HTTP status
-- Try/catch with `console.error("METHOD /api/path:", err)` and 500 response
 
 ### Database (MongoDB)
 Collections: `users`, `groups`, `logs`, `comments`, `checkins`, `announcements`, `tags`, `invites`, `skippedDays`, `attendance`
@@ -42,53 +41,31 @@ Some documents have both singular and array versions of relationship fields:
 - `groupId` / `groupIds` — user's group membership
 - `coachId` / `coachIds` — group's coaches
 
-`canManageGroup()` handles both: `group.coachIds ?? (group.coachId ? [group.coachId] : [])`. Always check both when querying.
+`canManageGroup()` handles both. Always check both when querying.
 
-## Directory Purposes
+## Directory Map
 
 | Directory | Purpose |
 |-----------|---------|
-| `app/api/` | REST API route handlers (Next.js App Router) |
+| `app/api/` | REST API route handlers |
 | `app/auth/` | Login/signup pages |
 | `app/dashboard/` | Main dashboard (layout + sub-routes) |
-| `components/ui/` | shadcn/ui primitives (Button, Dialog, etc.) |
-| `components/dashboard/` | Feature components (logs, filters, sidebar, group) |
+| `components/ui/` | shadcn/ui primitives |
+| `components/dashboard/` | Feature components |
 | `components/dashboard/shared/` | Reusable components (DeleteConfirmDialog, VisibilityBadge, TagPill) |
-| `hooks/` | Custom React hooks (one per file, `use-` prefix) |
+| `hooks/` | Custom React hooks (`use-` prefix, one per file) |
 | `lib/` | Server/client utilities (auth, db, streak calc, date/time) |
-| `types/dashboard.ts` | All shared TypeScript types — never duplicate these |
+| `types/dashboard.ts` | All shared TypeScript types — never duplicate |
 | `cypress/e2e/` | E2E tests organized by feature area |
-
-## Component Conventions
-- Files: kebab-case. Exports: PascalCase named exports (no default exports)
-- `"use client"` only when component uses hooks/browser APIs
-- `cn()` from `@/lib/utils` for class merging
-- Import alias: `@/*` → project root
-- Props interface: `ComponentNameProps`
-
-## Styling
-- Tailwind utility classes only (no CSS modules)
-- Semantic color tokens: `primary`, `secondary`, `destructive`, `muted`, `accent`, `checkin`
-- Dark mode: `class` strategy. Color themes: `[data-theme="..."]` on `<html>`
-- `cn()` for conditional classes, `cva` for variant styles
-
-## Key Hooks
-- `useAuth()` — current session + mutate
-- `useRequireAuth()` — page-level auth guard (redirects if unauthenticated)
-- `useDashboardFilters()` — filter state for dashboard feed
-- `useTrainingSlots()` — CRUD for training slot arrays
-
-## Testing
-- **E2E:** Cypress in `cypress/e2e/` — 9 feature areas, 20 spec files
-- **Unit:** Vitest in `__tests__/` or `*.test.ts` files
-- E2E uses `cy.session()` for login caching, credentials from `cypress.env.json`
-- Prefer semantic locators: `cy.contains()`, `findByRole()`, `data-testid`
-- Run E2E: `pnpm e2e:ci` (sets `SKIP_EMAIL=1`, starts dev server automatically)
 
 ## Data Fetching (Client)
 - SWR for all client data fetching
 - Fetchers in `lib/swr-utils.ts`: `urlFetcher` (single), `logsInfiniteFetcher` (paginated)
 - `useSWR` for single resources, `useSWRInfinite` for paginated feeds
+
+## Testing
+After editing or adding a feature, update or add the related E2E and/or unit tests.
+See `cypress/CLAUDE.md` for E2E conventions.
 
 ## Large Files (refactoring candidates)
 - `app/api/groups/route.ts` (528 lines)

@@ -5,7 +5,7 @@
  * Requires:
  * - MONGODB_URI in env
  * - TEST_ACCOUNT_EMAILS in .env.local including:
- *   athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com
+ *   athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com
  */
 
 import { MongoClient, ObjectId } from "mongodb";
@@ -17,6 +17,8 @@ const COACH_EMAIL = "coach@test.pretvia.com";
 const COACH_PASSWORD = "TestPass123!";
 const DELETE_TEST_EMAIL = "deletetest@test.pretvia.com";
 const DELETE_TEST_PASSWORD = "TestPass123!";
+const GUARDIAN_EMAIL = "guardian@test.pretvia.com";
+const GUARDIAN_PASSWORD = "TestPass123!";
 
 async function seed() {
   const uri = process.env.MONGODB_URI;
@@ -34,6 +36,7 @@ async function seed() {
 
   const athleteHash = await bcrypt.hash(ATHLETE_PASSWORD, 12);
   const coachHash = await bcrypt.hash(COACH_PASSWORD, 12);
+  const guardianHash = await bcrypt.hash(GUARDIAN_PASSWORD, 12);
 
   const groupMemberships = db.collection("groupMemberships");
 
@@ -152,6 +155,49 @@ async function seed() {
     { upsert: true },
   );
 
+  // Create or update guardian (linked to athlete for guardian-calendar E2E tests)
+  const guardianExists = await users.findOne({ email: GUARDIAN_EMAIL });
+  let guardianId: string;
+  if (!guardianExists) {
+    const guardianResult = await users.insertOne({
+      _id: new ObjectId(),
+      email: GUARDIAN_EMAIL,
+      password: guardianHash,
+      displayName: "E2E Guardian",
+      role: "guardian",
+      groupId: null,
+      groupIds: [],
+      profileComplete: true,
+      authProvider: "email",
+      emailVerified: true,
+      createdAt: new Date(),
+    });
+    guardianId = guardianResult.insertedId.toString();
+    console.log("Created guardian:", GUARDIAN_EMAIL);
+  } else {
+    guardianId = guardianExists._id.toString();
+    await users.updateOne(
+      { email: GUARDIAN_EMAIL },
+      {
+        $set: {
+          password: guardianHash,
+          displayName: "E2E Guardian",
+          emailVerified: true,
+        },
+      },
+    );
+    console.log("Updated guardian:", GUARDIAN_EMAIL);
+  }
+
+  // Link guardian to athlete
+  const guardianLinks = db.collection("guardianLinks");
+  await guardianLinks.updateOne(
+    { guardianId, athleteId },
+    { $setOnInsert: { guardianId, athleteId, createdAt: new Date() } },
+    { upsert: true },
+  );
+  console.log("Linked guardian to athlete");
+
   // Create or update delete-test account (for account deletion E2E tests)
   const deleteHash = await bcrypt.hash(DELETE_TEST_PASSWORD, 12);
   const deleteExists = await users.findOne({ email: DELETE_TEST_EMAIL });
@@ -239,13 +285,15 @@ async function seed() {
   await client.close();
   console.log("\nDone. Add to .env.local:");
   console.log(
-    "TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com",
+    "TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com",
   );
   console.log("\nOptional for Cypress (or use cypress.env.json):");
   console.log("CYPRESS_ATHLETE_EMAIL=athlete@test.pretvia.com");
   console.log("CYPRESS_ATHLETE_PASSWORD=TestPass123!");
   console.log("CYPRESS_COACH_EMAIL=coach@test.pretvia.com");
   console.log("CYPRESS_COACH_PASSWORD=TestPass123!");
+  console.log("CYPRESS_GUARDIAN_EMAIL=guardian@test.pretvia.com");
+  console.log("CYPRESS_GUARDIAN_PASSWORD=TestPass123!");
   console.log("CYPRESS_DELETE_TEST_EMAIL=deletetest@test.pretvia.com");
   console.log("CYPRESS_DELETE_TEST_PASSWORD=TestPass123!");
 }
