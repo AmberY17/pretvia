@@ -102,14 +102,15 @@ export function useDashboardPanel({
           mutateLogs(undefined, { revalidate: true });
           return;
         }
-        // Revalidate tags in the background so the filter dropdown stays accurate
+        // Revalidate tags and stats in the background
         mutateTags();
+        mutateStats();
       } catch {
         toast.error("Network error");
         mutateLogs(undefined, { revalidate: true });
       }
     },
-    [mutateLogs, mutateTags, selectedLog],
+    [mutateLogs, mutateTags, mutateStats, selectedLog],
   );
 
   const handleViewLog = useCallback((log: LogEntry) => {
