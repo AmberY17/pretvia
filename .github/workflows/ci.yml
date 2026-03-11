@@ -79,6 +79,10 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm seed:test
       - run: pnpm e2e:ci

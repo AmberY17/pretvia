@@ -1,6 +1,8 @@
 import { getDb } from "@/lib/mongodb"
 import { WaitlistTable, type WaitlistEntry } from "@/components/admin/waitlist-table"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Waitlist — Pretvia Admin",
 }
