@@ -84,5 +84,6 @@ jobs:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile
+      - run: npx cypress install
       - run: pnpm seed:test
       - run: pnpm e2e:ci
