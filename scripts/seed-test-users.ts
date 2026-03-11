@@ -282,6 +282,25 @@ async function seed() {
   );
   console.log("Seeded invite token: e2e-invite-under13");
 
+  // Seed waitlist invite token for E2E coach signup tests
+  const waitlist = db.collection("waitlist")
+  await waitlist.updateOne(
+    { inviteToken: "e2e-waitlist-token" },
+    {
+      $set: {
+        email: "e2e-waitlist@test.pretvia.com",
+        name: "E2E Waitlist Coach",
+        status: "approved",
+        inviteToken: "e2e-waitlist-token",
+        inviteExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+      },
+      $unset: { usedAt: "" },
+    },
+    { upsert: true }
+  )
+  console.log("Seeded waitlist token: e2e-waitlist-token")
+
   await client.close();
   console.log("\nDone. Add to .env.local:");
   console.log(

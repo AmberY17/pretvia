@@ -8,7 +8,7 @@ import { sendVerificationEmail } from "@/lib/resend"
 
 export async function POST(req: Request) {
   try {
-    const { email, password, displayName, firstName, lastName, dateOfBirth, role } = await req.json()
+    const { email, password, displayName, firstName, lastName, dateOfBirth, role, waitlistToken } = await req.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -48,6 +48,40 @@ export async function POST(req: Request) {
     }
 
     const userRole = role === "coach" ? "coach" : "athlete"
+
+    // Waitlist gate: coach sign-ups require an approved invite token
+    let waitlistEntryId: import("mongodb").ObjectId | null = null
+    if (userRole === "coach" && !isTestAccount(normalizedEmail)) {
+      if (!waitlistToken) {
+        return NextResponse.json(
+          { error: "Coach sign-ups require a waitlist invite token." },
+          { status: 403 }
+        )
+      }
+      const entry = await db.collection("waitlist").findOne({
+        inviteToken: waitlistToken,
+        status: "approved",
+      })
+      if (!entry) {
+        return NextResponse.json(
+          { error: "Invalid or expired invite token." },
+          { status: 403 }
+        )
+      }
+      if (entry.usedAt) {
+        return NextResponse.json(
+          { error: "This invite has already been used." },
+          { status: 403 }
+        )
+      }
+      if (new Date() > entry.inviteExpiresAt) {
+        return NextResponse.json(
+          { error: "Your invite link has expired." },
+          { status: 403 }
+        )
+      }
+      waitlistEntryId = entry._id
+    }
 
     // Test accounts: create user immediately, skip verification
     if (isTestAccount(normalizedEmail)) {
@@ -107,6 +141,14 @@ export async function POST(req: Request) {
       token,
       expiresAt,
     })
+
+    // Mark waitlist token as used (single-use)
+    if (waitlistEntryId) {
+      await db.collection("waitlist").updateOne(
+        { _id: waitlistEntryId },
+        { $set: { usedAt: new Date() } }
+      )
+    }
 
     const sendResult = await sendVerificationEmail(normalizedEmail, token)
     if (!sendResult.ok) {

@@ -14,7 +14,7 @@
     "cy:run": "cypress run",
     "e2e": "cypress open",
     "e2e:ci": "SKIP_EMAIL=1 start-server-and-test dev http://localhost:3000 cy:run",
-    "seed:test": "tsx --env-file=.env.local scripts/seed-test-users.ts",
+    "seed:test": "tsx scripts/seed-test-users.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

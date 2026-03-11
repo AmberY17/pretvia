@@ -1,7 +1,6 @@
 describe("Sign Up", () => {
   beforeEach(() => {
-    cy.visit("/auth");
-    cy.findByRole("button", { name: /don't have an account/i }).click();
+    cy.visit("/auth?signup=coach&token=e2e-waitlist-token");
     cy.contains("Create your account").should("be.visible");
     cy.findByRole("button", { name: "Coach" }).click();
   });
@@ -58,8 +57,7 @@ describe("Sign Up", () => {
   context("Mobile viewport", () => {
     beforeEach(() => {
       cy.viewport(375, 667);
-      cy.visit("/auth");
-      cy.findByRole("button", { name: /don't have an account/i }).click();
+      cy.visit("/auth?signup=coach&token=e2e-waitlist-token");
       cy.contains("Create your account").should("be.visible");
       cy.findByRole("button", { name: "Coach" }).click();
     });
@@ -85,5 +83,30 @@ describe("Sign Up", () => {
       cy.findByRole("button", { name: /already have an account/i }).click();
       cy.contains("Welcome back").should("be.visible");
     });
+  });
+});
+
+describe("Sign Up — no-token coach state", () => {
+  it("shows waitlist message and 'Join the waitlist' button when Coach selected without token", () => {
+    cy.visit("/auth");
+    cy.findByRole("button", { name: /don't have an account/i }).click();
+    cy.contains("Create your account").should("be.visible");
+    cy.findByRole("button", { name: "Coach" }).click();
+    cy.contains("Pretvia is currently invite-only for coaches").should("be.visible");
+    cy.findByRole("button", { name: "Join the waitlist" }).should("be.visible");
+    cy.findByLabelText("First name").should("not.exist");
+  });
+
+  it("'Join the waitlist' button navigates to /waitlist", () => {
+    cy.visit("/auth");
+    cy.findByRole("button", { name: /don't have an account/i }).click();
+    cy.findByRole("button", { name: "Coach" }).click();
+    cy.findByRole("button", { name: "Join the waitlist" }).click();
+    cy.url().should("include", "/waitlist");
+  });
+
+  it("?signup=coach param auto-opens signup tab", () => {
+    cy.visit("/auth?signup=coach");
+    cy.contains("Create your account").should("be.visible");
   });
 });
