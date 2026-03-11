@@ -182,27 +182,21 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
               size="sm"
               onClick={onNewLog}
               className="gap-2"
+              aria-label="New Log"
             >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">New Log</span>
             </Button>
           )}
 
-          {/* Athlete: Account + Sign Out icons (no coach — coach has them in sm+ or mobile menu).
-              Account uses router.push instead of <Link> so that
-              cy.get('a[href="/dashboard/account"]') only matches the sidebar
-              link, not this mobile-only header button. */}
+          {/* Athlete: Account + Sign Out icons (no coach — coach has them in sm+ or mobile menu). */}
           {!isGuardian && !isCoachWithGroup && (
             <>
-              <Button
-                variant="ghost-secondary"
-                size="sm"
-                onClick={() => router.push("/dashboard/account")}
-                className="lg:hidden"
-                aria-label="Account settings"
-              >
-                <User className="h-4 w-4" />
-              </Button>
+              <Link href="/dashboard/account" className="lg:hidden" aria-label="Account">
+                <Button variant="ghost-secondary" size="sm" tabIndex={-1}>
+                  <User className="h-4 w-4" />
+                </Button>
+              </Link>
               <Button
                 variant="ghost-secondary"
                 size="sm"

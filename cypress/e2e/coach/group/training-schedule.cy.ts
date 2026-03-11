@@ -26,8 +26,8 @@ describe("Group Training Schedule", () => {
     cy.contains(/Training Schedule/i)
       .closest("section")
       .within(() => {
-        cy.contains(/Add Slot|Add/i).click();
-        cy.get('select, [role="listbox"]').should("have.length.at.least", 1);
+        cy.contains(/Add schedule slot|Add Slot|Add/i).click();
+        cy.get('[aria-label="Select day of week"]').should("be.visible");
       });
   });
 
@@ -35,6 +35,8 @@ describe("Group Training Schedule", () => {
     cy.contains(/Training Schedule/i)
       .closest("section")
       .within(() => {
+        cy.contains(/Add schedule slot|Add Slot|Add/i).click();
+        cy.get('[aria-label="Select day of week"]').should("be.visible");
         cy.contains("button", /Save/i).click();
       });
     cy.contains(/saved|updated|applied/i).should("be.visible");
@@ -43,7 +45,7 @@ describe("Group Training Schedule", () => {
   it("athlete can sync group schedule from account page", () => {
     cy.loginAsAthlete();
     cy.visit("/dashboard/account");
-    cy.contains(/Sync Group Schedule/i).should("be.visible");
+    cy.contains(/Sync with group/i).should("be.visible");
   });
 
   context("Mobile viewport", () => {
@@ -69,8 +71,8 @@ describe("Group Training Schedule", () => {
       cy.contains(/Training Schedule/i)
         .closest("section")
         .within(() => {
-          cy.contains(/Add Slot|Add/i).click();
-          cy.get('select, [role="listbox"]').should("have.length.at.least", 1);
+          cy.contains(/Add schedule slot|Add Slot|Add/i).click();
+          cy.get('[aria-label="Select day of week"]').should("be.visible");
         });
     });
   });

@@ -42,6 +42,7 @@ describe("Guardian Dashboard", () => {
   });
 
   it("shows weekly calendar grid", () => {
+    cy.findByLabelText(/E2E Athlete/i).check();
     cy.contains(/Mon|Tue|Wed|Thu|Fri/i).should("be.visible");
   });
 
@@ -66,6 +67,8 @@ describe("Guardian Dashboard", () => {
     });
 
     it("shows weekly calendar grid on mobile", () => {
+      cy.findByRole("button", { name: /select athletes/i }).click();
+      cy.findAllByLabelText(/E2E Athlete/i).filter(":visible").first().check();
       cy.contains(/Mon|Tue|Wed|Thu|Fri/i).should("be.visible");
     });
   });

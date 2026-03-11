@@ -77,7 +77,7 @@ export function AthleteRow({
   const isPending = a.status === "pending";
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div data-testid="athlete-row" className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="font-medium text-foreground">
           {a.displayName ||

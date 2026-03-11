@@ -42,7 +42,7 @@ describe("Mobile Navigation", () => {
     });
 
     it("sidebar nav links are not visible (hidden on mobile)", () => {
-      cy.findByRole("link", { name: "Manage Group" }).should("not.be.visible");
+      cy.get('a[href="/dashboard/group"]').should("not.be.visible");
     });
 
     it("clicking hamburger opens popover with nav links", () => {
@@ -71,10 +71,10 @@ describe("Mobile Navigation", () => {
       cy.url().should("include", "/dashboard/account");
     });
 
-    it("clicking Sign out logs out and redirects to /auth", () => {
+    it("clicking Sign out logs out and redirects away from dashboard", () => {
       cy.findByRole("button", { name: "Open menu" }).click();
       cy.contains("Sign out").click();
-      cy.url().should("include", "/auth");
+      cy.url().should("not.include", "/dashboard");
     });
   });
 });

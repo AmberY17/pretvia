@@ -68,7 +68,7 @@ describe("Login", () => {
     it("can switch to sign up on small screen", () => {
       cy.findByRole("button", { name: /don't have an account/i }).click();
       cy.contains("Create your account").should("be.visible");
-      cy.findByRole("button", { name: "Create Account" }).should("be.visible");
+      cy.findByRole("button", { name: "Athlete" }).should("be.visible");
     });
   });
 });

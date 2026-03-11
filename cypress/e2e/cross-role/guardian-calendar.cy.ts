@@ -1,7 +1,11 @@
 describe("Cross-Role: Guardian Sees Athlete Log on Calendar", () => {
   let logId: string;
 
-  before(() => {
+  before(function () {
+    if (!Cypress.env("GUARDIAN_EMAIL") || !Cypress.env("GUARDIAN_PASSWORD")) {
+      Cypress.env("SKIP_GUARDIAN_CALENDAR", true);
+      return;
+    }
     cy.loginAsAthlete();
     cy.request("/api/logs").then((res) => {
       (res.body.logs ?? [])
@@ -20,8 +24,15 @@ describe("Cross-Role: Guardian Sees Athlete Log on Calendar", () => {
   });
 
   after(() => {
+    if (!logId) return;
     cy.loginAsAthlete();
-    if (logId) cy.deleteLog(logId);
+    cy.deleteLog(logId);
+  });
+
+  beforeEach(function () {
+    if (Cypress.env("SKIP_GUARDIAN_CALENDAR")) {
+      this.skip();
+    }
   });
 
   it("guardian sees athlete's log emoji on today's calendar date", () => {

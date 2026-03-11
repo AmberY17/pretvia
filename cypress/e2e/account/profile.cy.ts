@@ -23,10 +23,10 @@ describe("Account Profile Settings", () => {
     cy.contains(/Training Slots|Training/i)
       .closest("section")
       .within(() => {
-        cy.contains(/Add Slot|Add Training Slot|\+/i)
+        cy.contains(/Add schedule slot|Add Slot|Add Training Slot/i)
           .first()
           .click();
-        cy.get('select, [role="listbox"]').should("have.length.at.least", 1);
+        cy.findByRole("button", { name: /Select day of week/i }).should("be.visible");
       });
   });
 
@@ -61,10 +61,10 @@ describe("Account Profile Settings", () => {
       cy.contains(/Training Slots|Training/i)
         .closest("section")
         .within(() => {
-          cy.contains(/Add Slot|Add Training Slot|\+/i)
+          cy.contains(/Add schedule slot|Add Slot|Add Training Slot/i)
             .first()
             .click();
-          cy.get('select, [role="listbox"]').should("have.length.at.least", 1);
+          cy.findByRole("button", { name: /Select day of week/i }).should("be.visible");
         });
     });
   });

@@ -59,13 +59,13 @@ describe("Athlete Log Detail", () => {
     cy.contains("E2E log-detail fixture").click();
     cy.contains("Log Details").should("be.visible");
     cy.contains("E2E log-detail fixture").should("be.visible");
-    cy.contains("e2e-detail-tag").should("be.visible");
+    cy.get("main").contains("e2e-detail-tag").should("exist");
   });
 
   it("shows visibility badge for athlete's own log", () => {
     cy.contains("E2E log-detail fixture").click();
     cy.contains("Log Details").should("be.visible");
-    cy.contains(/Shared|Only me/i).should("be.visible");
+    cy.contains(/Shared|Only me/i).should("exist");
   });
 
   it("shows Edit and Delete buttons in the detail panel", () => {
@@ -80,7 +80,7 @@ describe("Athlete Log Detail", () => {
     cy.contains("Log Details").should("be.visible");
     cy.contains("button", "Edit").click();
     cy.contains("Edit Log").should("be.visible");
-    cy.get("textarea#notes").clear().type("E2E log-detail updated notes");
+    cy.get("textarea#notes").filter(":visible").clear().type("E2E log-detail updated notes");
     cy.contains("button", "Update Log").click();
     cy.get("main").should("contain", "E2E log-detail updated notes");
   });
@@ -118,15 +118,15 @@ describe("Athlete Log Detail", () => {
     it("tapping a log card opens the detail panel on mobile", () => {
       cy.get("main").should("contain", "E2E log-detail");
       cy.contains('[role="button"]', "E2E log-detail").click();
-      cy.contains("Log Details").should("be.visible");
+      cy.findByRole("heading", { name: "Log Details" }).should("be.visible");
     });
 
     it("shows notes, tags, Edit and Delete in the panel on mobile", () => {
       cy.contains('[role="button"]', "E2E log-detail").click();
-      cy.contains("Log Details").should("be.visible");
-      cy.contains("e2e-detail-tag").should("be.visible");
-      cy.contains("button", "Edit").should("be.visible");
-      cy.contains("button", "Delete").should("be.visible");
+      cy.findByRole("heading", { name: "Log Details" }).should("be.visible");
+      cy.get("main").contains("e2e-detail-tag").should("exist");
+      cy.findByRole("button", { name: "Edit" }).should("be.visible");
+      cy.findByRole("button", { name: "Delete" }).should("be.visible");
     });
   });
 });

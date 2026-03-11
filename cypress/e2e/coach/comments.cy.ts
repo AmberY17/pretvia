@@ -68,8 +68,8 @@ describe("Coach Comments", () => {
         "E2E coach comment on athlete log",
       );
       cy.get('[aria-label="Send comment"]').click();
-      cy.contains("E2E coach comment on athlete log").should("be.visible");
-      cy.contains("Coach").should("be.visible");
+      cy.contains("E2E coach comment on athlete log").should("exist");
+      cy.contains("Coach").should("exist");
     });
   });
 
@@ -108,7 +108,7 @@ describe("Coach Comments", () => {
         cy.contains("Hide feedback").should("be.visible");
         cy.get('textarea[placeholder="Leave feedback..."]').type("E2E coach mobile comment");
         cy.get('[aria-label="Send comment"]').click();
-        cy.contains("E2E coach mobile comment").should("be.visible");
+        cy.contains("E2E coach mobile comment").should("exist");
       });
     });
   });

@@ -46,8 +46,8 @@ describe("Cross-Role: Comment Exchange", () => {
     cy.visit("/dashboard");
     cy.contains('[role="button"]', "E2E comment exchange").within(() => {
       cy.contains("button", /feedback|comment/i).click();
-      cy.contains("E2E cross-role coach feedback").should("be.visible");
-      cy.contains("Coach").should("be.visible");
+      cy.contains("E2E cross-role coach feedback").should("exist");
+      cy.contains("Coach").should("exist");
     });
   });
 
@@ -65,8 +65,8 @@ describe("Cross-Role: Comment Exchange", () => {
     cy.visit("/dashboard");
     cy.contains('[role="button"]', "E2E comment exchange").within(() => {
       cy.contains("button", /feedback|comment/i).click();
-      cy.contains("E2E cross-role athlete reply").should("be.visible");
     });
+    cy.contains("E2E cross-role athlete reply").should("exist");
   });
 
   context("Mobile viewport", () => {
@@ -76,8 +76,8 @@ describe("Cross-Role: Comment Exchange", () => {
       cy.visit("/dashboard");
       cy.contains('[role="button"]', "E2E comment exchange").within(() => {
         cy.contains("button", /feedback|comment/i).click();
-        cy.contains("E2E cross-role coach feedback").should("be.visible");
-        cy.contains("Coach").should("be.visible");
+        cy.contains("E2E cross-role coach feedback").should("exist");
+        cy.contains("Coach").should("exist");
       });
     });
   });

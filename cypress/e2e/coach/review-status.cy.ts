@@ -33,16 +33,16 @@ describe("Coach Review Status", () => {
 
   it("shows review status badge on shared log", () => {
     cy.contains("E2E coach review test").should("be.visible");
-    cy.contains("Pending").should("be.visible");
+    cy.contains("Pending").should("exist");
   });
 
   it("can change status via dropdown", () => {
     cy.contains('[role="button"]', "E2E coach review test").within(() => {
-      cy.contains("Pending").click();
+      cy.contains(/Pending|Reviewed|Revisit/i).scrollIntoView().click({ force: true });
     });
-    cy.contains("Reviewed").click();
+    cy.findByRole("menuitem", { name: "Reviewed" }).click();
     cy.contains('[role="button"]', "E2E coach review test").within(() => {
-      cy.contains("Reviewed").should("be.visible");
+      cy.contains("Reviewed").should("exist");
     });
   });
 

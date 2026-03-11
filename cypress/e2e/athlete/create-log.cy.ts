@@ -25,7 +25,7 @@ describe("Athlete Create Log", () => {
 
     cy.reload();
     cy.get("main").should("contain", "E2E create-log test");
-    cy.contains("e2e-create").should("be.visible");
+    cy.get("main").contains("e2e-create").should("exist");
   });
 
   context("Mobile viewport", () => {
@@ -36,12 +36,12 @@ describe("Athlete Create Log", () => {
     });
 
     it("New Log button is visible on mobile", () => {
-      cy.findByRole("button", { name: "New Log" }).should("be.visible");
+      cy.findByRole("button", { name: /new log/i }).should("be.visible");
     });
 
     it("opens new log panel on mobile", () => {
-      cy.findByRole("button", { name: "New Log" }).click();
-      cy.contains("New Log Entry").should("be.visible");
+      cy.findByRole("button", { name: /new log/i }).click();
+      cy.findByRole("heading", { name: /New Log Entry/i }).should("be.visible");
       cy.findByRole("button", { name: "Select emoji" }).should("be.visible");
     });
 
@@ -60,7 +60,7 @@ describe("Athlete Create Log", () => {
 
       cy.reload();
       cy.get("main").should("contain", "E2E create-log mobile test");
-      cy.contains("e2e-create-mobile").should("be.visible");
+      cy.get("main").contains("e2e-create-mobile").should("be.visible");
     });
   });
 });

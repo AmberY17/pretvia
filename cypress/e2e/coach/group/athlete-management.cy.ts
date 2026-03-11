@@ -20,11 +20,9 @@ describe("Coach Athlete Management", () => {
   });
 
   it("can assign a role to an athlete", () => {
-    cy.contains(/E2E Athlete|athlete@test/i)
-      .closest('[class*="rounded"]')
-      .within(() => {
-        cy.get('select, [role="combobox"]').first().should("be.visible");
-      });
+    cy.contains('[data-testid="athlete-row"]', /E2E Athlete|athlete@test/i).within(() => {
+      cy.contains("button", /No roles|roles/i).should("be.visible");
+    });
   });
 
   context("Mobile viewport", () => {
@@ -46,7 +44,7 @@ describe("Coach Athlete Management", () => {
       cy.get('input[placeholder*="athlete"], input[placeholder*="Search"], input[placeholder*="search"]')
         .first()
         .type("E2E Athlete");
-      cy.contains(/E2E Athlete/i).should("be.visible");
+      cy.contains('[data-testid="athlete-row"]', /E2E Athlete/i).should("be.visible");
     });
   });
 });

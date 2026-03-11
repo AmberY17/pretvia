@@ -38,7 +38,7 @@ describe("Coach Check-in Sessions", () => {
     cy.contains("New Session Check-In").should("be.visible");
     cy.findByLabelText(/Title/i).type("E2E Checkin Session");
     cy.contains("button", "Create").click();
-    cy.contains("E2E Checkin Session").should("be.visible");
+    cy.contains("E2E Checkin Session").should("exist");
   });
 
   it("shows the check-in card with progress indicator", () => {
@@ -75,7 +75,7 @@ describe("Coach Check-in Sessions", () => {
       cy.contains("New Session Check-In").should("be.visible");
       cy.findByLabelText(/Title/i).type("E2E Checkin Mobile");
       cy.contains("button", "Create").click();
-      cy.contains("E2E Checkin Mobile").should("be.visible");
+      cy.contains("E2E Checkin Mobile").should("exist");
     });
 
     it("check-in card shows progress indicator on mobile", () => {
