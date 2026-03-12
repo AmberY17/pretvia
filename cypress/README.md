@@ -57,8 +57,13 @@ See `cypress.env.example.json` for the full template.
 | `pnpm cy:open` | Open Cypress interactive GUI (dev server must already be running) |
 | `pnpm cy:run` | Run all tests headlessly (dev server must already be running) |
 | `pnpm e2e:ci` | Start dev server + wait + run tests (single command for CI; skips sending real emails) |
+| `pnpm e2e:ci:record` | Same as `e2e:ci` but records to Cypress Cloud (requires `CYPRESS_RECORD_KEY` env var) |
+| `pnpm e2e:ci:spec <path>` | Run a single spec with CI environment |
+| `pnpm e2e:ci:spec:record <path>` | Run a single spec and record to Cypress Cloud |
 
-When running tests manually (`pnpm dev` then `pnpm cy:run`), set `SKIP_EMAIL=1` before starting the dev server so no real emails are sent (e.g. forgot-password, verification). Example: `SKIP_EMAIL=1 pnpm dev`. The `e2e:ci` script sets this automatically.
+**Cypress Cloud recording:** Set `CYPRESS_RECORD_KEY` (from cloud.cypress.io) when using `e2e:ci:record` or `e2e:ci:spec:record`. The run URL will appear in the terminal. In CI, the GitHub Actions summary includes the link when `CYPRESS_RECORD_KEY` is set as a repository secret.
+
+When running tests manually (`pnpm dev` then `pnpm cy:run`), use `pnpm dev:skip-email` instead of `pnpm dev` so no real emails are sent (e.g. forgot-password, verification). The `e2e:ci` and `e2e:ci:record` scripts use `dev:skip-email` automatically. If you use `TEST_EMAIL_REDIRECT` in `.env.local` for development, it will not apply during E2E runs because `SKIP_EMAIL=1` prevents sending entirely.
 
 ## Test Structure
 

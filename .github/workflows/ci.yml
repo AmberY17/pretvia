@@ -86,4 +86,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npx cypress install
       - run: pnpm seed:test
-      - run: pnpm e2e:ci
+      - uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: pnpm dev:skip-email
+          wait-on: "http://localhost:3000"
+          wait-on-timeout: 120
+          run: cypress run --record
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
