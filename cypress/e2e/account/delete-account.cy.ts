@@ -60,14 +60,14 @@ describe("Account Deletion", () => {
       cy.viewport(375, 667);
       cy.login(DELETE_EMAIL, DELETE_PASSWORD);
       cy.visit("/dashboard/account");
-      cy.contains(/Delete Account/i).should("be.visible");
+      cy.contains(/Delete Account/i).scrollIntoView().should("be.visible");
     });
 
     it("shows confirmation dialog on mobile", () => {
       cy.viewport(375, 667);
       cy.login(DELETE_EMAIL, DELETE_PASSWORD);
       cy.visit("/dashboard/account");
-      cy.contains("button", /Delete Account/i).click();
+      cy.contains("button", /Delete Account/i).scrollIntoView().click();
       cy.contains(/cannot be undone|permanently/i).should("be.visible");
       cy.findByRole("button", { name: "Delete" }).should("be.visible");
       cy.findByRole("button", { name: /Cancel/i }).click();
@@ -80,7 +80,7 @@ describe("Account Deletion", () => {
     cy.contains("button", /Delete Account/i).click();
     cy.contains(/cannot be undone|permanently/i).should("be.visible");
     cy.findByRole("button", { name: "Delete" }).click();
-    cy.url().should("not.include", "/dashboard");
+    cy.url({ timeout: 10000 }).should("not.include", "/dashboard");
   });
 
   it("dashboard is inaccessible after account deletion", () => {

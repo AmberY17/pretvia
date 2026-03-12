@@ -3,12 +3,31 @@
  * Run: pnpm seed:test
  *
  * Requires:
- * - MONGODB_URI in env
+ * - MONGODB_URI in .env.local (or env)
  * - TEST_ACCOUNT_EMAILS in .env.local including:
  *   athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com
  */
 
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
 import { MongoClient, ObjectId } from "mongodb";
+
+// Load .env.local if it exists (tsx does not auto-load it)
+for (const file of [".env.local", ".env"]) {
+  const path = resolve(process.cwd(), file);
+  if (existsSync(path)) {
+    const content = readFileSync(path, "utf8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^([^#=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const val = match[2].trim().replace(/^["']|["']$/g, "");
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+    break;
+  }
+}
 import bcrypt from "bcryptjs";
 
 const ATHLETE_EMAIL = "athlete@test.pretvia.com";
@@ -22,7 +41,6 @@ const GUARDIAN_PASSWORD = "TestPass123!";
 
 async function seed() {
   const uri = process.env.MONGODB_URI;
-  console.log("uri", uri);
   if (!uri) {
     console.error("MONGODB_URI is required");
     process.exit(1);
