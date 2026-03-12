@@ -1,8 +1,18 @@
 describe("Group Training Schedule", () => {
   before(() => {
     cy.loginAsCoach();
-    // The training schedule is part of the group document — no direct delete API
-    // Tests will add/update slots and verify the UI response
+    // Pre-save a training slot so SWR refetches return non-empty data,
+    // preventing the useEffect from resetting local state to empty.
+    cy.request("/api/groups?mode=coach-groups").then((res) => {
+      const groupId = (res.body.groups ?? [])[0]?.id;
+      if (groupId) {
+        cy.request({
+          method: "PUT",
+          url: `/api/groups/${groupId}/training-schedule`,
+          body: { trainingSchedule: [{ dayOfWeek: 1, time: "09:00" }] },
+        });
+      }
+    });
   });
 
   beforeEach(() => {
@@ -27,8 +37,8 @@ describe("Group Training Schedule", () => {
       .closest("section")
       .within(() => {
         cy.contains(/Add schedule slot|Add Slot|Add/i).click();
-        cy.get('[aria-label="Select day of week"]').should("be.visible");
       });
+    cy.get('[aria-label="Select day of week"]').should("be.visible");
   });
 
   it("can save the training schedule", () => {
@@ -36,7 +46,11 @@ describe("Group Training Schedule", () => {
       .closest("section")
       .within(() => {
         cy.contains(/Add schedule slot|Add Slot|Add/i).click();
-        cy.get('[aria-label="Select day of week"]').should("be.visible");
+      });
+    cy.get('[aria-label="Select day of week"]').should("be.visible");
+    cy.contains(/Training Schedule/i)
+      .closest("section")
+      .within(() => {
         cy.contains("button", /Save/i).click();
       });
     cy.contains(/saved|updated|applied/i).should("be.visible");
@@ -72,8 +86,8 @@ describe("Group Training Schedule", () => {
         .closest("section")
         .within(() => {
           cy.contains(/Add schedule slot|Add Slot|Add/i).click();
-          cy.get('[aria-label="Select day of week"]').should("be.visible");
         });
+      cy.get('[aria-label="Select day of week"]').should("be.visible");
     });
   });
 });

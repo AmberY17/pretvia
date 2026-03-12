@@ -55,6 +55,7 @@ export function CommentItem({
       key={comment.id}
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
+      data-testid="comment-item"
       className={`group/comment flex gap-2.5 ${isOwn ? "flex-row-reverse" : ""}`}
     >
       <Avatar className="h-7 w-7 shrink-0 shadow-sm">

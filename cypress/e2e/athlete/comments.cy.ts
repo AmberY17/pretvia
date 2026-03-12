@@ -80,34 +80,28 @@ describe("Athlete Comments", () => {
 
   it("can edit own comment", () => {
     cy.contains('[role="button"]', "E2E athlete-comments log").within(() => {
-      cy.contains("Feedback").click();
+      cy.contains("button", /feedback|comment/i).click();
+      cy.contains('[data-testid="comment-item"]', "E2E comment from athlete")
+        .trigger("mouseover")
+        .within(() => {
+          cy.get('[aria-label="Edit comment"]').click({ force: true });
+          cy.get("textarea").clear().type("E2E comment edited");
+          cy.get('[aria-label="Save edit"]').click();
+        });
+      cy.contains("E2E comment edited").should("be.visible");
     });
-    cy.contains("E2E comment from athlete")
-      .parents()
-      .filter(':has([aria-label="Edit comment"])')
-      .first()
-      .trigger("mouseover")
-      .within(() => {
-        cy.get('[aria-label="Edit comment"]').click({ force: true });
-        cy.get("textarea").clear().type("E2E comment edited");
-        cy.get('[aria-label="Save edit"]').click();
-      });
-    cy.contains("E2E comment edited").should("be.visible");
   });
 
   it("can delete own comment", () => {
     cy.contains('[role="button"]', "E2E athlete-comments log").within(() => {
-      cy.contains("Feedback").click();
+      cy.contains("button", /feedback|comment/i).click();
+      cy.contains('[data-testid="comment-item"]', "E2E comment edited")
+        .trigger("mouseover")
+        .within(() => {
+          cy.get('[aria-label="Delete comment"]').click({ force: true });
+        });
+      cy.contains("E2E comment edited").should("not.exist");
     });
-    cy.contains("E2E comment edited")
-      .parents()
-      .filter(':has([aria-label="Delete comment"])')
-      .first()
-      .trigger("mouseover")
-      .within(() => {
-        cy.get('[aria-label="Delete comment"]').click({ force: true });
-      });
-    cy.contains("E2E comment edited").should("not.exist");
   });
 
   context("Mobile viewport", () => {
