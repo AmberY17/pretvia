@@ -21,7 +21,7 @@ describe("Account Page", () => {
 
   it("shows Celebration toggle for athlete", () => {
     cy.visit("/dashboard/account");
-    cy.contains("Celebration").should("be.visible");
+    cy.contains("Celebration").scrollIntoView().should("be.visible");
   });
 
   context("Mobile viewport — Athlete", () => {
@@ -44,7 +44,7 @@ describe("Account Page", () => {
       cy.visit("/dashboard/account");
       cy.contains("Profile Emoji").should("be.visible");
       cy.contains(/Training|Schedule/).should("be.visible");
-      cy.contains("Celebration").should("be.visible");
+      cy.contains("Celebration").scrollIntoView().should("be.visible");
     });
   });
 

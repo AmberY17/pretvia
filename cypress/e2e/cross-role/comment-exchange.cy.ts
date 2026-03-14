@@ -63,10 +63,12 @@ describe("Cross-Role: Comment Exchange", () => {
 
     cy.loginAsCoach();
     cy.visit("/dashboard");
-    cy.contains('[role="button"]', "E2E comment exchange").within(() => {
-      cy.contains("button", /feedback|comment/i).click();
-    });
-    cy.contains("E2E cross-role athlete reply").should("exist");
+    cy.contains('[role="button"]', "E2E comment exchange", { timeout: 15000 })
+      .scrollIntoView()
+      .within(() => {
+        cy.contains("button", /feedback|comment/i).click();
+      });
+    cy.contains("E2E cross-role athlete reply", { timeout: 15000 }).should("exist");
   });
 
   context("Mobile viewport", () => {

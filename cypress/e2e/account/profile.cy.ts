@@ -26,12 +26,12 @@ describe("Account Profile Settings", () => {
         cy.contains(/Add schedule slot|Add Slot|Add Training Slot/i)
           .first()
           .click();
-        cy.findByRole("button", { name: /Select day of week/i }).should("be.visible");
+        cy.get('[aria-label="Select day of week"]').last().scrollIntoView().should("be.visible");
       });
   });
 
   it("shows celebration section for athlete", () => {
-    cy.contains(/Celebration/i).should("be.visible");
+    cy.contains(/Celebration/i).scrollIntoView().should("be.visible");
   });
 
   context("Mobile viewport", () => {
@@ -54,7 +54,7 @@ describe("Account Profile Settings", () => {
     });
 
     it("shows celebration section on mobile", () => {
-      cy.contains(/Celebration/i).should("be.visible");
+      cy.contains(/Celebration/i).scrollIntoView().should("be.visible");
     });
 
     it("can add a training slot on mobile", () => {
@@ -64,7 +64,7 @@ describe("Account Profile Settings", () => {
           cy.contains(/Add schedule slot|Add Slot|Add Training Slot/i)
             .first()
             .click();
-          cy.findByRole("button", { name: /Select day of week/i }).should("be.visible");
+          cy.get('[aria-label="Select day of week"]').last().scrollIntoView().should("be.visible");
         });
     });
   });

@@ -52,7 +52,7 @@ describe("Coach Invite Athlete", () => {
     });
 
     it("shows Invite button on mobile", () => {
-      cy.contains(/Invite|Add Athlete/i).should("be.visible");
+      cy.contains(/Invite|Add Athlete/i).scrollIntoView().should("be.visible");
     });
 
     it("can open invite modal and see form fields on mobile", () => {

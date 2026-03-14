@@ -110,13 +110,7 @@ describe("Coach signup with waitlist token", () => {
   });
 
   it("submitting valid form shows verification toast", () => {
-    // Clean up any lingering pending signup first
-    cy.request({
-      method: "POST",
-      url: "/api/waitlist",
-      body: {},
-      failOnStatusCode: false,
-    });
+    const uniqueEmail = `e2e-waitlist-${Date.now()}@test.pretvia.com`;
 
     cy.visit("/auth?signup=coach&token=e2e-waitlist-token");
     cy.contains("Create your account").should("be.visible");
@@ -124,7 +118,7 @@ describe("Coach signup with waitlist token", () => {
 
     cy.findByLabelText("First name").type("E2E");
     cy.findByLabelText("Last name").type("Waitlist");
-    cy.findByLabelText("Email").type("e2e-waitlist@test.pretvia.com");
+    cy.findByLabelText("Email").type(uniqueEmail);
     cy.findByLabelText("Password").type("TestPass123!", { log: false });
     cy.findByRole("button", { name: "Create Account" }).click();
 

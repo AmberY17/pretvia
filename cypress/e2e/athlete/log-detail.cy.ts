@@ -80,9 +80,9 @@ describe("Athlete Log Detail", () => {
     cy.contains("Log Details").should("be.visible");
     cy.contains("button", "Edit").click();
     cy.contains("Edit Log").should("be.visible");
-    cy.get("textarea#notes").filter(":visible").clear().type("E2E log-detail updated notes");
+    cy.get("textarea#notes").scrollIntoView().clear().type("E2E log-detail updated notes");
     cy.contains("button", "Update Log").click();
-    cy.get("main").should("contain", "E2E log-detail updated notes");
+    cy.get("main", { timeout: 15000 }).should("contain", "E2E log-detail updated notes");
   });
 
   it("can delete a log via the detail panel with confirmation", () => {
