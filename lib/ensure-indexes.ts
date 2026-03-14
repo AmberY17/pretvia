@@ -55,6 +55,10 @@ export async function ensureIndexes(): Promise<void> {
       // groups
       db.collection("groups").createIndex({ coachId: 1 }),
       db.collection("groups").createIndex({ coachIds: 1 }),
+
+      // waitlist
+      db.collection("waitlist").createIndex({ email: 1 }, { unique: true }),
+      db.collection("waitlist").createIndex({ inviteToken: 1 }),
     ]);
   } catch (err) {
     // Non-fatal: indexes are advisory. Log but don't crash the request.

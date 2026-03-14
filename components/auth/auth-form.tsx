@@ -55,6 +55,10 @@ export function AuthForm() {
     }
   }, [searchParams, router]);
 
+  useEffect(() => {
+    if (searchParams.get("signup") === "coach") setIsLogin(false);
+  }, [searchParams]);
+
   const handleForgotPassword = useCallback((email: string) => {
     setForgotInitialEmail(email);
     setShowForgot(true);

@@ -7,14 +7,14 @@ import { urlFetcher } from "@/lib/swr-utils";
 import { ClipboardCheck } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
-import { PageHeader } from "@/components/dashboard/shared/page-header";
+import { PageHeader } from "@/components/main/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { AttendancePageSkeleton } from "@/components/dashboard/main/dashboard-skeletons";
+import { AttendancePageSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
 import {
   AttendanceSessionDropdown,
   type CheckinItem,
-} from "@/components/dashboard/attendance/attendance-session-dropdown";
-import { AttendanceSessionCard } from "@/components/dashboard/attendance/attendance-session-card";
+} from "@/components/main/coach/attendance/attendance-session-dropdown";
+import { AttendanceSessionCard } from "@/components/main/coach/attendance/attendance-session-card";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { AttendanceStatus } from "@/types/dashboard";

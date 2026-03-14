@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { mutate } from "swr";
 import { Loader2, Users, Dumbbell } from "lucide-react";
@@ -22,12 +22,16 @@ interface SignUpFormProps {
 
 export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const waitlistToken = searchParams.get("token");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [role, setRole] = useState<Role>("athlete");
+  const [dateOfBirth] = useState("");
+  const [role, setRole] = useState<Role>(
+    searchParams.get("signup") === "coach" ? "coach" : "athlete"
+  );
   const [loading, setLoading] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,6 +68,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
             displayName: `${fn} ${ln}`,
             dateOfBirth: role === "athlete" && dateOfBirth ? dateOfBirth : undefined,
             role,
+            waitlistToken: waitlistToken ?? undefined,
           }),
         });
         const data = await res.json();
@@ -91,7 +96,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         setLoading(false);
       }
     },
-    [firstName, lastName, email, password, dateOfBirth, role, router],
+    [firstName, lastName, email, password, dateOfBirth, role, waitlistToken, router],
   );
 
   const isCoach = role === "coach";
@@ -148,8 +153,26 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
             )}
           </motion.div>
 
-          {/* Coach signup fields */}
-          {isCoach && (
+          {/* Coach: no token — waitlist gate */}
+          {isCoach && !waitlistToken && (
+            <>
+              <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                Pretvia is currently invite-only for coaches. Join the waitlist to
+                request early access.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => router.push("/waitlist")}
+              >
+                Join the waitlist
+              </Button>
+            </>
+          )}
+
+          {/* Coach: valid token — full signup form */}
+          {isCoach && !!waitlistToken && (
             <>
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -220,12 +243,6 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
                   className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
-            </>
-          )}
-
-          {/* Submit and Google - coach only */}
-          {isCoach && (
-            <>
               <Button
                 type="submit"
                 disabled={loading}

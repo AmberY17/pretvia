@@ -200,6 +200,45 @@ export async function sendFeedbackEmail(
   return { ok: true }
 }
 
+export async function sendWaitlistApprovalEmail(
+  to: string,
+  name: string,
+  signupUrl: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.error("RESEND_API_KEY is not set")
+    return { ok: false, error: "Email service is not configured" }
+  }
+
+  const resend = new Resend(apiKey)
+  const content = `
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 600; color: #18181b;">You're approved — Welcome to Pretvia</h1>
+    <p style="margin: 0 0 24px; font-size: 16px; color: #71717a;">Hi ${escapeHtml(name)}, your spot has been approved. Click below to create your coach account — valid for 30 days, one-time use.</p>
+    <table role="presentation" align="center" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+      <tr>
+        <td align="center" style="border-radius: 8px; background-color: #18181b;">
+          <a href="${signupUrl}" target="_blank" rel="noopener" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">Create my account</a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin: 24px 0 0; font-size: 14px; color: #a1a1aa;">Or copy and paste this URL: ${signupUrl}</p>
+    <p style="margin: 32px 0 0; font-size: 13px; color: #a1a1aa;">This link expires in 30 days and can only be used once.</p>
+  `
+  const { error } = await resend.emails.send({
+    from: FROM_DISPLAY,
+    to: resolveRecipient(to),
+    subject: "You're approved — Welcome to Pretvia",
+    html: emailWrapper(content),
+  })
+  if (error) {
+    console.error("Resend waitlist approval error:", error)
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

@@ -68,7 +68,7 @@ export async function GET() {
         .collection("guardianLinks")
         .find({ guardianId: user._id.toString() })
         .toArray()
-      linkedAthleteIds = (links as { athleteId: string }[]).map((l) => l.athleteId)
+      linkedAthleteIds = links.map((l) => l.athleteId as string)
     }
 
     return NextResponse.json({
@@ -87,7 +87,7 @@ export async function GET() {
         trainingSlots: user.trainingSlots ?? [],
       },
     })
-  } catch (err) {
+  } catch {
     return NextResponse.json({ user: null })
   }
 }

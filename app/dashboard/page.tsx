@@ -6,26 +6,26 @@ import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { urlFetcher, logsInfiniteFetcher } from "@/lib/swr-utils";
-import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
-import { useDashboardPanel } from "@/hooks/use-dashboard-panel";
+import { useDashboardFilters } from "@/components/main/dashboard/filters/hooks/use-dashboard-filters";
+import { useDashboardPanel } from "@/components/main/dashboard/logs/hooks/use-dashboard-panel";
 import dynamic from "next/dynamic";
-import { DashboardHeader } from "@/components/dashboard/main/dashboard-header";
+import { DashboardHeader } from "@/components/main/dashboard/layout/dashboard-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 
 const DashboardSidebar = dynamic(() =>
-  import("@/components/dashboard/main/dashboard-sidebar").then((m) => m.DashboardSidebar)
+  import("@/components/main/dashboard/layout/dashboard-sidebar").then((m) => m.DashboardSidebar)
 );
 const DashboardFeed = dynamic(() =>
-  import("@/components/dashboard/main/dashboard-feed").then((m) => m.DashboardFeed)
+  import("@/components/main/dashboard/layout/dashboard-feed").then((m) => m.DashboardFeed)
 );
 const DashboardPanel = dynamic(() =>
-  import("@/components/dashboard/main/dashboard-panel").then((m) => m.DashboardPanel)
+  import("@/components/main/dashboard/layout/dashboard-panel").then((m) => m.DashboardPanel)
 );
 const GuardianDashboard = dynamic(() =>
-  import("@/components/dashboard/guardian/guardian-dashboard").then((m) => m.GuardianDashboard)
+  import("@/components/main/guardian/guardian-dashboard").then((m) => m.GuardianDashboard)
 );
 import type { LogEntry } from "@/types/dashboard";
-import type { CheckinItem } from "@/components/dashboard/shared/checkin-card";
+import type { CheckinItem } from "@/components/main/dashboard/checkins/checkin-card";
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth();

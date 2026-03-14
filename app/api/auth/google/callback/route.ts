@@ -109,11 +109,25 @@ export async function GET(req: Request) {
         )
       }
     } else {
+      // Check if this email has an approved waitlist entry (coach via Google OAuth)
+      const waitlistEntry = await db.collection("waitlist").findOne({
+        email: normalizedEmail,
+        status: "approved",
+        usedAt: { $exists: false },
+      })
+      const role = waitlistEntry ? "coach" : "athlete"
+      if (waitlistEntry) {
+        await db.collection("waitlist").updateOne(
+          { _id: waitlistEntry._id },
+          { $set: { usedAt: new Date() } }
+        )
+      }
+
       const result = await db.collection("users").insertOne({
         email: normalizedEmail,
         password: null,
         displayName: name?.trim() || normalizedEmail.split("@")[0],
-        role: "athlete",
+        role,
         groupId: null,
         profileComplete: true,
         authProvider: "google",

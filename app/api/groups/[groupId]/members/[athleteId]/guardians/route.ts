@@ -46,7 +46,7 @@ export async function GET(
       return NextResponse.json({ guardians: [] })
     }
 
-    const guardianIds = (links as { guardianId: string }[]).map((l) => l.guardianId)
+    const guardianIds = links.map((l) => l.guardianId as string)
     const guardians = await db
       .collection("users")
       .find({

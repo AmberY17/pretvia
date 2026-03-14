@@ -3,22 +3,44 @@
  * Run: pnpm seed:test
  *
  * Requires:
- * - MONGODB_URI in env
+ * - MONGODB_URI in .env.local (or env)
  * - TEST_ACCOUNT_EMAILS in .env.local including:
- *   athlete@test.pretvia.com,coach@test.pretvia.com
+ *   athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com
  */
 
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
 import { MongoClient, ObjectId } from "mongodb";
+
+// Load .env.local if it exists (tsx does not auto-load it)
+for (const file of [".env.local", ".env"]) {
+  const path = resolve(process.cwd(), file);
+  if (existsSync(path)) {
+    const content = readFileSync(path, "utf8");
+    for (const line of content.split("\n")) {
+      const match = line.match(/^([^#=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const val = match[2].trim().replace(/^["']|["']$/g, "");
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+    break;
+  }
+}
 import bcrypt from "bcryptjs";
 
 const ATHLETE_EMAIL = "athlete@test.pretvia.com";
 const ATHLETE_PASSWORD = "TestPass123!";
 const COACH_EMAIL = "coach@test.pretvia.com";
 const COACH_PASSWORD = "TestPass123!";
+const DELETE_TEST_EMAIL = "deletetest@test.pretvia.com";
+const DELETE_TEST_PASSWORD = "TestPass123!";
+const GUARDIAN_EMAIL = "guardian@test.pretvia.com";
+const GUARDIAN_PASSWORD = "TestPass123!";
 
 async function seed() {
   const uri = process.env.MONGODB_URI;
-  console.log("uri", uri);
   if (!uri) {
     console.error("MONGODB_URI is required");
     process.exit(1);
@@ -32,6 +54,7 @@ async function seed() {
 
   const athleteHash = await bcrypt.hash(ATHLETE_PASSWORD, 12);
   const coachHash = await bcrypt.hash(COACH_PASSWORD, 12);
+  const guardianHash = await bcrypt.hash(GUARDIAN_PASSWORD, 12);
 
   const groupMemberships = db.collection("groupMemberships");
 
@@ -150,16 +173,166 @@ async function seed() {
     { upsert: true },
   );
 
+  // Create or update guardian (linked to athlete for guardian-calendar E2E tests)
+  const guardianExists = await users.findOne({ email: GUARDIAN_EMAIL });
+  let guardianId: string;
+  if (!guardianExists) {
+    const guardianResult = await users.insertOne({
+      _id: new ObjectId(),
+      email: GUARDIAN_EMAIL,
+      password: guardianHash,
+      displayName: "E2E Guardian",
+      role: "guardian",
+      groupId: null,
+      groupIds: [],
+      profileComplete: true,
+      authProvider: "email",
+      emailVerified: true,
+      createdAt: new Date(),
+    });
+    guardianId = guardianResult.insertedId.toString();
+    console.log("Created guardian:", GUARDIAN_EMAIL);
+  } else {
+    guardianId = guardianExists._id.toString();
+    await users.updateOne(
+      { email: GUARDIAN_EMAIL },
+      {
+        $set: {
+          password: guardianHash,
+          displayName: "E2E Guardian",
+          emailVerified: true,
+        },
+      },
+    );
+    console.log("Updated guardian:", GUARDIAN_EMAIL);
+  }
+
+  // Link guardian to athlete
+  const guardianLinks = db.collection("guardianLinks");
+  await guardianLinks.updateOne(
+    { guardianId, athleteId },
+    { $setOnInsert: { guardianId, athleteId, createdAt: new Date() } },
+    { upsert: true },
+  );
+  console.log("Linked guardian to athlete");
+
+  // Create or update delete-test account (for account deletion E2E tests)
+  const deleteHash = await bcrypt.hash(DELETE_TEST_PASSWORD, 12);
+  const deleteExists = await users.findOne({ email: DELETE_TEST_EMAIL });
+  if (!deleteExists) {
+    await users.insertOne({
+      _id: new ObjectId(),
+      email: DELETE_TEST_EMAIL,
+      password: deleteHash,
+      displayName: "E2E Delete Test",
+      role: "athlete",
+      groupId: null,
+      groupIds: [],
+      profileComplete: true,
+      authProvider: "email",
+      emailVerified: true,
+      createdAt: new Date(),
+    });
+    console.log("Created delete-test account:", DELETE_TEST_EMAIL);
+  } else {
+    await users.updateOne(
+      { email: DELETE_TEST_EMAIL },
+      { $set: { password: deleteHash, emailVerified: true } },
+    );
+    console.log("Updated delete-test account:", DELETE_TEST_EMAIL);
+  }
+
+  // Seed static invite tokens for invite redemption tests
+  // Tokens are long-lived (365 days) and reseeded on each run
+  const invites = db.collection("invites");
+  const inviteExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+  await invites.updateOne(
+    { token: "e2e-invite-athlete" },
+    {
+      $set: {
+        token: "e2e-invite-athlete",
+        groupId: coachGroupId,
+        type: "athlete",
+        email: "e2e-invited@test.pretvia.com",
+        createdBy: coachId,
+        expiresAt: inviteExpiry,
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+  console.log("Seeded invite token: e2e-invite-athlete");
+
+  await invites.updateOne(
+    { token: "e2e-invite-parent" },
+    {
+      $set: {
+        token: "e2e-invite-parent",
+        groupId: coachGroupId,
+        type: "parent",
+        email: "e2e-parent@test.pretvia.com",
+        athleteEmail: ATHLETE_EMAIL,
+        createdBy: coachId,
+        expiresAt: inviteExpiry,
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+  console.log("Seeded invite token: e2e-invite-parent");
+
+  await invites.updateOne(
+    { token: "e2e-invite-under13" },
+    {
+      $set: {
+        token: "e2e-invite-under13",
+        groupId: coachGroupId,
+        type: "under13_parent",
+        email: "e2e-under13parent@test.pretvia.com",
+        athleteNamePlaceholder: "E2E Child",
+        createdBy: coachId,
+        expiresAt: inviteExpiry,
+        createdAt: new Date(),
+      },
+    },
+    { upsert: true },
+  );
+  console.log("Seeded invite token: e2e-invite-under13");
+
+  // Seed waitlist invite token for E2E coach signup tests
+  const waitlist = db.collection("waitlist")
+  await waitlist.updateOne(
+    { inviteToken: "e2e-waitlist-token" },
+    {
+      $set: {
+        email: "e2e-waitlist@test.pretvia.com",
+        name: "E2E Waitlist Coach",
+        status: "approved",
+        inviteToken: "e2e-waitlist-token",
+        inviteExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+      },
+      $unset: { usedAt: "" },
+    },
+    { upsert: true }
+  )
+  console.log("Seeded waitlist token: e2e-waitlist-token")
+
   await client.close();
   console.log("\nDone. Add to .env.local:");
   console.log(
-    "TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com",
+    "TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com",
   );
   console.log("\nOptional for Cypress (or use cypress.env.json):");
   console.log("CYPRESS_ATHLETE_EMAIL=athlete@test.pretvia.com");
   console.log("CYPRESS_ATHLETE_PASSWORD=TestPass123!");
   console.log("CYPRESS_COACH_EMAIL=coach@test.pretvia.com");
   console.log("CYPRESS_COACH_PASSWORD=TestPass123!");
+  console.log("CYPRESS_GUARDIAN_EMAIL=guardian@test.pretvia.com");
+  console.log("CYPRESS_GUARDIAN_PASSWORD=TestPass123!");
+  console.log("CYPRESS_DELETE_TEST_EMAIL=deletetest@test.pretvia.com");
+  console.log("CYPRESS_DELETE_TEST_PASSWORD=TestPass123!");
 }
 
 seed().catch((err) => {

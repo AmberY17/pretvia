@@ -24,9 +24,43 @@ describe("Athlete Create Log", () => {
     }).then((res) => expect(res.status).to.eq(200));
 
     cy.reload();
-    // Notes use line-clamp; assert text exists in main (avoids clipped-element visibility failure)
     cy.get("main").should("contain", "E2E create-log test");
-    cy.viewport(375, 667);
-    cy.contains("e2e-create").should("be.visible");
+    cy.get("main").contains("e2e-create").should("exist");
+  });
+
+  context("Mobile viewport", () => {
+    beforeEach(() => {
+      cy.loginAsAthlete();
+      cy.viewport(375, 667);
+      cy.visit("/dashboard");
+    });
+
+    it("New Log button is visible on mobile", () => {
+      cy.findByRole("button", { name: /new log/i }).should("be.visible");
+    });
+
+    it("opens new log panel on mobile", () => {
+      cy.findByRole("button", { name: /new log/i }).click();
+      cy.findByRole("heading", { name: /New Log Entry/i }).should("be.visible");
+      cy.findByRole("button", { name: "Select emoji" }).should("be.visible");
+    });
+
+    it("log created via API is visible in feed on mobile", () => {
+      cy.request({
+        method: "POST",
+        url: "/api/logs",
+        body: {
+          emoji: "\u{1F4AA}",
+          timestamp: new Date().toISOString(),
+          visibility: "coach",
+          notes: "E2E create-log mobile test",
+          tags: ["e2e-create-mobile"],
+        },
+      }).then((res) => expect(res.status).to.eq(200));
+
+      cy.reload();
+      cy.get("main").should("contain", "E2E create-log mobile test");
+      cy.get("main").contains("e2e-create-mobile").should("be.visible");
+    });
   });
 });

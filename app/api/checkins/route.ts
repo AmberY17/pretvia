@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 
     // For coaches: "all" mode returns all check-ins (including expired) for filtering
     // Default: only return active (non-expired) check-ins
-    let filter: Record<string, unknown> = { groupId: userGroupId }
+    const filter: Record<string, unknown> = { groupId: userGroupId }
     if (mode !== "all") {
       filter.expiresAt = { $gt: new Date() }
     }

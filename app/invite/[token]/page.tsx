@@ -33,7 +33,7 @@ export default function InvitePage() {
   const searchParams = useSearchParams();
   const token = params?.token as string;
   const fromOAuth = searchParams?.get("from_oauth") === "1";
-  const { data: session } = useSWR<{ user: { email?: string } | null }>("/api/auth/session", (u) => fetch(u).then((r) => r.json()));
+  const { data: session } = useSWR<{ user: { email?: string } | null }>("/api/auth/session", (u: string) => fetch(u).then((r) => r.json()));
   const [invite, setInvite] = useState<InviteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(false);
@@ -179,7 +179,7 @@ function InviteUnder13Form({
   redeeming,
 }: {
   invite: InviteData;
-  redeem: (body: Record<string, unknown>) => Promise<{ requiresChildVerification?: boolean } | undefined>;
+  redeem: (body: Record<string, unknown>) => Promise<{ requiresChildVerification?: boolean; message?: string } | undefined>;
   redeeming: boolean;
 }) {
   const [childFirstName, setChildFirstName] = useState("");
@@ -380,7 +380,7 @@ function InviteAthleteForm({
 }: {
   token: string;
   invite: InviteData;
-  redeem: (body: Record<string, unknown>) => Promise<void>;
+  redeem: (body: Record<string, unknown>) => Promise<{ requiresChildVerification?: boolean; redirect?: string } | undefined>;
   redeeming: boolean;
 }) {
   const [isLogin, setIsLogin] = useState(false);

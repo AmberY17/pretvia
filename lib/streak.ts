@@ -5,7 +5,6 @@
  */
 
 import type { Db } from "mongodb"
-import { ObjectId } from "mongodb"
 import { parseTime } from "@/lib/time-utils"
 import type { TrainingSlotItem } from "@/types/dashboard"
 
@@ -168,7 +167,7 @@ export async function computeStreak(
   // comparisons align with the timezone the user used when setting up their schedule.
   const refDateStr = localDate ?? now.toISOString().slice(0, 10)
   const [ry, rm, rd] = refDateStr.split("-").map(Number)
-  let iterDate = new Date(Date.UTC(ry, rm - 1, rd, 23, 59, 59, 999))
+  const iterDate = new Date(Date.UTC(ry, rm - 1, rd, 23, 59, 59, 999))
 
   for (let i = 0; i < 365; i++) {
     const dayOfWeek = iterDate.getUTCDay()
@@ -296,7 +295,6 @@ export async function removeRedundantSkipsForLog(
 ): Promise<void> {
   if (!trainingSlots?.length) return
 
-  const logMs = logTimestamp.getTime()
   const slotInstances = getSlotInstances(trainingSlots, logTimestamp, 2)
 
   for (const { slotTime, dayOfWeek, time } of slotInstances) {

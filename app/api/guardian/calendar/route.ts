@@ -50,7 +50,7 @@ export async function GET(req: Request) {
       .find({ guardianId: session.userId })
       .project({ athleteId: 1 })
       .toArray()
-    const athleteIds = (links as { athleteId: string }[]).map((l) => l.athleteId)
+    const athleteIds = links.map((l) => l.athleteId as string)
 
     if (athleteIds.length === 0) {
       return NextResponse.json({

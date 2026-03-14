@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { PageHeader } from "@/components/dashboard/shared/page-header";
+import { PageHeader } from "@/components/main/shared/page-header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { AccountProfileEmojiSection } from "@/components/dashboard/account/account-profile-emoji-section";
-import { AccountTrainingSlotsSection } from "@/components/dashboard/account/account-training-slots-section";
-import { AccountCelebrationSection } from "@/components/dashboard/account/account-celebration-section";
-import { AccountFilterOrderSection } from "@/components/dashboard/account/account-filter-order-section";
-import { AccountDeleteSection } from "@/components/dashboard/account/account-delete-section";
+import { AccountProfileEmojiSection } from "@/components/main/account/account-profile-emoji-section";
+import { AccountTrainingSlotsSection } from "@/components/main/account/account-training-slots-section";
+import { AccountCelebrationSection } from "@/components/main/account/account-celebration-section";
+import { AccountFilterOrderSection } from "@/components/main/account/account-filter-order-section";
+import { AccountDeleteSection } from "@/components/main/account/account-delete-section";
 import { toast } from "sonner";
 import {
   CELEBRATION_KEY,
@@ -41,7 +41,7 @@ export default function AccountPage() {
     removeSlot: removeTrainingSlot,
     updateSlot: updateTrainingSlot,
   } = useTrainingSlots();
-  const [savingSlots, setSavingSlots] = useState(false);
+  const [, setSavingSlots] = useState(false);
   const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] =
     useState<number | null>(null);
   const [syncingSchedule, setSyncingSchedule] = useState(false);
@@ -151,7 +151,7 @@ export default function AccountPage() {
 
   async function saveTrainingSlotsToServer(
     slots: { dayOfWeek: number; time: string; sourceGroupId?: string }[],
-    options?: { silent?: boolean },
+    _options?: { silent?: boolean },
   ) {
     setSavingSlots(true);
     try {

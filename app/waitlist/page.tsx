@@ -1,0 +1,24 @@
+import { WaitlistForm } from "@/components/waitlist/waitlist-form"
+
+export const metadata = {
+  title: "Join the waitlist — Pretvia",
+  description: "Request early access as a coach on Pretvia.",
+}
+
+export default function WaitlistPage() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-16">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold text-foreground">Join the waitlist</h1>
+          <p className="text-muted-foreground">
+            Pretvia is in early access for coaches. Apply below and we&apos;ll send you an invite link when your spot opens up.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <WaitlistForm />
+        </div>
+      </div>
+    </main>
+  )
+}
