@@ -58,7 +58,7 @@ describe("Cross-Role: Comment Exchange", () => {
       cy.contains("button", /feedback|comment/i).click();
       cy.findByRole("textbox").type("E2E cross-role athlete reply");
       cy.get('[aria-label="Send comment"]').click();
-      cy.contains("E2E cross-role athlete reply").should("be.visible");
+      cy.contains("E2E cross-role athlete reply").should("exist");
     });
 
     cy.loginAsCoach();

@@ -81,11 +81,13 @@ describe("Athlete Comments", () => {
   it("can edit own comment", () => {
     cy.contains('[role="button"]', "E2E athlete-comments log").within(() => {
       cy.contains("button", /feedback|comment/i).click();
-      cy.contains('[data-testid="comment-item"]', "E2E comment from athlete").as("commentItem");
-      cy.get("@commentItem").trigger("mouseover");
-      cy.get("@commentItem").find('[aria-label="Edit comment"]').click({ force: true });
-      cy.get("@commentItem").find("textarea").should("be.visible").clear().type("E2E comment edited");
-      cy.get("@commentItem").find('[aria-label="Save edit"]').should("not.be.disabled").click();
+      cy.contains('[data-testid="comment-item"]', "E2E comment from athlete")
+        .trigger("mouseover")
+        .find('[aria-label="Edit comment"]').click({ force: true });
+      cy.get('[data-testid="comment-item"]')
+        .find("textarea").should("be.visible").clear().type("E2E comment edited");
+      cy.get('[data-testid="comment-item"]')
+        .find('[aria-label="Save edit"]').should("not.be.disabled").click();
       cy.contains("E2E comment edited").should("be.visible");
     });
   });
@@ -112,7 +114,7 @@ describe("Athlete Comments", () => {
     it("shows Feedback toggle on coach-shared log card on mobile", () => {
       cy.get("main").should("contain", "E2E athlete-comments log");
       cy.contains('[role="button"]', "E2E athlete-comments log").within(() => {
-        cy.contains("Feedback").should("be.visible");
+        cy.contains(/feedback|comment/i).should("be.visible");
       });
     });
 

@@ -80,7 +80,7 @@ describe("Athlete Log Detail", () => {
     cy.contains("Log Details").should("be.visible");
     cy.contains("button", "Edit").click();
     cy.contains("Edit Log").should("be.visible");
-    cy.get("textarea#notes").scrollIntoView().clear().type("E2E log-detail updated notes");
+    cy.get("textarea#notes").first().scrollIntoView().clear().type("E2E log-detail updated notes");
     cy.contains("button", "Update Log").click();
     cy.get("main", { timeout: 15000 }).should("contain", "E2E log-detail updated notes");
   });

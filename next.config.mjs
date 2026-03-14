@@ -7,6 +7,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  ...(process.env.CI && { logging: false }),
 };
 
 export default nextConfig;
