@@ -17,6 +17,7 @@ if (!spec) {
 }
 
 const cypressArgs = `--spec ${JSON.stringify(spec)}${record ? " --record" : ""}`;
+execSync("pnpm seed:test", { stdio: "inherit" });
 execSync(
   `npx start-server-and-test dev:skip-email http://localhost:3000 "cypress run ${cypressArgs}"`,
   { stdio: "inherit" }

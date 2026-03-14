@@ -19,7 +19,7 @@ jobs:
       AUTH_SECRET: ci-test-secret
       MONGODB_URI: mongodb://localhost:27017/pretvia-e2e
       NEXT_PUBLIC_APP_URL: http://localhost:3000
-      TEST_ACCOUNT_EMAILS: athlete@test.pretvia.com,coach@test.pretvia.com
+      TEST_ACCOUNT_EMAILS: athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com
     services:
       mongodb:
         image: mongo:7

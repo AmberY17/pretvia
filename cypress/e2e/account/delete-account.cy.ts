@@ -59,12 +59,12 @@ describe("Account Deletion", () => {
     it("shows Delete Account section on mobile", () => {
       cy.viewport(375, 667);
       cy.login(DELETE_EMAIL, DELETE_PASSWORD);
+      cy.viewport(375, 667);
       cy.visit("/dashboard/account");
       cy.contains(/Delete Account/i).scrollIntoView().should("be.visible");
     });
 
     it("shows confirmation dialog on mobile", () => {
-      cy.viewport(375, 667);
       cy.login(DELETE_EMAIL, DELETE_PASSWORD);
       cy.visit("/dashboard/account");
       cy.contains("button", /Delete Account/i).scrollIntoView().click();
@@ -74,18 +74,20 @@ describe("Account Deletion", () => {
     });
   });
 
-  it("deletes account, clears session, and redirects to auth", () => {
-    cy.login(DELETE_EMAIL, DELETE_PASSWORD);
-    cy.visit("/dashboard/account");
-    cy.contains("button", /Delete Account/i).click();
-    cy.contains(/cannot be undone|permanently/i).should("be.visible");
-    cy.findByRole("button", { name: "Delete" }).click();
-    cy.url({ timeout: 10000 }).should("not.include", "/dashboard");
-  });
+  context("Account deletion (destructive)", () => {
+    it("deletes account, clears session, and redirects to auth", { retries: 0 }, () => {
+      cy.login(DELETE_EMAIL, DELETE_PASSWORD);
+      cy.visit("/dashboard/account");
+      cy.contains("button", /Delete Account/i).click();
+      cy.contains(/cannot be undone|permanently/i).should("be.visible");
+      cy.findByRole("button", { name: "Delete" }).click();
+      cy.url({ timeout: 10000 }).should("not.include", "/dashboard");
+    });
 
-  it("dashboard is inaccessible after account deletion", () => {
-    cy.clearAllCookies();
-    cy.visit("/dashboard", { failOnStatusCode: false });
-    cy.url().should("not.include", "/dashboard");
+    it("dashboard is inaccessible after account deletion", () => {
+      cy.clearAllCookies();
+      cy.visit("/dashboard", { failOnStatusCode: false });
+      cy.url().should("not.include", "/dashboard");
+    });
   });
 });
