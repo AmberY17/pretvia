@@ -10,6 +10,10 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: write
     env:
       SKIP_EMAIL: "1"
       AUTH_SECRET: ci-test-secret
@@ -37,7 +41,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: npx cypress install
       - run: pnpm seed:test
-      - uses: cypress-io/github-action@v6
+      - uses: cypress-io/github-action@v7
         with:
           install: false
           start: pnpm dev:skip-email
@@ -46,3 +50,6 @@ jobs:
           run: cypress run --record
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_INFO_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          COMMIT_INFO_MESSAGE: ${{ github.event_name == 'pull_request' && github.event.pull_request.title || github.event.head_commit.message }}
