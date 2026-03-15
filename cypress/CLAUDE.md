@@ -13,18 +13,27 @@ Credentials live in `cypress.env.json` (not committed). Seed test accounts with 
 
 ```
 cypress/e2e/
-  athlete/        # Athlete-only flows
-  coach/          # Coach-only flows
-  guardian/       # Guardian dashboard + calendar
+  athlete/
+    dashboard.cy.ts          # Feed, logs, comments, filters, sign-out
+    account-settings.cy.ts   # Emoji, training slots, celebration, delete account
+  coach/
+    dashboard.cy.ts          # Feed, announcements, check-ins, comments, filters, sign-out
+    account-settings.cy.ts   # Emoji, filter order, delete account
+    manage-group.cy.ts       # Roles, training schedule, athlete management, invites, invite redemption
+    attendance.cy.ts         # Attendance session selection and recording
+  guardian/
+    dashboard.cy.ts          # Calendar view, athlete selection, sign-out
   cross-role/     # Multi-role interaction flows (coach ↔ athlete ↔ guardian)
-  auth/           # Login, signup, session
-  account/        # Profile, account deletion
+  auth/
+    auth.cy.ts               # Login, signup, logout, forgot/reset password, signed-in modal
   edge-cases/     # Error states, empty states
-  mobile/         # Mobile-only nav (hamburger, coach popover)
   shared/         # Flows shared across roles
+  waitlist/       # Waitlist signup flow
 ```
 
 Cross-role tests belong in `cypress/e2e/cross-role/` — not in role-specific folders.
+
+**No mobile `context()` blocks in any spec — desktop-first (1280×900).** All specs run at the default desktop viewport.
 
 ## Login Commands
 
@@ -78,29 +87,28 @@ Always use the first applicable option — stop as soon as one fits:
    cy.get('[aria-label="Send comment"]')
    ```
 
-**Never use:** CSS class selectors, DOM traversal chains (`.parent().parent()`), bare element selectors (`cy.get('div')`), or `placeholder` attribute selectors (`cy.get('textarea[placeholder="..."]')`).
+**Never use:** CSS class selectors, DOM traversal chains (`.parent().parent()`), bare element selectors (`cy.get('div')`), `placeholder` attribute selectors (`cy.get('textarea[placeholder="..."]')`), or `button[title="..."]` title attribute selectors.
 
 For dynamic button labels (e.g. feedback toggle: "Feedback" / "1 comment" / "Hide feedback"), use a regex that covers all states:
 ```typescript
 cy.contains("button", /feedback|comment/i)
 ```
 
+For search inputs use `cy.findByRole("searchbox")` (search inputs have `type="search"`).
+
+For role name inputs (only textbox in section), use `cy.findByRole("textbox")`.
+
+For attendance status buttons use `cy.findByRole("button", { name: "Present" })` etc. — **not** `button[title="..."]`.
+
 ## data-testid Inventory
 
 | Element | `data-testid` |
 |---------|--------------|
 | Check-in card | `checkin-card` |
+| Athlete row | `athlete-row` |
+| Comment item | `comment-item` |
 
 Log cards have `role="button"` on their root element — use `cy.contains('[role="button"]', "note text")`.
-
-## Mobile Testing
-
-- Add `context("Mobile viewport", ...)` blocks **within each feature file**
-- Exception: `mobile/navigation.cy.ts` for hamburger/coach popover nav
-- Set `cy.viewport(375, 667)` **before** `cy.visit()` so media queries fire at the right size
-- Coach on mobile: sidebar hidden (`lg:flex`), use `cy.get('[aria-label="Open menu"]')`
-- Athlete on mobile: sidebar hidden, filter pills replace sidebar collapsibles
-- Guardian on mobile: sidebar hidden, use `cy.findByRole("button", { name: /select athletes/i })` to open the pair selector popover
 
 ## Cross-Role Test Pattern
 

@@ -1,4 +1,5 @@
 import { defineConfig } from "cypress";
+import fs from "fs";
 
 export default defineConfig({
   projectId: "ocq4yh",
@@ -9,8 +10,10 @@ export default defineConfig({
     defaultCommandTimeout: 10000,
     video: false,
     retries: { runMode: 2, openMode: 0 },
-    setupNodeEvents(_on, _config) {
-      // implement node event listeners here
+    setupNodeEvents(on, _config) {
+      on("before:run", () => {
+        fs.rmSync("cypress/screenshots", { recursive: true, force: true });
+      });
     },
     supportFile: "cypress/support/e2e.ts",
     specPattern: "cypress/e2e/**/*.cy.ts",

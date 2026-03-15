@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Plus, Loader2, Trash2 } from "lucide-react";
+import { Calendar, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayWheelPicker } from "@/components/main/shared/day-wheel-picker";
 import { TimeWheelPicker } from "@/components/main/shared/time-wheel-picker";
@@ -15,8 +15,6 @@ interface GroupTrainingScheduleSectionProps {
     field: "dayOfWeek" | "time",
     value: number | string,
   ) => void;
-  onSave: () => void;
-  saving: boolean;
 }
 
 export function GroupTrainingScheduleSection({
@@ -24,8 +22,6 @@ export function GroupTrainingScheduleSection({
   onAddSlot,
   onRemoveSlot,
   onUpdateSlot,
-  onSave,
-  saving,
 }: GroupTrainingScheduleSectionProps) {
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -72,21 +68,6 @@ export function GroupTrainingScheduleSection({
           <Plus className="mr-2 h-4 w-4" />
           Add schedule slot
         </Button>
-        {trainingSchedule.length > 0 && (
-          <Button
-            variant="ghost-primary"
-            size="sm"
-            className="w-fit"
-            onClick={onSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Save"
-            )}
-          </Button>
-        )}
       </div>
     </section>
   );

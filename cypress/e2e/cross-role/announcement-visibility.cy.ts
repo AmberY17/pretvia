@@ -33,13 +33,4 @@ describe("Cross-Role: Announcement Visibility", () => {
     cy.visit("/dashboard");
     cy.get("main").contains("E2E cross-role announcement").should("be.visible");
   });
-
-  context("Mobile viewport", () => {
-    it("athlete sees announcement on mobile", () => {
-      cy.loginAsAthlete();
-      cy.viewport(375, 667);
-      cy.visit("/dashboard");
-      cy.get("main").contains("E2E cross-role announcement").should("be.visible");
-    });
-  });
 });

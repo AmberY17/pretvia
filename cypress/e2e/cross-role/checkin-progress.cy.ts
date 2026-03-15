@@ -65,22 +65,4 @@ describe("Cross-Role: Check-in Progress", () => {
       cy.findByRole("button", { name: "Log Session" }).should("not.exist");
     });
   });
-
-  context("Mobile viewport", () => {
-    it("athlete sees check-in card and Log Session on mobile (before logging)", () => {
-      cy.loginAsCoach();
-      cy.createCheckin({ title: "E2E Cross-Role Checkin Mobile" }).then((mobileCheckin) => {
-        const mobileCheckinId = mobileCheckin.id ?? mobileCheckin._id;
-        cy.loginAsAthlete();
-        cy.viewport(375, 667);
-        cy.visit("/dashboard");
-        cy.contains('[data-testid="checkin-card"]', "E2E Cross-Role Checkin Mobile").within(() => {
-          cy.contains(/0\/\d+ checked in/).should("be.visible");
-          cy.findByRole("button", { name: "Log Session" }).should("be.visible");
-        });
-        cy.loginAsCoach();
-        cy.deleteCheckin(mobileCheckinId);
-      });
-    });
-  });
 });

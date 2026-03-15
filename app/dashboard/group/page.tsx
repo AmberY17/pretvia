@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
 import { urlFetcher } from "@/lib/swr-utils";
@@ -41,7 +41,9 @@ export default function GroupManagementPage() {
     removeSlot: removeTrainingSlot,
     updateSlot: updateTrainingSlot,
   } = useTrainingSlots();
-  const [savingTrainingSchedule, setSavingTrainingSchedule] = useState(false);
+  const trainingScheduleInitializedRef = useRef(false);
+  const trainingScheduleSaveSkippedRef = useRef(false);
+  const lastSavedTrainingScheduleRef = useRef<typeof trainingSchedule>([]);
   const [athleteSearch, setAthleteSearch] = useState("");
 
   const groupsUrl =
@@ -100,40 +102,46 @@ export default function GroupManagementPage() {
 
   useEffect(() => {
     if (!trainingScheduleData) return;
+    if (trainingScheduleInitializedRef.current) return;
+    trainingScheduleInitializedRef.current = true;
     const slots = Array.isArray(trainingScheduleData.trainingScheduleTemplate)
       ? trainingScheduleData.trainingScheduleTemplate
       : [];
-    setTrainingSchedule(
-      slots.map((s) => ({
-        dayOfWeek: s.dayOfWeek,
-        time: s.time || "09:00",
-      })),
-    );
+    const mapped = slots.map((s) => ({ dayOfWeek: s.dayOfWeek, time: s.time || "09:00" }));
+    setTrainingSchedule(mapped);
+    lastSavedTrainingScheduleRef.current = mapped;
+    trainingScheduleSaveSkippedRef.current = false;
   }, [trainingScheduleData]);
 
-  const handleSaveTrainingSchedule = async () => {
+  // Auto-save training schedule when it changes (debounced). Skip the first run after load.
+  useEffect(() => {
     if (!user?.groupId) return;
-    setSavingTrainingSchedule(true);
-    try {
-      const res = await fetch(`/api/groups/${user.groupId}/training-schedule`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainingSchedule }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to update training schedule");
-        return;
-      }
-      toast.success(
-        "Training schedule updated and applied to all athletes in this group.",
-      );
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setSavingTrainingSchedule(false);
+    if (!trainingScheduleSaveSkippedRef.current) {
+      trainingScheduleSaveSkippedRef.current = true;
+      return;
     }
-  };
+    if (trainingSchedule === lastSavedTrainingScheduleRef.current) return;
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/groups/${user.groupId}/training-schedule`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trainingSchedule }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "Failed to update training schedule");
+          return;
+        }
+        lastSavedTrainingScheduleRef.current = trainingSchedule;
+        toast.success("Training schedule updated.");
+      } catch {
+        toast.error("Network error");
+      }
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [user?.groupId, trainingSchedule]);
+
   const filteredTransferGroups = transferSearch.trim()
     ? transferableGroups.filter((g) =>
         g.name.toLowerCase().includes(transferSearch.trim().toLowerCase()),
@@ -356,8 +364,6 @@ export default function GroupManagementPage() {
                 onAddSlot={addTrainingSlot}
                 onRemoveSlot={removeTrainingSlot}
                 onUpdateSlot={updateTrainingSlot}
-                onSave={handleSaveTrainingSchedule}
-                saving={savingTrainingSchedule}
               />
               <GroupAthletesSection
                 groupId={user.groupId}

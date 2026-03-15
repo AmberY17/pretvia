@@ -1,11 +1,7 @@
 describe("Cross-Role: Guardian Sees Athlete Log on Calendar", () => {
   let logId: string;
 
-  before(function () {
-    if (!Cypress.env("GUARDIAN_EMAIL") || !Cypress.env("GUARDIAN_PASSWORD")) {
-      Cypress.env("SKIP_GUARDIAN_CALENDAR", true);
-      return;
-    }
+  before(() => {
     cy.loginAsAthlete();
     cy.request("/api/logs").then((res) => {
       (res.body.logs ?? [])
@@ -29,12 +25,6 @@ describe("Cross-Role: Guardian Sees Athlete Log on Calendar", () => {
     cy.deleteLog(logId);
   });
 
-  beforeEach(function () {
-    if (Cypress.env("SKIP_GUARDIAN_CALENDAR")) {
-      this.skip();
-    }
-  });
-
   it("guardian sees athlete's log emoji on today's calendar date", () => {
     cy.loginAsGuardian();
     cy.visit("/dashboard");
@@ -45,16 +35,22 @@ describe("Cross-Role: Guardian Sees Athlete Log on Calendar", () => {
       .and("contain", "🏋️");
   });
 
-  context("Mobile viewport", () => {
-    it("guardian sees athlete emoji on calendar on mobile", () => {
-      cy.viewport(375, 667);
-      cy.loginAsGuardian();
-      cy.visit("/dashboard");
-      cy.findByRole("button", { name: /select athletes/i }).click();
-      cy.findAllByLabelText(/E2E Athlete/i).filter(":visible").first().check();
-      cy.findAllByRole("img", { name: "log mood" })
-        .should("be.visible")
-        .and("contain", "🏋️");
-    });
+  it("guardian can see athlete's log emoji on monthly view", () => {
+    cy.loginAsGuardian();
+    cy.visit("/dashboard");
+    cy.findByLabelText(/E2E Athlete/i).check();
+    cy.findAllByRole("img", { name: "log mood" })
+      .should("be.visible")
+      .and("contain", "🏋️");
+  });
+
+  it("guardian can see athlete's log emoji on weekly view", () => {
+    cy.loginAsGuardian();
+    cy.visit("/dashboard");
+    cy.findByLabelText(/E2E Athlete/i).check();
+    cy.contains("button", "Week").click();
+    cy.findAllByRole("img", { name: "log mood" })
+      .should("be.visible")
+      .and("contain", "🏋️");
   });
 });
