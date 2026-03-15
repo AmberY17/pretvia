@@ -39,8 +39,7 @@ describe("Coach Account Settings", () => {
       cy.contains(/Date/i).should("be.visible")
     })
 
-    // TODO: we have to revisit dashboard and check the order of the filters on the sidebar
-    it("can reorder filter sections via keyboard drag — order persists on reload", () => {
+    it("can reorder filter sections via keyboard drag — order persists on reload and reflects in sidebar", () => {
       cy.contains("h2", "Filter Order").scrollIntoView()
       cy.get('[aria-label^="Drag to reorder"]').then(($handles) => {
         const initialOrder = $handles.toArray().map((el) => el.getAttribute("aria-label"))
@@ -59,6 +58,16 @@ describe("Coach Account Settings", () => {
             .toArray()
             .map((el) => el.getAttribute("aria-label"))
           expect(reloadedOrder).to.not.deep.equal(initialOrder)
+          // Navigate to dashboard and verify sidebar reflects the reordered first filter
+          const newFirstFilter = $reloadedHandles.first().attr("aria-label")?.replace("Drag to reorder ", "") ?? ""
+          cy.visit("/dashboard")
+          cy.viewport(1280, 900)
+          cy.contains("FILTER BY")
+            .parent()
+            .next()
+            .find("button")
+            .first()
+            .should("contain.text", newFirstFilter)
         })
       })
     })

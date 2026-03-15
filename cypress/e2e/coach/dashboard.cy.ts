@@ -75,10 +75,20 @@ describe("Coach Dashboard", () => {
       cy.contains("button", "All Roles").should("not.be.visible")
     })
 
-    // TODO: we have to click the Pick Dates to open the date picker and then select a date
     it("can select a date from date picker — fixture log shown", () => {
       cy.contains("button", "Date").click()
       cy.contains("button", "Today").click()
+      cy.get("main").contains("E2E coach-filter fixture").should("be.visible")
+    })
+
+    it("can pick a specific date — fixture log shown", () => {
+      cy.contains("button", "Date").click()
+      cy.findByRole("button", { name: /pick dates/i }).click()
+      const today = new Date().getDate()
+      cy.get('[role="gridcell"] button:not([disabled])')
+        .contains(new RegExp(`^${today}$`))
+        .first()
+        .click()
       cy.get("main").contains("E2E coach-filter fixture").should("be.visible")
     })
 
@@ -238,7 +248,9 @@ describe("Coach Dashboard", () => {
       cy.contains("New Session Check-In").should("be.visible")
       cy.findByLabelText(/Title/i).type("E2E Checkin Session")
       cy.contains("button", "Create").click()
-      cy.contains('[data-testid="checkin-card"]', "E2E Checkin Session").should("be.visible")
+      cy.contains('[data-testid="checkin-card"]', "E2E Checkin Session")
+        .scrollIntoView()
+        .should("be.visible")
       cy.contains('[data-testid="checkin-card"]', "E2E Checkin Session").within(() => {
         cy.contains(/\d+\/\d+ checked in/).should("be.visible")
       })
@@ -457,21 +469,30 @@ describe("Coach Dashboard", () => {
     })
   })
 
-  // TODO: the goal of this test is to check if selecting the filter renders the correct logs (Checking if the button exist was already tested above in Filter By test)
-  // Create different logs for each filter and check if the correct logs are rendered
   describe("Filters", () => {
     let logId: string
+    let untaggedLogId: string
 
     before(() => {
       cy.loginAsAthlete()
-      cy.request("/api/logs").then((res) => {
-        const logs = res.body.logs ?? []
-        logs
-          .filter((l: { notes?: string }) => l.notes?.includes("E2E coach-filters-section fixture"))
-          .forEach((l: { id: string }) => {
-            cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false })
-          })
-      })
+
+      // Delete ALL accumulated fixture logs across pages
+      const deleteFixtureLogs = () => {
+        cy.request("/api/logs?limit=100").then((res) => {
+          const logs: { id: string; notes?: string }[] = res.body.logs ?? []
+          const toDelete = logs.filter(
+            (l) =>
+              l.notes?.includes("E2E coach-filters-section fixture") ||
+              l.notes?.includes("E2E coach-filters-section untagged"),
+          )
+          if (toDelete.length === 0) return
+          toDelete.forEach((l) =>
+            cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false }),
+          )
+          if (toDelete.length === logs.length) deleteFixtureLogs()
+        })
+      }
+      deleteFixtureLogs()
       cy.createLog({
         emoji: "🎽",
         notes: "E2E coach-filters-section fixture",
@@ -481,11 +502,21 @@ describe("Coach Dashboard", () => {
       }).then((log) => {
         logId = log?.id ?? log?._id
       })
+      cy.createLog({
+        emoji: "📝",
+        notes: "E2E coach-filters-section untagged",
+        visibility: "coach",
+        tags: [],
+        timestamp: new Date().toISOString(),
+      }).then((log) => {
+        untaggedLogId = log?.id ?? log?._id
+      })
     })
 
     after(() => {
       cy.loginAsAthlete()
       if (logId) cy.deleteLog(logId)
+      if (untaggedLogId) cy.deleteLog(untaggedLogId)
     })
 
     beforeEach(() => {
@@ -494,9 +525,10 @@ describe("Coach Dashboard", () => {
       cy.visit("/dashboard")
     })
 
-    it("can filter by role", () => {
+    it("can filter by role — athlete logs shown", () => {
       cy.contains("button", "Role").click()
-      cy.contains("button", "All Roles").should("be.visible")
+      cy.contains("button", "E2E Athlete Role").click()
+      cy.get("main").contains("E2E coach-filters-section fixture").should("be.visible")
     })
 
     it("can filter by review status", () => {
@@ -505,9 +537,10 @@ describe("Coach Dashboard", () => {
       cy.get("main").contains("E2E coach-filters-section fixture").should("be.visible")
     })
 
-    it("can filter by athlete", () => {
+    it("can filter by athlete — that athlete's logs shown", () => {
       cy.contains("button", "Athlete").click()
-      cy.contains("button", "All Athletes").should("be.visible")
+      cy.contains("button", "E2E Athlete").click()
+      cy.get("main").contains("E2E coach-filters-section fixture").should("be.visible")
     })
 
     it("can filter by date", () => {

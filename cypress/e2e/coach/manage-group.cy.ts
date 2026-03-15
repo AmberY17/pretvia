@@ -169,6 +169,20 @@ describe("Coach Manage Group", () => {
       cy.request("/api/groups?mode=coach-groups").then((res) => {
         const groupId = (res.body.groups ?? [])[0]?.id
         if (groupId) {
+          // Clear any roles already assigned to the E2E Athlete
+          cy.request(`/api/groups?groupId=${groupId}`).then((membersRes) => {
+            const athlete = (membersRes.body.members ?? []).find(
+              (m: { email: string }) => m.email === "athlete@test.pretvia.com",
+            )
+            if (athlete?.id) {
+              cy.request({
+                method: "PATCH",
+                url: `/api/groups/${groupId}/members`,
+                body: { action: "assignRoles", userId: athlete.id, roleIds: [] },
+                failOnStatusCode: false,
+              })
+            }
+          })
           cy.request({
             method: "POST",
             url: `/api/groups/${groupId}/roles`,
@@ -194,9 +208,20 @@ describe("Coach Manage Group", () => {
       })
     })
 
-    // TODO: Do we start with more than one athlete? To test this search functionality, we need to create more athletes. We can the length of the athletes list and check the athlete info.
     it("can search for an athlete — result shown", () => {
       cy.findByRole("searchbox").type("E2E Athlete")
+      cy.contains('[data-testid="athlete-row"]', /E2E Athlete/).should("be.visible")
+    })
+
+    it("shows no results for a non-existent athlete search", () => {
+      cy.findByRole("searchbox").type("xyz-nobody-12345")
+      cy.get('[data-testid="athlete-row"]').should("not.exist")
+    })
+
+    it("clearing search restores the athlete list", () => {
+      cy.findByRole("searchbox").type("E2E Athlete")
+      cy.contains('[data-testid="athlete-row"]', /E2E Athlete/).should("be.visible")
+      cy.findByRole("searchbox").clear()
       cy.contains('[data-testid="athlete-row"]', /E2E Athlete/).should("be.visible")
     })
 

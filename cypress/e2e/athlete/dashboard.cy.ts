@@ -19,9 +19,28 @@ describe("Athlete Dashboard", () => {
       cy.visit("/dashboard")
     })
 
-    // TODO: we have to create a log for the athlete and check if the total number of logs gets incremented
     it("can see the total number of logs", () => {
       cy.contains(/\d+ logs?/).should("be.visible")
+    })
+
+    it("total log count increments after creating a new log", () => {
+      cy.contains(/\d+ logs?/)
+        .invoke("text")
+        .then((before) => {
+          const beforeCount = parseInt(before.match(/\d+/)![0])
+          cy.createLog({
+            emoji: "📊",
+            notes: "E2E count-test",
+            visibility: "private",
+            timestamp: new Date().toISOString(),
+            tags: [],
+          }).then((log) => {
+            const logId = log?.id ?? log?._id
+            cy.reload()
+            cy.contains(new RegExp(`${beforeCount + 1} logs?`)).should("be.visible")
+            if (logId) cy.deleteLog(logId)
+          })
+        })
     })
 
     it("can navigate to account when clicking Edit schedule", () => {
@@ -83,10 +102,20 @@ describe("Athlete Dashboard", () => {
       cy.contains("button", "e2e-filter-tag").should("be.visible")
     })
 
-    // TODO: we have to click the Pick Dates to open the date picker and then select a date
     it("can select a date — fixture log appears", () => {
       cy.contains("button", "Date").click()
       cy.contains("button", "Today").click()
+      cy.get("main").contains("E2E filter fixture").should("be.visible")
+    })
+
+    it("can pick a specific date — fixture log appears", () => {
+      cy.contains("button", "Date").click()
+      cy.findByRole("button", { name: /pick dates/i }).click()
+      const today = new Date().getDate()
+      cy.get('[role="gridcell"] button:not([disabled])')
+        .contains(new RegExp(`^${today}$`))
+        .first()
+        .click()
       cy.get("main").contains("E2E filter fixture").should("be.visible")
     })
 
@@ -327,17 +356,20 @@ describe("Athlete Dashboard", () => {
     })
   })
 
-  // TODO: the goal of this test is to check if selecting the filter renders the correct logs (Checking if the button exist was already tested above in Filter By test)
-  // Create different logs for each filter and check if the correct logs are rendered
   describe("Filters", () => {
     let logId: string
+    let untaggedLogId: string
 
     before(() => {
       cy.loginAsAthlete()
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
-          .filter((l: { notes?: string }) => l.notes?.includes("E2E filter-section fixture"))
+          .filter(
+            (l: { notes?: string }) =>
+              l.notes?.includes("E2E filter-section fixture") ||
+              l.notes?.includes("E2E filter-section untagged"),
+          )
           .forEach((l: { id: string }) => {
             cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false })
           })
@@ -351,13 +383,21 @@ describe("Athlete Dashboard", () => {
       }).then((log) => {
         logId = log?.id ?? log?._id
       })
+      cy.createLog({
+        emoji: "📝",
+        notes: "E2E filter-section untagged",
+        visibility: "coach",
+        tags: [],
+        timestamp: new Date().toISOString(),
+      }).then((log) => {
+        untaggedLogId = log?.id ?? log?._id
+      })
     })
 
     after(() => {
       cy.loginAsAthlete()
-      if (logId) {
-        cy.deleteLog(logId)
-      }
+      if (logId) cy.deleteLog(logId)
+      if (untaggedLogId) cy.deleteLog(untaggedLogId)
     })
 
     beforeEach(() => {
@@ -370,6 +410,7 @@ describe("Athlete Dashboard", () => {
       cy.contains("button", "Tags").click()
       cy.contains("button", "e2e-filter-section-tag").click()
       cy.get("main").contains("E2E filter-section fixture").should("be.visible")
+      cy.get("main").should("not.contain", "E2E filter-section untagged")
     })
 
     it("can filter by date — only today's logs shown", () => {

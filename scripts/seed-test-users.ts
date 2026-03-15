@@ -169,7 +169,10 @@ async function seed() {
   // Ensure athlete has groupMembership
   await groupMemberships.updateOne(
     { userId: athleteId, groupId: coachGroupId },
-    { $setOnInsert: { userId: athleteId, groupId: coachGroupId, roleIds: [] } },
+    {
+    $set: { roleIds: ["e2e-role-1"] },
+    $setOnInsert: { userId: athleteId, groupId: coachGroupId },
+  },
     { upsert: true },
   );
 

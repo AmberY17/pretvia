@@ -61,7 +61,7 @@ export function CheckinCardItem({
   return (
     <motion.div
       data-testid="checkin-card"
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className="group/checkin relative rounded-2xl border border-checkin/20 bg-checkin/5 p-4"
