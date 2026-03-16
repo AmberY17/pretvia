@@ -21,10 +21,29 @@ const kumarOneOutline = Kumar_One_Outline({
   variable: "--font-brand",
 });
 
+const siteUrl = 'https://pretvia.com'
+const siteDescription =
+  'Track your training with emoji-powered visual logs, custom tags, and share them with your fellow athletes.'
+
 export const metadata: Metadata = {
-  title: "Pretvia",
-  description:
-    "Track your training with emoji-powered visual logs, custom tags, and share them with your fellow athletes.",
+  title: {
+    default: 'Pretvia',
+    template: '%s | Pretvia',
+  },
+  description: siteDescription,
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    title: 'Pretvia',
+    description: siteDescription,
+    url: siteUrl,
+    siteName: 'Pretvia',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pretvia',
+    description: siteDescription,
+  },
 };
 
 export const viewport: Viewport = {
@@ -56,6 +75,21 @@ export default function RootLayout({
     >
       <head suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: colorThemeScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'Pretvia',
+              description: siteDescription,
+              applicationCategory: 'SportsApplication',
+              operatingSystem: 'Web',
+              url: siteUrl,
+              offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+            }),
+          }}
+        />
       </head>
       <body className="font-sans antialiased min-h-screen overflow-x-hidden">
         <QueryProvider>

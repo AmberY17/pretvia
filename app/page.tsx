@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { getDb } from "@/lib/mongodb"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingFooter } from "@/components/landing/landing-footer"
@@ -10,6 +11,18 @@ import { FinalHookSection } from "@/components/landing/final-hook-section"
 import { CtaSection } from "@/components/landing/cta-section"
 
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: 'Pretvia — Emoji-Powered Training Logs for Athletes & Coaches',
+  description:
+    'Track your training with emoji-powered visual logs, custom tags, and share them with your fellow athletes. Built for athletes and coaches.',
+  openGraph: {
+    title: 'Pretvia — Emoji-Powered Training Logs',
+    description:
+      'Track your training with emoji-powered visual logs, custom tags, and share them with your fellow athletes.',
+    url: 'https://pretvia.com',
+  },
+}
 
 export default async function LandingPage() {
   const db = await getDb()

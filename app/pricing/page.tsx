@@ -8,7 +8,15 @@ import { Button } from "@/components/ui/button"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Pricing — Pretvia",
+  title: "Pricing",
+  description:
+    "Pretvia is free during beta. Get full access to all features — no credit card required.",
+  openGraph: {
+    title: "Pricing — Pretvia",
+    description:
+      "Pretvia is free during beta. Get full access to all features — no credit card required.",
+    url: "https://pretvia.com/pricing",
+  },
 }
 
 export default async function PricingPage() {

@@ -1,8 +1,13 @@
 import { WaitlistForm } from "@/components/waitlist/waitlist-form"
 
 export const metadata = {
-  title: "Join the waitlist — Pretvia",
+  title: "Join the waitlist",
   description: "Request early access as a coach on Pretvia.",
+  openGraph: {
+    title: "Join the Pretvia Waitlist",
+    description: "Request early access as a coach on Pretvia.",
+    url: "https://pretvia.com/waitlist",
+  },
 }
 
 export default function WaitlistPage() {
