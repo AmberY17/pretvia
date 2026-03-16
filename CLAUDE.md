@@ -59,9 +59,11 @@ Some documents have both singular and array versions of relationship fields:
 | `cypress/e2e/` | E2E tests organized by feature area |
 
 ## Data Fetching (Client)
-- SWR for all client data fetching
-- Fetchers in `lib/swr-utils.ts`: `urlFetcher` (single), `logsInfiniteFetcher` (paginated)
-- `useSWR` for single resources, `useSWRInfinite` for paginated feeds
+- React Query (TanStack Query v5) for all client data fetching
+- Shared fetcher in `lib/query-client.ts`: `apiFetcher` (single), `logsFetcher` (paginated)
+- Centralized query keys in `lib/query-keys.ts` — hierarchical keys enable prefix-based invalidation
+- `useQuery` for single resources, `useInfiniteQuery` for paginated feeds
+- `QueryProvider` wraps the app in `components/query-provider.tsx`
 
 ## Testing
 After editing or adding a feature, update or add the related E2E and/or unit tests.

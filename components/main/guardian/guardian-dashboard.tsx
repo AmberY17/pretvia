@@ -2,8 +2,10 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { format, startOfWeek, addWeeks, subWeeks } from "date-fns";
-import useSWR from "swr";
-import { urlFetcher } from "@/lib/swr-utils";
+import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData } from "@tanstack/react-query";
+import { apiFetcher } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { GuardianSidebar, type GuardianPair } from "./guardian-sidebar";
 import { GuardianDashboardContent } from "./guardian-dashboard-content";
 import type { User } from "@/hooks/use-auth";
@@ -31,7 +33,7 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
     ? `/api/guardian/calendar?weekStart=${weekStart}${pairsParam ? `&pairs=${encodeURIComponent(pairsParam)}` : ""}`
     : `/api/guardian/calendar?month=${month}${pairsParam ? `&pairs=${encodeURIComponent(pairsParam)}` : ""}`;
 
-  const { data, isLoading, isValidating } = useSWR<{
+  const { data, isLoading, isFetching } = useQuery<{
     availablePairs: GuardianPair[];
     calendars: {
       athleteId: string;
@@ -41,11 +43,12 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
       dates: Record<string, string>;
       attendanceByDate: Record<string, "present" | "absent" | "excused">;
     }[];
-  }>(
-    user ? [calendarUrl, user.id, month, weekStart, viewMode, pairsParam] : null,
-    urlFetcher,
-    { keepPreviousData: true }
-  );
+  }>({
+    queryKey: [...queryKeys.guardian.calendar(calendarUrl), user.id, month, weekStart, viewMode, pairsParam],
+    queryFn: () => apiFetcher(calendarUrl),
+    enabled: !!user,
+    placeholderData: keepPreviousData,
+  });
 
   const availablePairs = data?.availablePairs ?? [];
   const calendars = data?.calendars ?? [];
@@ -108,7 +111,7 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
         selectedPairs={selectedPairs}
         onSelectedPairsChange={setSelectedPairs}
         calendars={calendars}
-        isLoading={isLoading || isValidating}
+        isLoading={isLoading || isFetching}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
         month={month}

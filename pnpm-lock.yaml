@@ -114,6 +114,12 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: 1.1.6
         version: 1.1.6(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@tanstack/react-query':
+        specifier: ^5.90.21
+        version: 5.90.21(react@19.2.3)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.91.3
+        version: 5.91.3(@tanstack/react-query@5.90.21(react@19.2.3))(react@19.2.3)
       '@vercel/analytics':
         specifier: ^1.6.1
         version: 1.6.1(next@16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
@@ -180,9 +186,6 @@ importers:
       sonner:
         specifier: ^1.7.1
         version: 1.7.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      swr:
-        specifier: ^2.2.5
-        version: 2.4.0(react@19.2.3)
       tailwind-merge:
         specifier: ^2.5.5
         version: 2.6.1
@@ -1934,6 +1937,23 @@ packages:
   '@tabby_ai/hijri-converter@1.0.5':
     resolution: {integrity: sha512-r5bClKrcIusDoo049dSL8CawnHR6mRdDwhlQuIgZRNty68q0x8k3Lf1BtPAMxRf/GgnHBnIO4ujd3+GQdLWzxQ==}
     engines: {node: '>=16.0.0'}
+
+  '@tanstack/query-core@5.90.20':
+    resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
+
+  '@tanstack/query-devtools@5.93.0':
+    resolution: {integrity: sha512-+kpsx1NQnOFTZsw6HAFCW3HkKg0+2cepGtAWXjiiSOJJ1CtQpt72EE2nyZb+AjAbLRPoeRmPJ8MtQd8r8gsPdg==}
+
+  '@tanstack/react-query-devtools@5.91.3':
+    resolution: {integrity: sha512-nlahjMtd/J1h7IzOOfqeyDh5LNfG0eULwlltPEonYy0QL+nqrBB+nyzJfULV+moL7sZyxc2sHdNJki+vLA9BSA==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.90.20
+      react: ^18 || ^19
+
+  '@tanstack/react-query@5.90.21':
+    resolution: {integrity: sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@testing-library/cypress@10.1.0':
     resolution: {integrity: sha512-tNkNtYRqPQh71xXKuMizr146zlellawUfDth7A/urYU4J66g0VGZ063YsS0gqS79Z58u1G/uo9UxN05qvKXMag==}
@@ -4297,11 +4317,6 @@ packages:
   svix@1.84.1:
     resolution: {integrity: sha512-K8DPPSZaW/XqXiz1kEyzSHYgmGLnhB43nQCMeKjWGCUpLIpAMMM8kx3rVVOSm6Bo6EHyK1RQLPT4R06skM/MlQ==}
 
-  swr@2.4.0:
-    resolution: {integrity: sha512-sUlC20T8EOt1pHmDiqueUWMmRRX03W7w5YxovWX7VR2KHEPCTMly85x05vpkP5i6Bu4h44ePSMD9Tc+G2MItFw==}
-    peerDependencies:
-      react: ^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
@@ -4513,11 +4528,6 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
-
-  use-sync-external-store@1.6.0:
-    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -6231,6 +6241,21 @@ snapshots:
       tslib: 2.8.1
 
   '@tabby_ai/hijri-converter@1.0.5': {}
+
+  '@tanstack/query-core@5.90.20': {}
+
+  '@tanstack/query-devtools@5.93.0': {}
+
+  '@tanstack/react-query-devtools@5.91.3(@tanstack/react-query@5.90.21(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@tanstack/query-devtools': 5.93.0
+      '@tanstack/react-query': 5.90.21(react@19.2.3)
+      react: 19.2.3
+
+  '@tanstack/react-query@5.90.21(react@19.2.3)':
+    dependencies:
+      '@tanstack/query-core': 5.90.20
+      react: 19.2.3
 
   '@testing-library/cypress@10.1.0(cypress@15.11.0)':
     dependencies:
@@ -8886,12 +8911,6 @@ snapshots:
       standardwebhooks: 1.0.0
       uuid: 10.0.0
 
-  swr@2.4.0(react@19.2.3):
-    dependencies:
-      dequal: 2.0.3
-      react: 19.2.3
-      use-sync-external-store: 1.6.0(react@19.2.3)
-
   symbol-tree@3.2.4:
     optional: true
 
@@ -9142,10 +9161,6 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 19.2.7
-
-  use-sync-external-store@1.6.0(react@19.2.3):
-    dependencies:
-      react: 19.2.3
 
   util-deprecate@1.0.2: {}
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import useSWR from "swr";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetcher } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
-import { urlFetcher } from "@/lib/swr-utils";
 import { ClipboardCheck } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
@@ -19,8 +20,20 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import type { AttendanceStatus } from "@/types/dashboard";
 
+interface Athlete {
+  id: string;
+  displayName?: string;
+  email?: string;
+  status?: string | null;
+}
+
+interface AttendanceData {
+  athletes: Athlete[];
+}
+
 export default function AttendancePage() {
   const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
+  const queryClient = useQueryClient();
   const [selectedCheckinId, setSelectedCheckinId] = useState<string | null>(
     null,
   );
@@ -44,21 +57,23 @@ export default function AttendancePage() {
       })
     : checkins;
 
-  const { data: checkinsData, isLoading: checkinsLoading } = useSWR<{
+  const { data: checkinsData, isLoading: checkinsLoading } = useQuery<{
     checkins: CheckinItem[];
-  }>(
-    user?.groupId ? ["/api/checkins?mode=all", user.id, user.groupId] : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.checkins.all, "allSessions", user?.id, user?.groupId],
+    queryFn: () => apiFetcher("/api/checkins?mode=all"),
+    enabled: !!user?.groupId,
+  });
 
   const attendanceUrl =
     user && selectedCheckinId
       ? `/api/attendance?checkinId=${selectedCheckinId}`
       : null;
-  const { data: attendanceData, mutate: mutateAttendance, isLoading: attendanceLoading } = useSWR(
-    attendanceUrl && user ? [attendanceUrl, user.id, user.groupId] : null,
-    urlFetcher,
-  );
+  const { data: attendanceData, isLoading: attendanceLoading } = useQuery<AttendanceData>({
+    queryKey: [...queryKeys.attendance.byCheckin(selectedCheckinId ?? ""), user?.id, user?.groupId],
+    queryFn: () => apiFetcher<AttendanceData>(attendanceUrl!),
+    enabled: !!attendanceUrl && !!user,
+  });
 
   useEffect(() => {
     const list = checkinsData?.checkins ?? [];
@@ -74,7 +89,7 @@ export default function AttendancePage() {
     if (attendanceData?.athletes) {
       const map: Record<string, AttendanceStatus> = {};
       for (const a of attendanceData.athletes) {
-        map[a.id] = a.status;
+        if (a.status) map[a.id] = a.status as AttendanceStatus;
       }
       setEntries(map);
     }
@@ -103,7 +118,7 @@ export default function AttendancePage() {
         toast.error(data.error || "Failed to save attendance");
         return;
       }
-      mutateAttendance();
+      queryClient.invalidateQueries({ queryKey: queryKeys.attendance.byCheckin(selectedCheckinId) });
     } catch {
       toast.error("Network error");
     } finally {

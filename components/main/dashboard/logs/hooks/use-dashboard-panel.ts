@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
+import type { QueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import type { LogEntry } from "@/components/main/dashboard/logs/log-card";
 
 export type PanelMode = "new" | "view" | "edit" | null;
@@ -11,28 +13,19 @@ export interface CheckinPrefill {
   checkinId: string;
 }
 
-type LogsPage = { logs: LogEntry[]; nextCursor: string | null };
-type MutateLogs = (
-  updater?: (pages: LogsPage[] | undefined) => LogsPage[] | undefined,
-  opts?: { revalidate?: boolean }
-) => void;
-
 export interface UseDashboardPanelParams {
   userId?: string;
-  mutateLogs: MutateLogs;
-  mutateTags: () => void;
-  mutateCheckins?: () => void;
-  mutateAllCheckins?: () => void;
-  mutateStats?: () => void;
+  queryClient: QueryClient;
+  logsQueryKey: readonly unknown[];
 }
+
+type LogsPage = { logs: LogEntry[]; nextCursor: string | null };
+type InfiniteData = { pages: LogsPage[]; pageParams: unknown[] };
 
 export function useDashboardPanel({
   userId,
-  mutateLogs,
-  mutateTags,
-  mutateCheckins = () => {},
-  mutateAllCheckins = () => {},
-  mutateStats = () => {},
+  queryClient,
+  logsQueryKey,
 }: UseDashboardPanelParams) {
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
@@ -50,44 +43,48 @@ export function useDashboardPanel({
 
   const handleLogCreated = useCallback(
     (totalCount?: number) => {
-      mutateLogs();
-      mutateTags();
-      mutateCheckins();
-      mutateAllCheckins();
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
       setCheckinPrefill(null);
       setPanelMode(null);
       setSelectedLog(null);
       if (typeof totalCount === "number") {
         setCelebrationCount(totalCount);
       }
-      mutateStats();
     },
-    [mutateLogs, mutateTags, mutateCheckins, mutateAllCheckins, mutateStats],
+    [queryClient],
   );
 
+  // BUG FIX #3: handleLogUpdated now also invalidates checkins and stats
   const handleLogUpdated = useCallback(() => {
-    mutateLogs();
-    mutateTags();
+    queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
     setPanelMode(null);
     setSelectedLog(null);
-  }, [mutateLogs, mutateTags]);
+  }, [queryClient]);
 
   const handleCelebrationDismiss = useCallback(() => {
     setCelebrationCount(null);
   }, []);
 
+  // BUG FIX #4: handleDeleteLog now also invalidates allCheckins (via checkins.all prefix)
   const handleDeleteLog = useCallback(
     async (id: string) => {
-      // Optimistically remove from the local cache immediately so the UI
-      // doesn't re-fetch and flash a loading state.
-      mutateLogs(
-        (pages) =>
-          pages?.map((page) => ({
+      // Optimistically remove from the local cache
+      queryClient.setQueryData<InfiniteData>(logsQueryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
             ...page,
             logs: page.logs.filter((l) => l.id !== id),
           })),
-        { revalidate: false }
-      );
+        };
+      });
 
       if (selectedLog?.id === id) {
         setPanelMode("new");
@@ -98,21 +95,23 @@ export function useDashboardPanel({
         const res = await fetch(`/api/logs?id=${id}`, { method: "DELETE" });
         if (!res.ok) {
           toast.error("Failed to delete log");
-          // Roll back by revalidating
-          mutateLogs(undefined, { revalidate: true });
+          queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
           return;
         }
-        // Revalidate tags, stats, and checkins in the background
-        mutateTags();
-        mutateStats();
-        mutateCheckins();
+        queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
       } catch {
         toast.error("Network error");
-        mutateLogs(undefined, { revalidate: true });
+        queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
       }
     },
-    [mutateLogs, mutateTags, mutateStats, mutateCheckins, selectedLog],
+    [queryClient, logsQueryKey, selectedLog],
   );
+
+  const mutateLogs = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+  }, [queryClient]);
 
   const handleViewLog = useCallback((log: LogEntry) => {
     setSelectedLog(log);

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/components/query-provider";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
 
 import "./globals.css";
@@ -57,6 +58,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: colorThemeScript }} />
       </head>
       <body className="font-sans antialiased min-h-screen overflow-x-hidden">
+        <QueryProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -79,6 +81,7 @@ export default function RootLayout({
           <Analytics />
           <SpeedInsights />
         </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

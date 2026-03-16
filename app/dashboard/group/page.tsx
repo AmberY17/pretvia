@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import useSWR, { mutate as globalMutate } from "swr";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetcher } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
-import { urlFetcher } from "@/lib/swr-utils";
 import { Settings } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/main/shared/page-header";
@@ -19,6 +20,7 @@ import type { Member, PendingAthlete, Role } from "@/types/dashboard";
 
 export default function GroupManagementPage() {
   const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
+  const queryClient = useQueryClient();
   const [newRoleName, setNewRoleName] = useState("");
   const [addingRole, setAddingRole] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
@@ -46,23 +48,27 @@ export default function GroupManagementPage() {
   const lastSavedTrainingScheduleRef = useRef<typeof trainingSchedule>([]);
   const [athleteSearch, setAthleteSearch] = useState("");
 
-  const groupsUrl =
-    user?.role === "coach" ? "/api/groups?mode=coach-groups" : null;
-  const { data: coachGroupsData } = useSWR<{
+  const { data: coachGroupsData } = useQuery<{
     groups: { id: string; name: string }[];
-  }>(groupsUrl && user ? [groupsUrl, user.id] : null, urlFetcher);
+  }>({
+    queryKey: [...queryKeys.groups.coachGroups, user?.id],
+    queryFn: () => apiFetcher("/api/groups?mode=coach-groups"),
+    enabled: user?.role === "coach",
+  });
 
-  const membersUrl = user?.groupId
-    ? `/api/groups?groupId=${user.groupId}`
-    : null;
-  const { data: membersData, mutate: mutateMembers, isLoading: membersLoading } = useSWR<{
+  const { data: membersData, isLoading: membersLoading } = useQuery<{
     members: Member[];
     roles: Role[];
     pendingAthletes?: PendingAthlete[];
-  }>(
-    membersUrl && user ? [membersUrl, user.id, user.groupId] : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.members.all, user?.id, user?.groupId],
+    queryFn: () => apiFetcher(`/api/groups?groupId=${user!.groupId}`),
+    enabled: !!user?.groupId,
+  });
+
+  const mutateMembers = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
+  }, [queryClient]);
 
   const realAthletes = (membersData?.members ?? []).filter(
     (m) => m.role !== "coach",
@@ -88,17 +94,13 @@ export default function GroupManagementPage() {
   const coachGroups = coachGroupsData?.groups ?? [];
   const transferableGroups = coachGroups.filter((g) => g.id !== user?.groupId);
 
-  const trainingScheduleUrl = user?.groupId
-    ? `/api/groups/${user.groupId}/training-schedule`
-    : null;
-  const { data: trainingScheduleData, isLoading: trainingScheduleLoading } = useSWR<{
+  const { data: trainingScheduleData, isLoading: trainingScheduleLoading } = useQuery<{
     trainingScheduleTemplate: { dayOfWeek: number; time: string }[];
-  }>(
-    trainingScheduleUrl && user
-      ? [trainingScheduleUrl, user.id, user.groupId]
-      : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.groups.trainingSchedule(user?.groupId ?? ""), user?.id],
+    queryFn: () => apiFetcher(`/api/groups/${user!.groupId}/training-schedule`),
+    enabled: !!user?.groupId,
+  });
 
   useEffect(() => {
     if (!trainingScheduleData) return;
@@ -153,6 +155,7 @@ export default function GroupManagementPage() {
     setNewRoleName("");
   };
 
+  // BUG FIX #5: Role CRUD now also invalidates tags and logs
   const handleAddRole = async () => {
     if (!newRoleName.trim() || !user?.groupId) return;
     setAddingRole(true);
@@ -169,6 +172,8 @@ export default function GroupManagementPage() {
       }
       setNewRoleName("");
       mutateMembers();
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
     } catch {
       toast.error("Network error");
     } finally {
@@ -195,6 +200,8 @@ export default function GroupManagementPage() {
       }
       handleCancelEditRole();
       mutateMembers();
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
     } catch {
       toast.error("Network error");
     } finally {
@@ -218,6 +225,8 @@ export default function GroupManagementPage() {
       }
       handleCancelEditRole();
       mutateMembers();
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
     } catch {
       toast.error("Network error");
     }
@@ -245,6 +254,7 @@ export default function GroupManagementPage() {
     }
   };
 
+  // BUG FIX #1: Remove/transfer now properly invalidates logs, checkins, and stats
   const handleRemoveAthlete = async (userId: string) => {
     if (!user?.groupId) return;
     setRemoveConfirmUserId(null);
@@ -261,11 +271,9 @@ export default function GroupManagementPage() {
         return;
       }
       mutateMembers();
-      globalMutate(
-        (key: unknown) => typeof key === "string" && key.includes("/api/logs"),
-        undefined,
-        { revalidate: false }
-      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
     } catch {
       toast.error("Network error");
     } finally {
@@ -296,11 +304,9 @@ export default function GroupManagementPage() {
       setTransferDropdownOpen(false);
       setTransferSearch("");
       mutateMembers();
-      globalMutate(
-        (key: unknown) => typeof key === "string" && key.includes("/api/logs"),
-        undefined,
-        { revalidate: false }
-      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
     } catch {
       toast.error("Network error");
     } finally {
