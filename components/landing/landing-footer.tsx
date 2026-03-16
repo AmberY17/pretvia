@@ -6,8 +6,10 @@ import { ChartNoAxesCombined } from "lucide-react";
 
 export function LandingFooter({
   footerLink,
+  secondaryLink,
 }: {
   footerLink: { href: string; label: string };
+  secondaryLink?: { href: string; label: string };
 }) {
   return (
     <footer className="border-t border-border px-6 py-8">
@@ -38,6 +40,14 @@ export function LandingFooter({
           >
             {footerLink.label}
           </Link>
+          {secondaryLink && (
+            <Link
+              href={secondaryLink.href}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {secondaryLink.label}
+            </Link>
+          )}
           <div className="flex items-center gap-1">
             <ChartNoAxesCombined className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">

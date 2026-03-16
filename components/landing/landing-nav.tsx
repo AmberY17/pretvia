@@ -7,8 +7,10 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 
 export function LandingNav({
   primaryLink,
+  secondaryLink,
 }: {
   primaryLink: { href: string; label: string };
+  secondaryLink?: { href: string; label: string };
 }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -38,6 +40,13 @@ export function LandingNav({
               {primaryLink.label}
             </Button>
           </Link>
+          {secondaryLink && (
+            <Link href={secondaryLink.href}>
+              <Button variant="ghost" size="sm">
+                {secondaryLink.label}
+              </Button>
+            </Link>
+          )}
           <Link href="/auth">
             <Button variant="ghost-secondary" size="sm" className="gap-2">
               Sign In
