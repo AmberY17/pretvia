@@ -80,58 +80,103 @@ export async function GET(req: Request) {
       }
     }
 
-    let logs = await db
-      .collection("logs")
-      .find(filter)
-      .sort({ timestamp: -1, _id: -1 })
-      .limit(limit + 1)
-      .toArray()
+    const useAggregation =
+      currentUser?.role === "coach" &&
+      filterReviewStatus &&
+      ["pending", "reviewed", "revisit"].includes(filterReviewStatus)
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let logs: any[]
     let nextCursor: string | null = null
-    if (logs.length > limit) {
-      const last = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
-      nextCursor = `${last.timestamp.toISOString()}|${last._id.toString()}`
-      logs = logs.slice(0, limit)
-    }
-
-    // Coach-only: fetch review status and optionally filter by it
     const reviewMap = new Map<string, string>()
-    if (currentUser?.role === "coach") {
-      const logIds = logs.map((l) => l._id.toString())
-      const map = await buildReviewStatusMap(db, logIds, session.userId)
-      for (const [k, v] of map) reviewMap.set(k, v)
 
-      if (
-        filterReviewStatus &&
-        ["pending", "reviewed", "revisit"].includes(filterReviewStatus)
-      ) {
-        logs = logs.filter((log) => {
-          const status = reviewMap.get(log._id.toString()) ?? "pending"
-          return status === filterReviewStatus
-        })
-        if (logs.length < limit) {
-          nextCursor = null
-        } else {
-          const lastFiltered = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
-          nextCursor = `${lastFiltered.timestamp.toISOString()}|${lastFiltered._id.toString()}`
-        }
-      } else {
+    if (useAggregation) {
+      // Use aggregation pipeline to filter by review status in the DB
+      const pipeline = [
+        { $match: filter },
+        { $addFields: { _idStr: { $toString: "$_id" } } },
+        {
+          $lookup: {
+            from: "log_reviews",
+            let: { logIdStr: "$_idStr" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$logId", "$$logIdStr"] },
+                      { $eq: ["$coachId", session.userId] },
+                    ],
+                  },
+                },
+              },
+            ],
+            as: "_reviews",
+          },
+        },
+        {
+          $addFields: {
+            _reviewStatus: {
+              $ifNull: [{ $arrayElemAt: ["$_reviews.status", 0] }, "pending"],
+            },
+          },
+        },
+        { $match: { _reviewStatus: filterReviewStatus } },
+        { $sort: { timestamp: -1 as const, _id: -1 as const } },
+        { $limit: limit + 1 },
+      ]
+
+      logs = await db.collection("logs").aggregate(pipeline).toArray()
+
+      if (logs.length > limit) {
+        const last = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
+        nextCursor = `${last.timestamp.toISOString()}|${last._id.toString()}`
+        logs = logs.slice(0, limit)
+      }
+
+      // Populate reviewMap from aggregation results
+      for (const log of logs) {
+        reviewMap.set(
+          (log._id as ObjectId).toString(),
+          (log._reviewStatus as string) ?? "pending",
+        )
+      }
+    } else {
+      logs = await db
+        .collection("logs")
+        .find(filter)
+        .sort({ timestamp: -1, _id: -1 })
+        .limit(limit + 1)
+        .toArray()
+
+      if (logs.length > limit) {
+        const last = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
+        nextCursor = `${last.timestamp.toISOString()}|${last._id.toString()}`
+        logs = logs.slice(0, limit)
+      }
+
+      // Coach-only: fetch review status for default ordering
+      if (currentUser?.role === "coach") {
+        const logIds = logs.map((l) => (l._id as ObjectId).toString())
+        const map = await buildReviewStatusMap(db, logIds, session.userId)
+        for (const [k, v] of map) reviewMap.set(k, v)
+
         const statusOrder: Record<string, number> = { pending: 0, revisit: 1, reviewed: 2 }
         logs.sort((a, b) => {
-          const aOrder = statusOrder[reviewMap.get(a._id.toString()) ?? "pending"] ?? 0
-          const bOrder = statusOrder[reviewMap.get(b._id.toString()) ?? "pending"] ?? 0
+          const aOrder = statusOrder[reviewMap.get((a._id as ObjectId).toString()) ?? "pending"] ?? 0
+          const bOrder = statusOrder[reviewMap.get((b._id as ObjectId).toString()) ?? "pending"] ?? 0
           if (aOrder !== bOrder) return aOrder - bOrder
-          return (b.timestamp as Date).getTime() - (a.timestamp as Date).getTime()
+          return ((b.timestamp as Date).getTime()) - ((a.timestamp as Date).getTime())
         })
       }
     }
 
-    const userIds = [...new Set(logs.map((l) => l.userId))]
+    const userIds = [...new Set(logs.map((l) => l.userId as string))]
     const userMap = await fetchUserDisplayNames(db, userIds)
 
     return NextResponse.json({
       logs: logs.map((log) => {
-        const logId = log._id.toString()
+        const logId = (log._id as ObjectId).toString()
         const reviewStatus =
           currentUser?.role === "coach"
             ? (reviewMap.get(logId) ?? "pending")

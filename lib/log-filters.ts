@@ -56,8 +56,11 @@ export async function buildVisibilityFilter(
     ],
   }
 
-  if (filterUserId && userRole === "coach" && memberIds.includes(filterUserId)) {
-    return { userId: filterUserId, ...coachVisibilityCondition }
+  if (filterUserId && userRole === "coach") {
+    if (memberIds.includes(filterUserId)) {
+      return { userId: filterUserId, ...coachVisibilityCondition }
+    }
+    return { _id: null } // no results — athlete doesn't match filters
   }
 
   if (userRole === "coach") {
