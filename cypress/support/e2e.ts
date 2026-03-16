@@ -1,6 +1,10 @@
 import "@testing-library/cypress/add-commands";
 import "./commands";
 
+before(() => {
+  cy.task("cleanupTestData");
+});
+
 // Suppress React hydration mismatch errors that Next.js throws in dev mode.
 // These are cosmetic in development — React recovers automatically — but
 // Cypress treats them as uncaught exceptions and fails the test.
