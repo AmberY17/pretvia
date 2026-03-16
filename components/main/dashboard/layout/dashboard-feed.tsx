@@ -170,16 +170,17 @@ export function DashboardFeed({
         <div className="flex flex-col gap-3">
           <AnimatePresence mode="wait">
             {isLoading ? (
-              [1, 2, 3, 4].map((i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <LogCardSkeleton />
-                </motion.div>
-              ))
+              <motion.div
+                key="loading"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col gap-3"
+              >
+                {[1, 2, 3, 4].map((i) => (
+                  <LogCardSkeleton key={i} />
+                ))}
+              </motion.div>
             ) : logs.length === 0 ? (
               <motion.div
                 key="empty"
@@ -191,20 +192,29 @@ export function DashboardFeed({
                 <p className="text-sm text-muted-foreground">No logs yet.</p>
               </motion.div>
             ) : (
-              logs.map((log, i) => (
-                <LogCard
-                  key={log.id}
-                  log={log}
-                  onDelete={onDeleteLog}
-                  onEdit={onEditLog}
-                  onClick={onViewLog}
-                  index={i}
-                  currentUserId={user.id}
-                  isCoach={user.role === "coach"}
-                  groupId={user.groupId}
-                  onMutateLogs={onMutateLogs}
-                />
-              ))
+              <motion.div
+                key="logs"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col gap-3"
+              >
+                {logs.map((log, i) => (
+                  <LogCard
+                    key={log.id}
+                    log={log}
+                    onDelete={onDeleteLog}
+                    onEdit={onEditLog}
+                    onClick={onViewLog}
+                    index={i}
+                    currentUserId={user.id}
+                    isCoach={user.role === "coach"}
+                    groupId={user.groupId}
+                    onMutateLogs={onMutateLogs}
+                  />
+                ))}
+              </motion.div>
             )}
           </AnimatePresence>
           {hasMoreLogs && (
