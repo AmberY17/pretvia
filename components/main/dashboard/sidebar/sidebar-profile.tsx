@@ -15,7 +15,7 @@ import { GroupActionForm } from "./group-action-form";
 interface SidebarProfileProps {
   user: User;
   onLogout: () => void;
-  onGroupChanged: () => void;
+  onGroupChanged: (newGroupId?: string) => void;
 }
 
 export function SidebarProfile({
@@ -114,7 +114,7 @@ export function SidebarProfile({
             <GroupSwitcher
               userGroups={userGroups}
               currentGroupId={user.group?.id}
-              onGroupChanged={onGroupChanged}
+              onGroupChanged={(newGroupId) => onGroupChanged(newGroupId)}
             />
           )}
 

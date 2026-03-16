@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
 import useSWRInfinite from "swr/infinite";
 import { toast } from "sonner";
@@ -29,6 +29,12 @@ import type { CheckinItem } from "@/components/main/dashboard/checkins/checkin-c
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth();
+  const [isGroupSwitching, setIsGroupSwitching] = useState(false);
+  const switchingGroupIdRef = useRef<string | undefined>(undefined);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  useEffect(() => {
+    setActiveGroupId(user?.groupId ?? null);
+  }, [user?.groupId]);
 
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
@@ -42,9 +48,9 @@ export default function DashboardPage() {
   } = useSWRInfinite<{ logs: LogEntry[]; nextCursor: string | null }>(
     (pageIndex, previousPageData) => {
       if (!user) return null;
-      if (pageIndex === 0) return [logsUrl, user.id, null] as const;
+      if (pageIndex === 0) return [logsUrl, user.id, activeGroupId, null] as const;
       if (!previousPageData?.nextCursor) return null;
-      return [logsUrl, user.id, previousPageData.nextCursor] as const;
+      return [logsUrl, user.id, activeGroupId, previousPageData.nextCursor] as const;
     },
     logsInfiniteFetcher,
     {
@@ -79,7 +85,7 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
-  const { data: checkinsData, isLoading: checkinsLoading, mutate: mutateCheckins } = useSWR<{
+  const { data: checkinsData, isLoading: checkinsLoading, isValidating: checkinsValidating, mutate: mutateCheckins } = useSWR<{
     checkins: CheckinItem[];
   }>(user?.groupId ? ["/api/checkins", user.id, user.groupId] : null, urlFetcher);
 
@@ -110,7 +116,7 @@ export default function DashboardPage() {
     urlFetcher,
   );
 
-  const { data: announcementData, isLoading: announcementLoading, mutate: mutateAnnouncement } = useSWR<{
+  const { data: announcementData, isLoading: announcementLoading, isValidating: announcementValidating, mutate: mutateAnnouncement } = useSWR<{
     announcements: {
       id: string;
       text: string;
@@ -145,9 +151,15 @@ export default function DashboardPage() {
     prevUserIdForFiltersRef.current = user?.id;
   }, [user?.id, handlers]);
 
-  const handleGroupChanged = useCallback(() => {
+  const handleGroupChanged = useCallback((newGroupId?: string) => {
+    setIsGroupSwitching(true);
+    switchingGroupIdRef.current = user?.groupId;
+    if (newGroupId !== undefined) {
+      setActiveGroupId(newGroupId);
+    }
     mutateAuth();
-    mutateLogs();
+    setSize(1);
+    mutateLogs(() => undefined, { revalidate: false });
     mutateAnnouncement();
     mutateCheckins();
     mutateAllCheckins();
@@ -155,11 +167,21 @@ export default function DashboardPage() {
   }, [
     mutateAuth,
     mutateLogs,
+    setSize,
     mutateAnnouncement,
     mutateCheckins,
     mutateAllCheckins,
     handlers,
+    setIsGroupSwitching,
+    user?.groupId,
   ]);
+
+  useEffect(() => {
+    if (!isGroupSwitching) return;
+    if (!user?.groupId || user.groupId === switchingGroupIdRef.current) return;
+    if (announcementLoading || checkinsLoading) return;
+    setIsGroupSwitching(false);
+  }, [isGroupSwitching, user?.groupId, announcementLoading, checkinsLoading]);
 
   const { data: myGroupsData } = useSWR<{
     groups: {
@@ -281,8 +303,12 @@ export default function DashboardPage() {
           panelMode={panelState.panelMode}
           announcements={announcementData?.announcements ?? []}
           checkins={checkinsData?.checkins ?? []}
-          announcementLoading={announcementLoading}
-          checkinsLoading={checkinsLoading}
+          announcementLoading={isGroupSwitching || announcementLoading || announcementValidating}
+          checkinsLoading={isGroupSwitching || checkinsLoading || checkinsValidating}
+          onEditCheckinLog={(logId) => {
+            const log = logs.find((l) => l.id === logId);
+            if (log) panelHandlers.handleEditLog(log);
+          }}
           trainingScheduleTemplate={membersData?.trainingScheduleTemplate}
           isLoading={logsLoading}
           hasMoreLogs={hasMoreLogs}
@@ -302,6 +328,10 @@ export default function DashboardPage() {
             panelHandlers={{
               ...panelHandlers,
               handleCloseEditToView: panelHandlers.handleCloseEditToView,
+              handleEditLogById: (logId: string) => {
+                const log = logs.find((l) => l.id === logId);
+                if (log) panelHandlers.handleEditLog(log);
+              },
             }}
             tagNames={tagNames}
           />

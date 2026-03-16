@@ -55,7 +55,7 @@ export function useDashboardPanel({
       mutateCheckins();
       mutateAllCheckins();
       setCheckinPrefill(null);
-      setPanelMode("new");
+      setPanelMode(null);
       setSelectedLog(null);
       if (typeof totalCount === "number") {
         setCelebrationCount(totalCount);
@@ -102,15 +102,16 @@ export function useDashboardPanel({
           mutateLogs(undefined, { revalidate: true });
           return;
         }
-        // Revalidate tags and stats in the background
+        // Revalidate tags, stats, and checkins in the background
         mutateTags();
         mutateStats();
+        mutateCheckins();
       } catch {
         toast.error("Network error");
         mutateLogs(undefined, { revalidate: true });
       }
     },
-    [mutateLogs, mutateTags, mutateStats, selectedLog],
+    [mutateLogs, mutateTags, mutateStats, mutateCheckins, selectedLog],
   );
 
   const handleViewLog = useCallback((log: LogEntry) => {

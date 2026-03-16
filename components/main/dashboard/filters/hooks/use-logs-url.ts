@@ -6,7 +6,7 @@ import type {
   CustomDateSelection,
 } from "@/lib/date-utils";
 import { getDateFilterParams } from "@/lib/date-utils";
-import type { ReviewStatusFilterValue } from "@/types/dashboard";
+import type { ReviewStatusFilterValue, VisibilityFilterValue } from "@/types/dashboard";
 
 export interface LogsUrlFilters {
   activeTags: string[];
@@ -14,6 +14,7 @@ export interface LogsUrlFilters {
   filterSessionId: string | null;
   filterRoleId: string | null;
   filterReviewStatus: ReviewStatusFilterValue;
+  filterVisibility: VisibilityFilterValue;
   dateFilter: DateFilterKey;
   customDates: CustomDateSelection | null;
 }
@@ -27,6 +28,8 @@ export function buildLogsUrl(filters: LogsUrlFilters): string {
   if (filters.filterRoleId) params.set("roleId", filters.filterRoleId);
   if (filters.filterReviewStatus)
     params.set("reviewStatus", filters.filterReviewStatus);
+  if (filters.filterVisibility)
+    params.set("visibility", filters.filterVisibility);
 
   const { dateFrom, dateTo, dates } = getDateFilterParams(
     filters.dateFilter,
@@ -49,6 +52,7 @@ export function useLogsUrl(filters: LogsUrlFilters): string {
       filters.filterSessionId,
       filters.filterRoleId,
       filters.filterReviewStatus,
+      filters.filterVisibility,
       filters.dateFilter,
       filters.customDates?.join(",") ?? "",
     ],

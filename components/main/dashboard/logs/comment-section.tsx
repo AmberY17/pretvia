@@ -185,7 +185,7 @@ export function CommentSection({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+            style={{ overflow: isExpanded ? "visible" : "hidden" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col gap-3 pt-3">

@@ -10,6 +10,7 @@ import { DateFilter } from "@/components/main/dashboard/filters/date-filter";
 import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter";
 import { RoleFilter } from "@/components/main/dashboard/filters/role-filter";
 import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter";
+import { VisibilityFilter } from "@/components/main/dashboard/filters/visibility-filter";
 import { SidebarFilterSkeleton, SidebarStatsCardSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
 import { SidebarStatsCard } from "@/components/main/dashboard/sidebar/sidebar-stats-card";
 import type { User } from "@/hooks/use-auth";
@@ -27,7 +28,7 @@ import type { Athlete, Role, SessionItem } from "@/types/dashboard";
 interface DashboardSidebarProps {
   user: User;
   onLogout: () => void;
-  onGroupChanged: () => void;
+  onGroupChanged: (newGroupId?: string) => void;
   filters: DashboardFiltersState;
   handlers: DashboardFiltersHandlers;
   tags: { id: string; name: string }[];
@@ -72,7 +73,7 @@ export function DashboardSidebar({
     () =>
       user.role === "coach"
         ? Object.fromEntries(DEFAULT_COACH_ORDER.map((id) => [id, false]))
-        : { tags: false, date: false },
+        : { tags: false, date: false, logType: false },
   );
 
   const handleResetAll = () => {
@@ -103,7 +104,8 @@ export function DashboardSidebar({
     !!filters.filterSessionId ||
     !!filters.filterAthleteId ||
     !!filters.filterRoleId ||
-    !!filters.filterReviewStatus;
+    !!filters.filterReviewStatus ||
+    !!filters.filterVisibility;
 
   const coachSections = useMemo(() => {
     const order = coachFilterOrder;
@@ -270,6 +272,20 @@ export function DashboardSidebar({
                     onDateFilterChange={handlers.setDateFilter}
                     onCustomDatesChange={handlers.setCustomDates}
                     onClear={handlers.clearDateFilter}
+                    hideHeader
+                  />
+                </CollapsibleFilterSection>
+                <CollapsibleFilterSection
+                  title="Log Type"
+                  open={openSections.logType ?? false}
+                  onOpenChange={(open) =>
+                    setOpenSections((prev) => ({ ...prev, logType: open }))
+                  }
+                >
+                  <VisibilityFilter
+                    variant="sidebar"
+                    filterVisibility={filters.filterVisibility}
+                    onFilter={handlers.setFilterVisibility}
                     hideHeader
                   />
                 </CollapsibleFilterSection>

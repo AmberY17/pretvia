@@ -39,14 +39,28 @@ beforeEach(() => {
 
 describe("POST /api/waitlist", () => {
   it("returns 400 when firstName is missing", async () => {
-    const res = await POST(makeReq({ lastName: "Smith", email: "test@example.com", clubName: "FC", groups: [{ ageGroups: ["U12"], level: "" }] }))
+    const res = await POST(
+      makeReq({
+        lastName: "Smith",
+        email: "test@example.com",
+        clubName: "FC",
+        groups: [{ ageGroups: ["U12"], level: "" }],
+      }),
+    )
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toBeTruthy()
   })
 
   it("returns 400 when email is missing", async () => {
-    const res = await POST(makeReq({ firstName: "Jane", lastName: "Smith", clubName: "FC", groups: [{ ageGroups: ["U12"], level: "" }] }))
+    const res = await POST(
+      makeReq({
+        firstName: "Jane",
+        lastName: "Smith",
+        clubName: "FC",
+        groups: [{ ageGroups: ["U12"], level: "" }],
+      }),
+    )
     expect(res.status).toBe(400)
     const data = await res.json()
     expect(data.error).toBeTruthy()
@@ -66,7 +80,14 @@ describe("POST /api/waitlist", () => {
     const { db, insertOne } = makeMockDb(null)
     vi.mocked(getDb).mockResolvedValue(db as any)
 
-    const res = await POST(makeReq({ ...validBody, firstName: "  Jane  ", lastName: "  Smith  ", email: "  Jane@Example.COM  " }))
+    const res = await POST(
+      makeReq({
+        ...validBody,
+        firstName: "  Jane  ",
+        lastName: "  Smith  ",
+        email: "  Jane@Example.COM  ",
+      }),
+    )
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.success).toBe(true)
@@ -78,7 +99,7 @@ describe("POST /api/waitlist", () => {
         firstName: "Jane",
         lastName: "Smith",
         clubName: "Riverside FC",
-      })
+      }),
     )
   })
 

@@ -9,7 +9,7 @@ type UserGroup = { id: string; name: string; code: string; coachId: string };
 interface GroupSwitcherProps {
   userGroups: UserGroup[];
   currentGroupId?: string;
-  onGroupChanged: () => void;
+  onGroupChanged: (newGroupId: string) => void;
 }
 
 export function GroupSwitcher({
@@ -43,7 +43,7 @@ export function GroupSwitcher({
       toast.success(`Switched to "${data.group.name}"`);
       setShowSwitcher(false);
       setGroupSearch("");
-      onGroupChanged();
+      onGroupChanged(groupId);
     } catch {
       toast.error("Network error");
     } finally {

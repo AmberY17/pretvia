@@ -28,6 +28,7 @@ export async function GET(req: Request) {
     const dateTo = searchParams.get("dateTo")
     const datesParam = searchParams.get("dates")
     const filterCheckinId = searchParams.get("checkinId")
+    const filterVisibility = searchParams.get("visibility")
     const filterReviewStatus = searchParams.get("reviewStatus") as
       | "pending"
       | "reviewed"
@@ -65,6 +66,20 @@ export async function GET(req: Request) {
     filter = applyDateFilter(filter, dateFrom, dateTo, datesParam)
     filter = applyCursorFilter(filter, cursor)
 
+    if (filterVisibility && currentUser?.role !== "coach") {
+      if (filterVisibility === "coach") {
+        filter = { $and: [filter, { $or: [
+          { visibility: "coach" },
+          { visibility: { $exists: false }, isGroup: true },
+        ]}]}
+      } else if (filterVisibility === "private") {
+        filter = { $and: [filter, { $or: [
+          { visibility: "private" },
+          { visibility: { $exists: false }, isGroup: { $ne: true } },
+        ]}]}
+      }
+    }
+
     let logs = await db
       .collection("logs")
       .find(filter)
@@ -100,6 +115,14 @@ export async function GET(req: Request) {
           const lastFiltered = logs[limit - 1] as { timestamp: Date; _id: ObjectId }
           nextCursor = `${lastFiltered.timestamp.toISOString()}|${lastFiltered._id.toString()}`
         }
+      } else {
+        const statusOrder: Record<string, number> = { pending: 0, revisit: 1, reviewed: 2 }
+        logs.sort((a, b) => {
+          const aOrder = statusOrder[reviewMap.get(a._id.toString()) ?? "pending"] ?? 0
+          const bOrder = statusOrder[reviewMap.get(b._id.toString()) ?? "pending"] ?? 0
+          if (aOrder !== bOrder) return aOrder - bOrder
+          return (b.timestamp as Date).getTime() - (a.timestamp as Date).getTime()
+        })
       }
     }
 
@@ -159,6 +182,39 @@ export async function POST(req: Request) {
     const user = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
+
+    // Enforce daily log limit for standalone logs (not checkin logs)
+    if (!checkinId) {
+      const now = new Date()
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const todayLogs = await db.collection("logs").find({
+        userId: session.userId,
+        createdAt: { $gte: startOfToday, $lt: endOfToday },
+        checkinId: { $exists: false },
+      }).project({ visibility: 1, isGroup: 1 }).toArray()
+
+      const resolvedNew = visibility || (isGroup ? "coach" : "private")
+      const hasShared = todayLogs.some((l) =>
+        l.visibility === "coach" || (!l.visibility && l.isGroup === true)
+      )
+      const hasPrivate = todayLogs.some((l) =>
+        l.visibility === "private" || (!l.visibility && l.isGroup !== true)
+      )
+
+      if (resolvedNew === "coach" && hasShared) {
+        return NextResponse.json(
+          { error: "Daily shared log limit reached" },
+          { status: 409 },
+        )
+      }
+      if (resolvedNew === "private" && hasPrivate) {
+        return NextResponse.json(
+          { error: "Daily private log limit reached" },
+          { status: 409 },
+        )
+      }
+    }
 
     const resolvedVisibility = visibility || (isGroup ? "coach" : "private")
 
@@ -244,6 +300,65 @@ export async function PUT(req: Request) {
         { error: "Log not found or not authorized" },
         { status: 404 },
       )
+    }
+
+    const resolvedNewVisibility =
+      visibility !== undefined
+        ? visibility
+        : isGroup !== undefined
+          ? isGroup
+            ? "coach"
+            : "private"
+          : null
+
+    const existingVisibility =
+      existing.visibility || (existing.isGroup ? "coach" : "private")
+
+    if (
+      resolvedNewVisibility &&
+      resolvedNewVisibility !== existingVisibility &&
+      !existing.checkinId
+    ) {
+      const now = new Date()
+      const startOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      )
+      const endOfToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+      )
+
+      const conflictLog = await db.collection("logs").findOne({
+        _id: { $ne: logOid },
+        userId: session.userId,
+        createdAt: { $gte: startOfToday, $lt: endOfToday },
+        checkinId: { $exists: false },
+        $or:
+          resolvedNewVisibility === "coach"
+            ? [
+                { visibility: "coach" },
+                { visibility: { $exists: false }, isGroup: true },
+              ]
+            : [
+                { visibility: "private" },
+                { visibility: { $exists: false }, isGroup: { $ne: true } },
+              ],
+      })
+
+      if (conflictLog) {
+        return NextResponse.json(
+          {
+            error:
+              resolvedNewVisibility === "coach"
+                ? "Daily shared log limit reached"
+                : "Daily private log limit reached",
+          },
+          { status: 409 },
+        )
+      }
     }
 
     const update: Record<string, unknown> = { updatedAt: new Date() }

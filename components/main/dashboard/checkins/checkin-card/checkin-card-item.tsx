@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Loader2,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
@@ -20,6 +21,7 @@ interface CheckinCardItemProps {
   checkin: CheckinItem;
   isCoach: boolean;
   onCheckinLog: (sessionDate: string, checkinId: string) => void;
+  onEditCheckinLog?: (logId: string) => void;
   onMutate: () => void;
 }
 
@@ -27,6 +29,7 @@ export function CheckinCardItem({
   checkin,
   isCoach,
   onCheckinLog,
+  onEditCheckinLog,
   onMutate,
 }: CheckinCardItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -107,12 +110,24 @@ export function CheckinCardItem({
           </div>
 
           {!isCoach && (
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-2">
               {checkin.hasUserLogged ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Logged
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Logged
+                  </span>
+                  {checkin.userLogId && onEditCheckinLog && (
+                    <button
+                      type="button"
+                      onClick={() => onEditCheckinLog(checkin.userLogId!)}
+                      className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </button>
+                  )}
+                </>
               ) : (
                 <Button
                   size="sm"

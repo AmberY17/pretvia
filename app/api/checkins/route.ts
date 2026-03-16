@@ -57,7 +57,7 @@ export async function GET(req: Request) {
     const logsForCheckins = await db
       .collection("logs")
       .find({ checkinId: { $in: checkinIds } })
-      .project({ checkinId: 1, userId: 1 })
+      .project({ _id: 1, checkinId: 1, userId: 1 })
       .toArray()
 
     // Build a map of checkinId -> set of userIds who logged
@@ -71,9 +71,13 @@ export async function GET(req: Request) {
 
     // Check which check-ins the current user has already logged for
     const userLoggedCheckinIds = new Set<string>()
+    const userLogIdByCheckin = new Map<string, string>()
     for (const log of logsForCheckins) {
       if (log.userId === session.userId) {
         userLoggedCheckinIds.add(log.checkinId)
+        if (!userLogIdByCheckin.has(log.checkinId)) {
+          userLogIdByCheckin.set(log.checkinId, log._id.toString())
+        }
       }
     }
 
@@ -89,6 +93,7 @@ export async function GET(req: Request) {
         checkedInCount: checkinLogMap.get(c._id.toString())?.size || 0,
         totalAthletes,
         hasUserLogged: userLoggedCheckinIds.has(c._id.toString()),
+        userLogId: userLogIdByCheckin.get(c._id.toString()) ?? null,
       })),
     })
   } catch (error) {

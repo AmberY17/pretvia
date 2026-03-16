@@ -250,18 +250,18 @@ export async function computeTodaySkipStatus(
     return { canSkipToday: false, skipDisabledReason: "already_skipped" }
   }
 
-  // Reuse prefetched logs (from computeStreak) — only need today's window so
-  // filter to today to avoid scanning more than necessary.
+  // Reuse prefetched logs (from computeStreak) — filter to logs from today's
+  // UTC midnight onward; logMatchesSlot is the sole authority on whether a log
+  // belongs to a slot (handles late-night logs that cross UTC midnight).
   const todayStart = new Date(todayDateStr + "T00:00:00.000Z")
-  const todayEnd = new Date(todayDateStr + "T23:59:59.999Z")
   const logs = prefetchedLogs
     ? prefetchedLogs.filter((l) => {
         const ts = l.timestamp instanceof Date ? l.timestamp : new Date(l.timestamp)
-        return ts >= todayStart && ts <= todayEnd
+        return ts >= todayStart
       })
     : await db
         .collection("logs")
-        .find({ userId, timestamp: { $gte: todayStart, $lte: todayEnd } })
+        .find({ userId, timestamp: { $gte: todayStart } })
         .project({ timestamp: 1 })
         .toArray()
 

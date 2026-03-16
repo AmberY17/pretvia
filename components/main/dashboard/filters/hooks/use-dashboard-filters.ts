@@ -9,7 +9,7 @@ import {
   useLogsUrl,
   type LogsUrlFilters,
 } from "@/components/main/dashboard/filters/hooks/use-logs-url";
-import type { ReviewStatusFilterValue } from "@/types/dashboard";
+import type { ReviewStatusFilterValue, VisibilityFilterValue } from "@/types/dashboard";
 
 export interface DashboardFiltersState {
   activeTags: string[];
@@ -19,6 +19,7 @@ export interface DashboardFiltersState {
   filterSessionId: string | null;
   filterRoleId: string | null;
   filterReviewStatus: ReviewStatusFilterValue;
+  filterVisibility: VisibilityFilterValue;
 }
 
 export interface DashboardFiltersHandlers {
@@ -30,6 +31,7 @@ export interface DashboardFiltersHandlers {
   setFilterSessionId: (id: string | null | ((prev: string | null) => string | null)) => void;
   setFilterRoleId: (id: string | null | ((prev: string | null) => string | null)) => void;
   setFilterReviewStatus: (value: ReviewStatusFilterValue) => void;
+  setFilterVisibility: (value: VisibilityFilterValue) => void;
   clearDateFilter: () => void;
   clearAllOnGroupChange: () => void;
   clearAllFilters: () => void;
@@ -46,6 +48,8 @@ export function useDashboardFilters() {
   const [filterRoleId, setFilterRoleId] = useState<string | null>(null);
   const [filterReviewStatus, setFilterReviewStatus] =
     useState<ReviewStatusFilterValue>(null);
+  const [filterVisibility, setFilterVisibility] =
+    useState<VisibilityFilterValue>(null);
 
   const filters: LogsUrlFilters = {
     activeTags,
@@ -53,6 +57,7 @@ export function useDashboardFilters() {
     filterSessionId,
     filterRoleId,
     filterReviewStatus,
+    filterVisibility,
     dateFilter,
     customDates,
   };
@@ -83,6 +88,7 @@ export function useDashboardFilters() {
     setFilterSessionId(null);
     setFilterRoleId(null);
     setFilterReviewStatus(null);
+    setFilterVisibility(null);
   }, []);
 
   const clearAllFilters = useCallback(() => {
@@ -93,6 +99,7 @@ export function useDashboardFilters() {
     setFilterSessionId(null);
     setFilterRoleId(null);
     setFilterReviewStatus(null);
+    setFilterVisibility(null);
   }, []);
 
   const filtersState: DashboardFiltersState = {
@@ -103,6 +110,7 @@ export function useDashboardFilters() {
     filterSessionId,
     filterRoleId,
     filterReviewStatus,
+    filterVisibility,
   };
 
   const handlers: DashboardFiltersHandlers = {
@@ -114,6 +122,7 @@ export function useDashboardFilters() {
     setFilterSessionId,
     setFilterRoleId,
     setFilterReviewStatus,
+    setFilterVisibility,
     clearDateFilter,
     clearAllOnGroupChange,
     clearAllFilters,

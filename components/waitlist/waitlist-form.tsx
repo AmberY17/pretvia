@@ -53,7 +53,7 @@ function GroupSection({
                   "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                   selected
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-foreground hover:bg-muted"
+                    : "border-border bg-background text-foreground hover:bg-muted",
                 )}
               >
                 {ag}
@@ -138,7 +138,7 @@ export function WaitlistForm() {
         setLoading(false)
       }
     },
-    [firstName, lastName, email, clubName, groups]
+    [firstName, lastName, email, clubName, groups],
   )
 
   if (submitted) {
@@ -147,7 +147,8 @@ export function WaitlistForm() {
         <div className="mb-4 text-4xl">🎉</div>
         <h2 className="mb-2 text-xl font-semibold text-foreground">You&apos;re on the list!</h2>
         <p className="text-muted-foreground">
-          We&apos;ll review your application and send you an invite link when your spot is approved. Keep an eye on your inbox.
+          We&apos;ll review your application and send you an invite link when your spot is approved.
+          Keep an eye on your inbox.
         </p>
       </div>
     )
@@ -163,7 +164,7 @@ export function WaitlistForm() {
           <Input
             id="wl-first-name"
             type="text"
-            placeholder="Jane"
+            placeholder="Amber"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
@@ -179,7 +180,7 @@ export function WaitlistForm() {
           <Input
             id="wl-last-name"
             type="text"
-            placeholder="Smith"
+            placeholder="Yang"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             required
@@ -211,7 +212,7 @@ export function WaitlistForm() {
         <Input
           id="wl-club"
           type="text"
-          placeholder="Riverside FC"
+          placeholder="Raffine Kim's Fencing Club"
           value={clubName}
           onChange={(e) => setClubName(e.target.value)}
           required

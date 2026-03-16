@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { AnimatePresence, motion } from "framer-motion";
 import { urlFetcher } from "@/lib/swr-utils";
 import { Settings } from "lucide-react";
@@ -261,6 +261,11 @@ export default function GroupManagementPage() {
         return;
       }
       mutateMembers();
+      globalMutate(
+        (key: unknown) => typeof key === "string" && key.includes("/api/logs"),
+        undefined,
+        { revalidate: false }
+      );
     } catch {
       toast.error("Network error");
     } finally {
@@ -291,6 +296,11 @@ export default function GroupManagementPage() {
       setTransferDropdownOpen(false);
       setTransferSearch("");
       mutateMembers();
+      globalMutate(
+        (key: unknown) => typeof key === "string" && key.includes("/api/logs"),
+        undefined,
+        { revalidate: false }
+      );
     } catch {
       toast.error("Network error");
     } finally {

@@ -23,32 +23,33 @@ export function FeedAnnouncementSection({
   if (!show) return null;
 
   return (
-    <AnimatePresence mode="wait">
-      {loading ? (
-        <motion.div
-          key="announcement-skeleton"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          <AnnouncementSkeleton />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="announcement-content"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
-          <AnnouncementBanner
-            announcements={announcements}
-            isCoach={isCoach}
-            onMutate={onMutate}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="relative overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {loading ? (
+          <motion.div
+            key="announcement-skeleton"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <AnnouncementSkeleton isCoach={isCoach} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="announcement-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }}
+            exit={{ opacity: 0, transition: { duration: 0 } }}
+          >
+            <AnnouncementBanner
+              announcements={announcements}
+              isCoach={isCoach}
+              onMutate={onMutate}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

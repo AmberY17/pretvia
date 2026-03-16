@@ -22,6 +22,7 @@ export interface PanelHandlers {
   handleClosePanel: () => void;
   handleCloseEditToView?: () => void;
   handleEditLog: (log: LogEntry) => void;
+  handleEditLogById?: (logId: string) => void;
   handleDeleteLog: (id: string) => void;
   handleMutateLogs: () => void;
 }
@@ -47,6 +48,7 @@ export function DashboardPanel({
     handleClosePanel,
     handleCloseEditToView,
     handleEditLog,
+    handleEditLogById,
     handleDeleteLog,
     handleMutateLogs,
   } = panelHandlers;
@@ -55,6 +57,7 @@ export function DashboardPanel({
     onLogCreated: handleLogCreated,
     onLogUpdated: handleLogUpdated,
     onClose: handleClosePanel,
+    onEditLog: handleEditLogById,
     existingTags: tagNames,
     prefillTimestamp: checkinPrefill?.timestamp ?? null,
     checkinId: checkinPrefill?.checkinId ?? null,
@@ -105,7 +108,7 @@ export function DashboardPanel({
             <LogForm
               editLog={selectedLog}
               {...formProps}
-              onClose={handleCloseEditToView ?? handleClosePanel}
+              onClose={handleClosePanel}
             />
           </motion.div>
         )}
@@ -147,7 +150,7 @@ export function DashboardPanel({
         <LogForm
           editLog={selectedLog}
           {...mobileFormProps}
-          onClose={handleCloseEditToView ?? handleClosePanel}
+          onClose={handleClosePanel}
         />
       )}
     </motion.div>

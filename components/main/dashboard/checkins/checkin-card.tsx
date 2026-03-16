@@ -11,6 +11,7 @@ interface CheckinCardProps {
   checkins: CheckinItem[];
   isCoach: boolean;
   onCheckinLog: (sessionDate: string, checkinId: string) => void;
+  onEditCheckinLog?: (logId: string) => void;
   onMutate: () => void;
   trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
 }
@@ -19,6 +20,7 @@ export function CheckinCard({
   checkins,
   isCoach,
   onCheckinLog,
+  onEditCheckinLog,
   onMutate,
   trainingScheduleTemplate,
 }: CheckinCardProps) {
@@ -31,6 +33,7 @@ export function CheckinCard({
             checkin={checkin}
             isCoach={isCoach}
             onCheckinLog={onCheckinLog}
+            onEditCheckinLog={onEditCheckinLog}
             onMutate={onMutate}
           />
         ))}

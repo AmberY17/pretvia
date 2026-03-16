@@ -12,6 +12,7 @@ interface FeedCheckinSectionProps {
   isCoach: boolean;
   trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
   onCheckinLog: (sessionDate: string, checkinId: string) => void;
+  onEditCheckinLog?: (logId: string) => void;
   onMutate: () => void;
 }
 
@@ -22,43 +23,42 @@ export function FeedCheckinSection({
   isCoach,
   trainingScheduleTemplate,
   onCheckinLog,
+  onEditCheckinLog,
   onMutate,
 }: FeedCheckinSectionProps) {
   if (!show) return null;
 
   return (
-    <AnimatePresence mode="wait">
-      {loading ? (
-        <motion.div
-          key="checkin-skeleton"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          <CheckinSkeleton />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="checkin-content"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{
-            delay: 0.04,
-            duration: 0.55,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-        >
-          <CheckinCard
-            checkins={checkins}
-            isCoach={isCoach}
-            onCheckinLog={onCheckinLog}
-            onMutate={onMutate}
-            trainingScheduleTemplate={trainingScheduleTemplate}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="relative overflow-hidden">
+      <AnimatePresence mode="popLayout">
+        {loading ? (
+          <motion.div
+            key="checkin-skeleton"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <CheckinSkeleton isCoach={isCoach} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="checkin-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.3, ease: "easeOut" } }}
+            exit={{ opacity: 0, transition: { duration: 0 } }}
+          >
+            <CheckinCard
+              checkins={checkins}
+              isCoach={isCoach}
+              onCheckinLog={onCheckinLog}
+              onEditCheckinLog={onEditCheckinLog}
+              onMutate={onMutate}
+              trainingScheduleTemplate={trainingScheduleTemplate}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

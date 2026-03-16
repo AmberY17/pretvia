@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Eye, Lock, X } from "lucide-react";
+import { Loader2, Eye, Lock, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,7 @@ interface LogFormProps {
   onLogCreated: (totalCount?: number) => void;
   onLogUpdated?: () => void;
   onClose?: () => void;
+  onEditLog?: (logId: string) => void;
   editLog?: LogEntry | null;
   existingTags?: string[];
   prefillTimestamp?: string | null;
@@ -44,6 +45,7 @@ export function LogForm({
   onLogCreated,
   onLogUpdated,
   onClose,
+  onEditLog,
   editLog,
   existingTags = [],
   prefillTimestamp,
@@ -65,6 +67,9 @@ export function LogForm({
   const [notes, setNotes] = useState(editLog?.notes || "");
   const [tags, setTags] = useState<string[]>(editLog?.tags || []);
   const [loading, setLoading] = useState(false);
+  const [todaySharedLogId, setTodaySharedLogId] = useState<string | null>(null);
+  const [todayPrivateLogId, setTodayPrivateLogId] = useState<string | null>(null);
+  const [todayLoading, setTodayLoading] = useState(!isEditing && !checkinId);
 
   // Sync fields when editLog changes
   useEffect(() => {
@@ -86,6 +91,28 @@ export function LogForm({
       setTags([]);
     }
   }, [editLog, prefillTimestamp, checkinId]);
+
+  // Fetch today's log limits when in "new" mode without a checkin
+  useEffect(() => {
+    if (isEditing || checkinId) {
+      setTodaySharedLogId(null);
+      setTodayPrivateLogId(null);
+      setTodayLoading(false);
+      return;
+    }
+    setTodayLoading(true);
+    let cancelled = false;
+    fetch("/api/logs/today")
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        setTodaySharedLogId(data.sharedLogId ?? null);
+        setTodayPrivateLogId(data.privateLogId ?? null);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setTodayLoading(false); });
+    return () => { cancelled = true; };
+  }, [isEditing, checkinId]);
 
   const resetForm = useCallback(() => {
     setEmoji("");
@@ -193,90 +220,168 @@ export function LogForm({
         )}
       </div>
 
+      {todayLoading ? null : (<>
+
       {/* Emoji Picker */}
-      <div className="flex flex-col gap-2">
-        <Label className="text-foreground">Activity</Label>
-        <EmojiPicker value={emoji} onChange={setEmoji} />
-      </div>
+      {!((!isEditing && !checkinId) && todaySharedLogId && todayPrivateLogId) && (
+        <div className="flex flex-col gap-2">
+          <Label className="text-foreground">Activity</Label>
+          <EmojiPicker value={emoji} onChange={setEmoji} />
+        </div>
+      )}
 
       {/* DateTime */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="timestamp" className="text-foreground">
-          Date & Time
-        </Label>
-        <DateTimeWheelPicker
-          value={timestamp}
-          onChange={setTimestamp}
-        />
-      </div>
+      {!((!isEditing && !checkinId) && todaySharedLogId && todayPrivateLogId) && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="timestamp" className="text-foreground">
+            Date & Time
+          </Label>
+          <DateTimeWheelPicker
+            value={timestamp}
+            onChange={setTimestamp}
+          />
+        </div>
+      )}
 
       {/* Visibility Selector */}
-      <div className="flex flex-col gap-2">
-        <Label className="text-foreground">Visibility</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setVisibility("coach")}
-            className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
-              visibility === "coach"
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <Eye className="h-4 w-4" />
-            <span>Shared</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setVisibility("private")}
-            className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
-              visibility === "private"
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <Lock className="h-4 w-4" />
-            <span>Only me</span>
-          </button>
+      {!isEditing && !checkinId && todaySharedLogId && todayPrivateLogId ? (
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-secondary/30 p-4">
+          <p className="text-sm font-medium text-foreground">You&apos;ve already logged today.</p>
+          <div className="flex gap-2">
+            {onEditLog && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost-primary"
+                  size="sm"
+                  className="flex-1 gap-1.5"
+                  onClick={() => onEditLog(todaySharedLogId)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Shared Log
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost-primary"
+                  size="sm"
+                  className="flex-1 gap-1.5"
+                  onClick={() => onEditLog(todayPrivateLogId)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Private Log
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <Label className="text-foreground">Visibility</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setVisibility("coach")}
+              disabled={!isEditing && !checkinId && !!todaySharedLogId}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                visibility === "coach"
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              <Eye className="h-4 w-4" />
+              <span>Shared</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibility("private")}
+              disabled={!isEditing && !checkinId && !!todayPrivateLogId}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                visibility === "private"
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              <Lock className="h-4 w-4" />
+              <span>Only me</span>
+            </button>
+          </div>
+          {!isEditing && !checkinId && (todaySharedLogId || todayPrivateLogId) && (
+            <div className="flex flex-col gap-0.5">
+              {todaySharedLogId && (
+                <p className="text-xs text-muted-foreground">
+                  Shared already logged.{" "}
+                  {onEditLog && (
+                    <button
+                      type="button"
+                      onClick={() => onEditLog(todaySharedLogId)}
+                      className="underline hover:text-foreground"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </p>
+              )}
+              {todayPrivateLogId && (
+                <p className="text-xs text-muted-foreground">
+                  Private already logged.{" "}
+                  {onEditLog && (
+                    <button
+                      type="button"
+                      onClick={() => onEditLog(todayPrivateLogId)}
+                      className="underline hover:text-foreground"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Notes */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="notes" className="text-foreground">
-          Notes
-        </Label>
-        <Textarea
-          id="notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="How was your session?"
-          rows={3}
-          className="resize-y border-border bg-secondary text-foreground placeholder:text-muted-foreground scrollbar-hidden"
-        />
-      </div>
+      {!((!isEditing && !checkinId) && todaySharedLogId && todayPrivateLogId) && (
+        <>
+          {/* Notes */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="notes" className="text-foreground">
+              Notes
+            </Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="How was your session?"
+              rows={3}
+              className="resize-y border-border bg-secondary text-foreground placeholder:text-muted-foreground scrollbar-hidden"
+            />
+          </div>
 
-      {/* Tags */}
-      <div className="flex flex-col gap-2">
-        <Label className="text-foreground">Tags</Label>
-        <TagInput tags={tags} onChange={setTags} suggestions={existingTags} />
-      </div>
+          {/* Tags */}
+          <div className="flex flex-col gap-2">
+            <Label className="text-foreground">Tags</Label>
+            <TagInput tags={tags} onChange={setTags} suggestions={existingTags} />
+          </div>
 
-      {/* Submit */}
-      <Button
-        type="submit"
-        variant="ghost-primary"
-        disabled={loading || !emoji}
-        className="w-full"
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : isEditing ? (
-          "Update Log"
-        ) : (
-          "Save Log Entry"
-        )}
-      </Button>
+          {/* Submit */}
+          <Button
+            type="submit"
+            variant="ghost-primary"
+            disabled={loading || !emoji}
+            className="w-full"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isEditing ? (
+              "Update Log"
+            ) : (
+              "Save Log Entry"
+            )}
+          </Button>
+        </>
+      )}
+
+      </>)}
     </motion.form>
   );
 }

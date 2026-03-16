@@ -74,6 +74,9 @@ export type ReviewStatus = "pending" | "reviewed" | "revisit";
 /** Review status filter value (includes null for "all") */
 export type ReviewStatusFilterValue = ReviewStatus | null;
 
+/** Visibility filter value for athlete log type filter (includes null for "all") */
+export type VisibilityFilterValue = "coach" | "private" | null;
+
 /** Attendance status for a session */
 export type AttendanceStatus = "present" | "absent" | "excused" | null;
 
@@ -89,6 +92,7 @@ export type CheckinItem = {
   checkedInCount: number;
   totalAthletes: number;
   hasUserLogged: boolean;
+  userLogId: string | null;
 };
 
 /** Announcement from a coach */
