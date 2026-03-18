@@ -28,6 +28,7 @@ export default async function LandingPage() {
   const db = await getDb()
   const siteSettings = await db.collection("siteSettings").findOne({ key: "site" })
   const pricingPageVisible = siteSettings?.pricingPageVisible ?? false
+  const emojiCatchEnabled = siteSettings?.eggEmojiCatch ?? false
 
   const pricingLink = pricingPageVisible
     ? { href: "/pricing", label: "Pricing" }
@@ -40,7 +41,7 @@ export default async function LandingPage() {
         secondaryLink={pricingLink}
       />
 
-      <HeroSection />
+      <HeroSection emojiCatchEnabled={emojiCatchEnabled} />
       <ProductSection />
       <GrowthTreeSection />
       <StaircaseSection />

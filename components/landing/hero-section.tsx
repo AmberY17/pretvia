@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EmojiInputBox } from "./emoji-input-box";
 import { EmojiCatchGame } from "./emoji-catch-game";
 
-export function HeroSection() {
+export function HeroSection({ emojiCatchEnabled }: { emojiCatchEnabled: boolean }) {
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
   const heroScale = useTransform(scrollY, [0, 400], [1, 0.95]);
@@ -18,7 +18,9 @@ export function HeroSection() {
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : false;
 
-  const [phase, setPhase] = useState<"input" | "floating" | "complete">("input");
+  const [phase, setPhase] = useState<"input" | "floating" | "complete">(
+    emojiCatchEnabled ? "input" : "complete"
+  );
   const [emojis, setEmojis] = useState<string[]>([...floatingEmojis]);
   const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
 

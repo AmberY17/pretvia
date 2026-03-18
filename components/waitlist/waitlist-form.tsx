@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,11 @@ const LEVELS = ["Beginner", "Intermediate", "Advanced", "Elite"]
 interface GroupData {
   ageGroups: string[]
   level: string
+}
+
+interface ActiveEggs {
+  superEarlyAccess: boolean
+  clickFrenzy: boolean
 }
 
 function GroupSection({
@@ -85,7 +90,7 @@ function GroupSection({
   )
 }
 
-export function WaitlistForm() {
+export function WaitlistForm({ activeEggs }: { activeEggs: ActiveEggs }) {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -96,6 +101,14 @@ export function WaitlistForm() {
   ])
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [showSecretInput, setShowSecretInput] = useState(false)
+  const [secretValue, setSecretValue] = useState("")
+  const [superMode, setSuperMode] = useState(false)
+
+  const [frenzyPhase, setFrenzyPhase] = useState<"idle" | "active" | "done">("idle")
+  const [frenzyCount, setFrenzyCount] = useState(0)
+  const [frenzyCountdown, setFrenzyCountdown] = useState(3)
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   function updateGroup(index: number, data: GroupData) {
     setGroups((prev) => prev.map((g, i) => (i === index ? data : g)))
@@ -104,6 +117,8 @@ export function WaitlistForm() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
+
+      if (frenzyPhase === "active") return
 
       const group1 = groups[0]
       if (group1.ageGroups.length === 0) {
@@ -124,6 +139,8 @@ export function WaitlistForm() {
             email: email.trim(),
             clubName: clubName.trim(),
             groups: submittedGroups,
+            superEarlyAccess: superMode,
+            clickFrenzyCount: frenzyPhase === "done" ? frenzyCount : 0,
           }),
         })
         const data = await res.json()
@@ -138,8 +155,29 @@ export function WaitlistForm() {
         setLoading(false)
       }
     },
-    [firstName, lastName, email, clubName, groups],
+    [firstName, lastName, email, clubName, groups, superMode, frenzyPhase, frenzyCount],
   )
+
+  function handleButtonClick(e: React.MouseEvent) {
+    if (!activeEggs.clickFrenzy || frenzyPhase === "done") return
+
+    e.preventDefault()
+
+    if (frenzyPhase === "idle") {
+      setFrenzyPhase("active")
+      setFrenzyCount(1)
+      setFrenzyCountdown(3)
+      setTimeout(() => {
+        setFrenzyPhase("done")
+        if (countdownRef.current) clearInterval(countdownRef.current)
+      }, 3000)
+      countdownRef.current = setInterval(() => {
+        setFrenzyCountdown((c) => Math.max(0, c - 1))
+      }, 1000)
+    } else if (frenzyPhase === "active") {
+      setFrenzyCount((c) => c + 1)
+    }
+  }
 
   if (submitted) {
     return (
@@ -232,10 +270,73 @@ export function WaitlistForm() {
       <Button
         type="submit"
         disabled={loading}
+        onClick={handleButtonClick}
         className="mt-2 w-full bg-primary text-primary-foreground hover:bg-primary/90"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Request early access"}
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : frenzyPhase === "active" ? (
+          `🔥 ${frenzyCount} — keep going!`
+        ) : (
+          <span className="flex items-center justify-center gap-0">
+            <span>Request</span>
+
+            {activeEggs.superEarlyAccess ? (
+              superMode ? (
+                <span>&nbsp;super&nbsp;</span>
+              ) : showSecretInput ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={secretValue}
+                  onChange={(e) => {
+                    setSecretValue(e.target.value)
+                    if (e.target.value.toLowerCase() === "super") {
+                      setSuperMode(true)
+                      setShowSecretInput(false)
+                    }
+                  }}
+                  onBlur={() => {
+                    setShowSecretInput(false)
+                    setSecretValue("")
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="w-10 bg-transparent border-none outline-none text-center placeholder:text-primary-foreground/50"
+                  placeholder="···"
+                />
+              ) : (
+                <span
+                  className="px-1 cursor-text"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowSecretInput(true)
+                  }}
+                >
+                  &nbsp;
+                </span>
+              )
+            ) : (
+              <span>&nbsp;</span>
+            )}
+
+            <span>early access</span>
+          </span>
+        )}
       </Button>
+
+      {frenzyPhase === "active" && (
+        <p className="text-center text-xs text-muted-foreground mt-1">{frenzyCountdown}s</p>
+      )}
+
+      {(frenzyPhase === "done" || (frenzyPhase === "active" && frenzyCount >= 20)) && (
+        <p className="text-center text-xs text-muted-foreground mt-1">
+          🏆 {frenzyCount} clicks
+          <br />
+          We&apos;ll factor your enthusiasm into beta access ranking
+        </p>
+      )}
     </form>
   )
 }

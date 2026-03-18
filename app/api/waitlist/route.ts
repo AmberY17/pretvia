@@ -3,7 +3,7 @@ import { getDb } from "@/lib/mongodb"
 
 export async function POST(req: Request) {
   try {
-    const { firstName, lastName, email, clubName, groups } = await req.json()
+    const { firstName, lastName, email, clubName, groups, superEarlyAccess, clickFrenzyCount } = await req.json()
 
     if (!firstName || !lastName || !email || !clubName) {
       return NextResponse.json({ error: "First name, last name, email, and club name are required" }, { status: 400 })
@@ -41,6 +41,8 @@ export async function POST(req: Request) {
       lastName: trimmedLast,
       clubName: trimmedClub,
       groups,
+      superEarlyAccess: superEarlyAccess === true,
+      clickFrenzyCount: typeof clickFrenzyCount === "number" ? clickFrenzyCount : 0,
       status: "pending",
       createdAt: new Date(),
     })

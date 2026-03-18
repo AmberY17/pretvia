@@ -18,7 +18,12 @@ export async function GET() {
     const db = await getDb()
     const doc = await db.collection("siteSettings").findOne({ key: "site" })
 
-    return NextResponse.json({ pricingPageVisible: doc?.pricingPageVisible ?? false })
+    return NextResponse.json({
+      pricingPageVisible: doc?.pricingPageVisible ?? false,
+      eggSuperEarlyAccess: doc?.eggSuperEarlyAccess ?? false,
+      eggClickFrenzy: doc?.eggClickFrenzy ?? false,
+      eggEmojiCatch: doc?.eggEmojiCatch ?? false,
+    })
   } catch (err) {
     console.error("GET /api/admin/settings:", err)
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
@@ -32,20 +37,24 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json()
-    const { pricingPageVisible } = body
+    const allowedFields = ["pricingPageVisible", "eggSuperEarlyAccess", "eggClickFrenzy", "eggEmojiCatch"]
+    const $set: Record<string, boolean> = {}
+    for (const field of allowedFields) {
+      if (typeof body[field] === "boolean") $set[field] = body[field]
+    }
 
-    if (typeof pricingPageVisible !== "boolean") {
+    if (Object.keys($set).length === 0) {
       return NextResponse.json({ error: "Invalid value" }, { status: 400 })
     }
 
     const db = await getDb()
     await db.collection("siteSettings").findOneAndUpdate(
       { key: "site" },
-      { $set: { pricingPageVisible } },
+      { $set },
       { upsert: true }
     )
 
-    return NextResponse.json({ pricingPageVisible })
+    return NextResponse.json($set)
   } catch (err) {
     console.error("PATCH /api/admin/settings:", err)
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 })

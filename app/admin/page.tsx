@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/mongodb"
 import { WaitlistTable, type WaitlistEntry } from "@/components/admin/waitlist-table"
 import { SiteSettingsToggle } from "@/components/admin/site-settings-toggle"
+import { EasterEggsToggle } from "@/components/admin/easter-eggs-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -30,6 +31,9 @@ export default async function AdminPage() {
   }))
 
   const pricingPageVisible = siteSettings?.pricingPageVisible ?? false
+  const eggSuperEarlyAccess = siteSettings?.eggSuperEarlyAccess ?? false
+  const eggClickFrenzy = siteSettings?.eggClickFrenzy ?? false
+  const eggEmojiCatch = siteSettings?.eggEmojiCatch ?? false
 
   return (
     <main className="min-h-screen bg-background px-6 py-12">
@@ -40,6 +44,19 @@ export default async function AdminPage() {
           </div>
           <div className="max-w-md">
             <SiteSettingsToggle initialPricingPageVisible={pricingPageVisible} />
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-foreground">Easter Eggs</h2>
+          </div>
+          <div className="max-w-md space-y-2">
+            <EasterEggsToggle
+              initialEggSuperEarlyAccess={eggSuperEarlyAccess}
+              initialEggClickFrenzy={eggClickFrenzy}
+              initialEggEmojiCatch={eggEmojiCatch}
+            />
           </div>
         </section>
 

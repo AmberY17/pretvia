@@ -1,4 +1,7 @@
+import { getDb } from "@/lib/mongodb"
 import { WaitlistForm } from "@/components/waitlist/waitlist-form"
+
+export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: "Join the waitlist",
@@ -10,7 +13,14 @@ export const metadata = {
   },
 }
 
-export default function WaitlistPage() {
+export default async function WaitlistPage() {
+  const db = await getDb()
+  const settings = await db.collection("siteSettings").findOne({ key: "site" })
+  const activeEggs = {
+    superEarlyAccess: settings?.eggSuperEarlyAccess ?? false,
+    clickFrenzy: settings?.eggClickFrenzy ?? false,
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
@@ -21,7 +31,7 @@ export default function WaitlistPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <WaitlistForm />
+          <WaitlistForm activeEggs={activeEggs} />
         </div>
       </div>
     </main>
