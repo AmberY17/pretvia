@@ -1,55 +1,49 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { ArrowRightLeft, Users, Check, ChevronDown } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react"
+import { ArrowRightLeft, Users, Check, ChevronDown } from "lucide-react"
+import { toast } from "sonner"
 
-type UserGroup = { id: string; name: string; code: string; coachId: string };
+type UserGroup = { id: string; name: string; code: string; coachId: string }
 
 interface GroupSwitcherProps {
-  userGroups: UserGroup[];
-  currentGroupId?: string;
-  onGroupChanged: (newGroupId: string) => void;
+  userGroups: UserGroup[]
+  currentGroupId?: string
+  onGroupChanged: (newGroupId: string) => void
 }
 
-export function GroupSwitcher({
-  userGroups,
-  currentGroupId,
-  onGroupChanged,
-}: GroupSwitcherProps) {
-  const [showSwitcher, setShowSwitcher] = useState(false);
-  const [groupSearch, setGroupSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+export function GroupSwitcher({ userGroups, currentGroupId, onGroupChanged }: GroupSwitcherProps) {
+  const [showSwitcher, setShowSwitcher] = useState(false)
+  const [groupSearch, setGroupSearch] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const filteredGroups = groupSearch.trim()
-    ? userGroups.filter((g) =>
-        g.name.toLowerCase().includes(groupSearch.trim().toLowerCase()),
-      )
-    : userGroups;
+    ? userGroups.filter((g) => g.name.toLowerCase().includes(groupSearch.trim().toLowerCase()))
+    : userGroups
 
   const handleSwitch = async (groupId: string) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const res = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "switch", groupId }),
-      });
-      const data = await res.json();
+      })
+      const data = await res.json()
       if (!res.ok) {
-        toast.error(data.error || "Failed to switch group");
-        return;
+        toast.error(data.error || "Failed to switch group")
+        return
       }
-      toast.success(`Switched to "${data.group.name}"`);
-      setShowSwitcher(false);
-      setGroupSearch("");
-      onGroupChanged(groupId);
+
+      setShowSwitcher(false)
+      setGroupSearch("")
+      onGroupChanged(groupId)
     } catch {
-      toast.error("Network error");
+      toast.error("Network error")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="mt-2">
@@ -62,9 +56,7 @@ export function GroupSwitcher({
           <ArrowRightLeft className="h-3 w-3" />
           Switch Group
           {userGroups.length > 0 && (
-            <span className="text-muted-foreground/80">
-              ({userGroups.length})
-            </span>
+            <span className="text-muted-foreground/80">({userGroups.length})</span>
           )}
         </span>
         <ChevronDown
@@ -83,9 +75,7 @@ export function GroupSwitcher({
             />
           )}
           {filteredGroups.length === 0 ? (
-            <p className="px-2.5 py-2 text-xs text-muted-foreground">
-              No groups match
-            </p>
+            <p className="px-2.5 py-2 text-xs text-muted-foreground">No groups match</p>
           ) : (
             <div
               className={`flex flex-col gap-1 ${
@@ -108,9 +98,7 @@ export function GroupSwitcher({
                 >
                   <Users className="h-3 w-3" />
                   <span className="flex-1 text-left truncate">{g.name}</span>
-                  {g.id === currentGroupId && (
-                    <Check className="h-3 w-3 shrink-0 text-primary" />
-                  )}
+                  {g.id === currentGroupId && <Check className="h-3 w-3 shrink-0 text-primary" />}
                 </button>
               ))}
             </div>
@@ -118,5 +106,5 @@ export function GroupSwitcher({
         </div>
       )}
     </div>
-  );
+  )
 }

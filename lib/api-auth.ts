@@ -12,9 +12,11 @@ export async function canManageGroup(db: Db, userId: string, groupId: string) {
   })
   if (!group) return false
 
-  const coachIds = group.coachIds ?? (group.coachId ? [group.coachId] : [])
-  if (coachIds.includes(userId)) return true
+  if (group.coachId?.toString() === userId) return true
+  if (Array.isArray(group.coachIds) && group.coachIds.some((id: unknown) => id?.toString() === userId)) return true
 
-  const groupIds = user.groupIds ?? (user.groupId ? [user.groupId] : [])
-  return groupIds.includes(groupId)
+  if (user.groupId?.toString() === groupId) return true
+  if (Array.isArray(user.groupIds) && user.groupIds.some((id: unknown) => id?.toString() === groupId)) return true
+
+  return false
 }

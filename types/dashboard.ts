@@ -66,6 +66,8 @@ export type TrainingSlotItem = {
   dayOfWeek: number;
   time: string;
   sourceGroupId?: string;
+  addedAt?: Date | string;
+  removedAt?: Date | string; // only present on deleted slots in `deletedSlots` array
 };
 
 /** Review status for coach log review */

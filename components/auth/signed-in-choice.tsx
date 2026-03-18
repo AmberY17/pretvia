@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { mutate } from "swr";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { AuthCardHeader } from "@/components/auth/auth-card-header";
@@ -11,7 +11,8 @@ import { toast } from "sonner";
 
 export function SignedInChoice() {
   const router = useRouter();
-  const { user, mutate: mutateAuth } = useAuth();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   if (!user) return null;
 
@@ -22,8 +23,8 @@ export function SignedInChoice() {
   const handleUseDifferentAccount = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      mutate(() => true, undefined, { revalidate: false });
-      mutateAuth();
+      queryClient.clear();
+      router.replace("/auth");
     } catch {
       toast.error("Could not sign out. Please try again.");
     }

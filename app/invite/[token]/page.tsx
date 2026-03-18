@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import useSWR from "swr";
-import { mutate } from "swr";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+import { apiFetcher } from "@/lib/query-client";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,9 +32,13 @@ export default function InvitePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const token = params?.token as string;
   const fromOAuth = searchParams?.get("from_oauth") === "1";
-  const { data: session } = useSWR<{ user: { email?: string } | null }>("/api/auth/session", (u: string) => fetch(u).then((r) => r.json()));
+  const { data: session } = useQuery<{ user: { email?: string } | null }>({
+    queryKey: [...queryKeys.auth.session, "invite"],
+    queryFn: () => apiFetcher<{ user: { email?: string } | null }>("/api/auth/session"),
+  });
   const [invite, setInvite] = useState<InviteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(false);
@@ -76,7 +81,7 @@ export default function InvitePage() {
           setRedeeming(false);
           return;
         }
-        mutate("/api/auth/session", undefined, { revalidate: true });
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
         if (!data.requiresChildVerification && data.redirect) {
           router.push(data.redirect);
         }
@@ -87,7 +92,7 @@ export default function InvitePage() {
         setRedeeming(false);
       }
     },
-    [token, router]
+    [token, router, queryClient]
   );
 
   const autoRedeemAttempted = useRef(false);
@@ -151,6 +156,7 @@ export default function InvitePage() {
         invite={invite}
         redeem={redeem}
         redeeming={redeeming}
+        queryClient={queryClient}
       />
     );
   }
@@ -162,6 +168,7 @@ export default function InvitePage() {
         invite={invite}
         redeem={redeem}
         redeeming={redeeming}
+        queryClient={queryClient}
       />
     );
   }
@@ -262,7 +269,7 @@ function InviteUnder13Form({
         <Card className="border-border bg-card">
           <CardHeader>
             <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
-            <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
             <CardTitle>Set up your child&apos;s account</CardTitle>
             <CardDescription>
               {invite.groupName ? `Join ${invite.groupName}` : "Create an athlete account"}
@@ -377,11 +384,13 @@ function InviteAthleteForm({
   invite,
   redeem,
   redeeming,
+  queryClient,
 }: {
   token: string;
   invite: InviteData;
   redeem: (body: Record<string, unknown>) => Promise<{ requiresChildVerification?: boolean; redirect?: string } | undefined>;
   redeeming: boolean;
+  queryClient: ReturnType<typeof useQueryClient>;
 }) {
   const [isLogin, setIsLogin] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -407,7 +416,7 @@ function InviteAthleteForm({
         toast.error(loginData.error || "Login failed");
         return;
       }
-      mutate("/api/auth/session", undefined, { revalidate: true });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
       await redeem({
         createAccount: false,
         email: invite.email,
@@ -436,7 +445,7 @@ function InviteAthleteForm({
         <Card className="border-border bg-card">
           <CardHeader>
             <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
-            <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
             <CardTitle>Join {invite.groupName ?? "the group"}</CardTitle>
             <CardDescription>
               {invite.email} — create an account or sign in to join
@@ -509,11 +518,13 @@ function InviteParentForm({
   invite,
   redeem,
   redeeming,
+  queryClient,
 }: {
   token: string;
   invite: InviteData;
   redeem: (body: Record<string, unknown>) => Promise<{ redirect?: string } | undefined>;
   redeeming: boolean;
+  queryClient: ReturnType<typeof useQueryClient>;
 }) {
   const [isLogin, setIsLogin] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -533,7 +544,7 @@ function InviteParentForm({
         toast.error(loginData.error || "Login failed");
         return;
       }
-      mutate("/api/auth/session", undefined, { revalidate: true });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
       await redeem({ createAccount: false, email: invite.email });
     } else {
       await redeem({
@@ -558,7 +569,7 @@ function InviteParentForm({
         <Card className="border-border bg-card">
           <CardHeader>
             <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
-            <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
             <CardTitle>{isLogin ? "Sign in" : "Create your parent account"}</CardTitle>
             <CardDescription>
               View your athlete&apos;s progress in {invite.groupName ?? "the group"}

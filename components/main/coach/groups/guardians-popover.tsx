@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
-import { urlFetcher } from "@/lib/swr-utils";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetcher } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { UsersRound, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +29,17 @@ export function GuardiansPopover({
 }: GuardiansPopoverProps) {
   const [guardianEmail, setGuardianEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, mutate } = useSWR<{
+  const guardiansQueryKey = queryKeys.guardians.byAthlete(groupId, athleteId);
+
+  const { data, isLoading } = useQuery<{
     guardians: { id: string; displayName: string; email: string }[];
-  }>(
-    groupId && athleteId
-      ? `/api/groups/${groupId}/members/${athleteId}/guardians`
-      : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: guardiansQueryKey,
+    queryFn: () => apiFetcher(`/api/groups/${groupId}/members/${athleteId}/guardians`),
+    enabled: !!groupId && !!athleteId,
+  });
   const guardians = data?.guardians ?? [];
 
   async function handleInviteGuardian(e: React.FormEvent) {
@@ -65,7 +68,7 @@ export function GuardiansPopover({
       }
       toast.success(json.message ?? `Guardian invite sent to ${email}`);
       setGuardianEmail("");
-      mutate();
+      queryClient.invalidateQueries({ queryKey: guardiansQueryKey });
     } catch {
       toast.error("Network error. Please try again.");
     } finally {

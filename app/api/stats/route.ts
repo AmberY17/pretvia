@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     })
 
     const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
+    const deletedSlots = (user?.deletedSlots ?? []) as TrainingSlot[]
 
     // Pre-fetch the logs window once and share it between computeStreak and
     // computeTodaySkipStatus to avoid two full log-collection scans per request.
@@ -49,7 +50,8 @@ export async function GET(req: Request) {
       trainingSlots,
       localDate,
       prefetchedLogs as { timestamp: Date | string }[],
-      prefetchedSkips as { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
+      prefetchedSkips as { date: Date | string; dayOfWeek: number; scheduledTime: string }[],
+      deletedSlots
     )
     const todaySkipStatus = await computeTodaySkipStatus(
       db,

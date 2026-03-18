@@ -1,6 +1,8 @@
 "use client"
 
-import useSWR from "swr"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { apiFetcher } from "@/lib/query-client"
+import { queryKeys } from "@/lib/query-keys"
 
 export interface User {
   id: string
@@ -26,27 +28,17 @@ export interface User {
   trainingSlots: { dayOfWeek: number; time: string; sourceGroupId?: string }[]
 }
 
-const fetcher = async (url: string) => {
-  const r = await fetch(url)
-  const data = await r.json()
-  if (!r.ok) throw new Error(data?.error ?? "Request failed")
-  return data
-}
-
 export function useAuth() {
-  const { data, error, isLoading, mutate } = useSWR<{ user: User | null }>(
-    "/api/auth/session",
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
-    }
-  )
+  const queryClient = useQueryClient()
+  const { data, error, isLoading } = useQuery<{ user: User | null }>({
+    queryKey: queryKeys.auth.session,
+    queryFn: () => apiFetcher<{ user: User | null }>("/api/auth/session"),
+  })
 
   return {
     user: data?.user ?? null,
     isLoading,
     isError: error,
-    mutate,
+    mutate: () => queryClient.invalidateQueries({ queryKey: queryKeys.auth.session }),
   }
 }

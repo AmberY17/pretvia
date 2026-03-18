@@ -4,6 +4,8 @@ import type { TrainingSlot } from "@/types/dashboard"
 
 export type GroupTrainingSlot = TrainingSlot
 
+type StoredSlot = { dayOfWeek: number; time: string; sourceGroupId?: string; addedAt?: Date; removedAt?: Date }
+
 function normalizeSlot(slot: { dayOfWeek: number; time: string }): GroupTrainingSlot {
   const t = String(slot.time).trim()
   const match = t.match(/^(\d{1,2}):(\d{2})$/)
@@ -37,44 +39,42 @@ export async function applyGroupTrainingScheduleToAllMembers(
   const members = await db
     .collection("users")
     .find({ $or: [{ groupIds: groupId }, { groupId }] })
-    .project({ _id: 1, trainingSlots: 1 })
+    .project({ _id: 1, trainingSlots: 1, deletedSlots: 1 })
     .toArray()
 
   if (!members.length) return
 
+  const now = new Date()
+  const templateKeys = new Set(template.map((t) => `${t.dayOfWeek}:${t.time}`))
+
   const bulkOps = members.map((user) => {
     const currentSlots = Array.isArray(user.trainingSlots)
-      ? (user.trainingSlots as { dayOfWeek: number; time: string; sourceGroupId?: string }[])
+      ? (user.trainingSlots as StoredSlot[])
       : []
+    const existingDeleted = Array.isArray(user.deletedSlots)
+      ? (user.deletedSlots as StoredSlot[])
+      : []
+    const existingByKey = new Map(currentSlots.map((s) => [`${s.dayOfWeek}:${s.time}`, s]))
 
-    let groupSlotIndex = 0
-    const updatedSlots: { dayOfWeek: number; time: string; sourceGroupId?: string }[] = []
-    for (const slot of currentSlots) {
-      if (slot.sourceGroupId === groupId) {
-        if (groupSlotIndex < template.length) {
-          updatedSlots.push({
-            dayOfWeek: template[groupSlotIndex].dayOfWeek,
-            time: template[groupSlotIndex].time,
-            sourceGroupId: groupId,
-          })
-          groupSlotIndex += 1
-        }
-      } else {
-        updatedSlots.push(slot)
-      }
-    }
-    for (let i = groupSlotIndex; i < template.length; i++) {
-      updatedSlots.push({
-        dayOfWeek: template[i].dayOfWeek,
-        time: template[i].time,
+    const updatedSlots = template.map((t) => {
+      const existing = existingByKey.get(`${t.dayOfWeek}:${t.time}`)
+      return {
+        dayOfWeek: t.dayOfWeek,
+        time: t.time,
         sourceGroupId: groupId,
-      })
-    }
+        addedAt: existing?.addedAt ?? now,
+      }
+    })
+
+    const nowDeleted = currentSlots
+      .filter((s) => s.sourceGroupId === groupId && !templateKeys.has(`${s.dayOfWeek}:${s.time}`))
+      .map((s) => ({ ...s, removedAt: now }))
+    const updatedDeletedSlots = [...existingDeleted, ...nowDeleted]
 
     return {
       updateOne: {
         filter: { _id: user._id },
-        update: { $set: { trainingSlots: updatedSlots } },
+        update: { $set: { trainingSlots: updatedSlots, deletedSlots: updatedDeletedSlots } },
       },
     }
   })
@@ -96,38 +96,33 @@ export async function applyGroupTrainingScheduleToUser(
   if (!user) return
 
   const currentSlots = Array.isArray(user.trainingSlots)
-    ? (user.trainingSlots as { dayOfWeek: number; time: string; sourceGroupId?: string }[])
+    ? (user.trainingSlots as StoredSlot[])
     : []
+  const existingDeleted = Array.isArray(user.deletedSlots)
+    ? (user.deletedSlots as StoredSlot[])
+    : []
+  const existingByKey = new Map(currentSlots.map((s) => [`${s.dayOfWeek}:${s.time}`, s]))
+  const now = new Date()
+  const templateKeys = new Set(template.map((t) => `${t.dayOfWeek}:${t.time}`))
 
-  // Preserve original order: replace group slots in place with template slots, keep custom slots where they are
-  let groupSlotIndex = 0
-  const updatedSlots: { dayOfWeek: number; time: string; sourceGroupId?: string }[] = []
-  for (const slot of currentSlots) {
-    if (slot.sourceGroupId === groupId) {
-      if (groupSlotIndex < template.length) {
-        updatedSlots.push({
-          dayOfWeek: template[groupSlotIndex].dayOfWeek,
-          time: template[groupSlotIndex].time,
-          sourceGroupId: groupId,
-        })
-        groupSlotIndex += 1
-      }
-      // else template shrank, drop this group slot
-    } else {
-      updatedSlots.push(slot)
-    }
-  }
-  for (let i = groupSlotIndex; i < template.length; i++) {
-    updatedSlots.push({
-      dayOfWeek: template[i].dayOfWeek,
-      time: template[i].time,
+  const updatedSlots = template.map((t) => {
+    const existing = existingByKey.get(`${t.dayOfWeek}:${t.time}`)
+    return {
+      dayOfWeek: t.dayOfWeek,
+      time: t.time,
       sourceGroupId: groupId,
-    })
-  }
+      addedAt: existing?.addedAt ?? now,
+    }
+  })
+
+  const nowDeleted = currentSlots
+    .filter((s) => s.sourceGroupId === groupId && !templateKeys.has(`${s.dayOfWeek}:${s.time}`))
+    .map((s) => ({ ...s, removedAt: now }))
+  const updatedDeletedSlots = [...existingDeleted, ...nowDeleted]
 
   await db.collection("users").updateOne(
     { _id: new ObjectId(userId) },
-    { $set: { trainingSlots: updatedSlots } }
+    { $set: { trainingSlots: updatedSlots, deletedSlots: updatedDeletedSlots } }
   )
 }
 

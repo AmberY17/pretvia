@@ -46,7 +46,6 @@ export function DashboardPanel({
     handleLogUpdated,
     handleCelebrationDismiss,
     handleClosePanel,
-    handleCloseEditToView,
     handleEditLog,
     handleEditLogById,
     handleDeleteLog,

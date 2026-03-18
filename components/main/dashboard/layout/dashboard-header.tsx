@@ -41,7 +41,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
             className="h-6 w-6 shrink-0 object-contain dark:hidden"
           />
           <Image
-            src="/logo_dark_white.png"
+            src="/logo_dark.png"
             alt="Pretvia"
             width={24}
             height={24}

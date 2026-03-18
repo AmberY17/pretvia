@@ -23,7 +23,7 @@ export function AuthCardHeader({ title, description }: AuthCardHeaderProps) {
         className="mb-2 h-11 w-11 object-contain dark:hidden"
       />
       <Image
-        src="/logo_dark_white.png"
+        src="/logo_dark.png"
         alt="Pretvia"
         width={44}
         height={44}

@@ -19,9 +19,9 @@ describe("Coach Account Settings", () => {
     cy.visit("/dashboard/account")
   })
 
-  it.skip("can select the profile emoji — confirmed on dashboard", () => {
+  it("can select the profile emoji — confirmed on dashboard", () => {
     cy.findByRole("button", { name: /Select emoji|emoji/i }).click()
-    cy.get('[role="option"]').first().click({ force: true })
+    cy.get("em-emoji-picker").shadow().find("button[aria-posinset]").first().click()
     cy.findByRole("button", { name: /Select emoji|emoji/i })
       .invoke("text")
       .should("not.eq", "?")

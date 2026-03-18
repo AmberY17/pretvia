@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { mutate } from "swr";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { Loader2, Users, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ interface SignUpFormProps {
 export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const waitlistToken = searchParams.get("token");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -84,11 +86,10 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           setLoading(false);
           return;
         }
-        mutate(
-          "/api/auth/session",
-          { user: { ...data.user, group: null } },
-          { revalidate: true },
-        );
+        queryClient.setQueryData(queryKeys.auth.session, {
+          user: { ...data.user, group: null },
+        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
         router.push("/dashboard");
       } catch {
         toast.error("Network error. Please try again.");
@@ -96,7 +97,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         setLoading(false);
       }
     },
-    [firstName, lastName, email, password, dateOfBirth, role, waitlistToken, router],
+    [firstName, lastName, email, password, dateOfBirth, role, waitlistToken, router, queryClient],
   );
 
   const isCoach = role === "coach";

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
-import useSWR, { mutate as globalMutate } from "swr";
-import useSWRInfinite from "swr/infinite";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetcher, logsFetcher } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { urlFetcher, logsInfiniteFetcher } from "@/lib/swr-utils";
 import { useDashboardFilters } from "@/components/main/dashboard/filters/hooks/use-dashboard-filters";
 import { useDashboardPanel } from "@/components/main/dashboard/logs/hooks/use-dashboard-panel";
 import dynamic from "next/dynamic";
@@ -29,6 +29,7 @@ import type { CheckinItem } from "@/components/main/dashboard/checkins/checkin-c
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth();
+  const queryClient = useQueryClient();
   const [isGroupSwitching, setIsGroupSwitching] = useState(false);
   const switchingGroupIdRef = useRef<string | undefined>(undefined);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
@@ -38,109 +39,98 @@ export default function DashboardPage() {
 
   const { filters, handlers, logsUrl } = useDashboardFilters();
 
+  const logsQueryKey = [...queryKeys.logs.all, "list", logsUrl, user?.id, activeGroupId] as const;
+
   const {
     data: logsPagesData,
     isLoading: logsLoading,
-    mutate: mutateLogs,
-    size,
-    setSize,
-    isValidating: logsValidating,
-  } = useSWRInfinite<{ logs: LogEntry[]; nextCursor: string | null }>(
-    (pageIndex, previousPageData) => {
-      if (!user) return null;
-      if (pageIndex === 0) return [logsUrl, user.id, activeGroupId, null] as const;
-      if (!previousPageData?.nextCursor) return null;
-      return [logsUrl, user.id, activeGroupId, previousPageData.nextCursor] as const;
-    },
-    logsInfiniteFetcher,
-    {
-      revalidateFirstPage: false, // Keep first page when loading more
-    },
-  );
+    fetchNextPage,
+    hasNextPage: hasMoreLogs,
+    isFetchingNextPage: logsValidating,
+  } = useInfiniteQuery<{ logs: LogEntry[]; nextCursor: string | null }>({
+    queryKey: logsQueryKey,
+    queryFn: ({ pageParam }) => logsFetcher<LogEntry>(logsUrl, pageParam as string | null),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled: !!user,
+  });
 
-  const logs = (logsPagesData ?? []).flatMap((p) => p.logs) as LogEntry[];
-  const hasMoreLogs = (logsPagesData?.[logsPagesData.length - 1]?.nextCursor ?? null) !== null;
-  const prevLogsUrlRef = useRef(logsUrl);
-  const prevUserIdRef = useRef(user?.id);
-  useEffect(() => {
-    if (prevLogsUrlRef.current !== logsUrl || prevUserIdRef.current !== user?.id) {
-      prevLogsUrlRef.current = logsUrl;
-      prevUserIdRef.current = user?.id;
-      setSize(1);
-    }
-  }, [logsUrl, user?.id, setSize]);
+  const logs = (logsPagesData?.pages ?? []).flatMap((p) => p.logs) as LogEntry[];
 
-  const { data: tagsData, isLoading: tagsLoading, mutate: mutateTags } = useSWR<{
+  const { data: tagsData, isLoading: tagsLoading } = useQuery<{
     tags: { id: string; name: string }[];
-  }>(user ? ["/api/tags", user.id] : null, urlFetcher);
+  }>({
+    queryKey: [...queryKeys.tags.all, user?.id],
+    queryFn: () => apiFetcher("/api/tags"),
+    enabled: !!user,
+  });
 
-  const { data: membersData } = useSWR<{
+  const { data: membersData } = useQuery<{
     members: { id: string; displayName: string; email: string; role: string }[];
     roles: { id: string; name: string }[];
     trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
-  }>(
-    user?.role === "coach" && user?.groupId
-      ? [`/api/groups?groupId=${user.groupId}`, user.id]
-      : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.members.all, user?.id, user?.groupId],
+    queryFn: () => apiFetcher(`/api/groups?groupId=${user!.groupId}`),
+    enabled: user?.role === "coach" && !!user?.groupId,
+  });
 
-  const { data: checkinsData, isLoading: checkinsLoading, isValidating: checkinsValidating, mutate: mutateCheckins } = useSWR<{
+  const { data: checkinsData, isLoading: checkinsLoading, isFetching: checkinsFetching } = useQuery<{
     checkins: CheckinItem[];
-  }>(user?.groupId ? ["/api/checkins", user.id, user.groupId] : null, urlFetcher);
+  }>({
+    queryKey: [...queryKeys.checkins.all, "active", user?.id, user?.groupId],
+    queryFn: () => apiFetcher("/api/checkins"),
+    enabled: !!user?.groupId,
+  });
 
-  const { data: allCheckinsData, mutate: mutateAllCheckins } = useSWR<{
+  const { data: allCheckinsData } = useQuery<{
     checkins: CheckinItem[];
-  }>(
-    user?.role === "coach" && user?.groupId
-      ? ["/api/checkins?mode=all", user.id, user.groupId]
-      : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.checkins.all, "allSessions", user?.id, user?.groupId],
+    queryFn: () => apiFetcher("/api/checkins?mode=all"),
+    enabled: user?.role === "coach" && !!user?.groupId,
+  });
 
-  // Build a local-date string in the user's browser timezone so the server can
-  // compare slot day-of-week against the correct calendar day.
   const localDate = (() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   })();
 
-  const { data: statsData, isLoading: statsLoading, mutate: mutateStats } = useSWR<{
+  const { data: statsData, isLoading: statsLoading } = useQuery<{
     totalLogs: number;
     streak: number;
     hasTrainingSlots: boolean;
     canSkipToday: boolean;
     skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null;
-  }>(
-    user?.role === "athlete" ? [`/api/stats?localDate=${localDate}`, user.id] : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.stats.all, user?.id, localDate],
+    queryFn: () => apiFetcher(`/api/stats?localDate=${localDate}`),
+    enabled: user?.role === "athlete",
+  });
 
-  const { data: announcementData, isLoading: announcementLoading, isValidating: announcementValidating, mutate: mutateAnnouncement } = useSWR<{
+  const { data: announcementData, isLoading: announcementLoading, isFetching: announcementFetching } = useQuery<{
     announcements: {
       id: string;
       text: string;
       coachName: string;
       createdAt: string;
     }[];
-  }>(
-    user?.groupId ? ["/api/announcements", user.id, user.groupId] : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.announcements.all, user?.id, user?.groupId],
+    queryFn: () => apiFetcher("/api/announcements"),
+    enabled: !!user?.groupId,
+  });
 
   const handleLogout = useCallback(() => {
     loggingOutRef.current = true;
-    globalMutate(() => true, undefined, { revalidate: false });
+    queryClient.clear();
     mutateAuth();
-  }, [mutateAuth]);
+  }, [mutateAuth, queryClient]);
 
   const { panelState, panelHandlers } = useDashboardPanel({
     userId: user?.id,
-    mutateLogs,
-    mutateTags,
-    mutateCheckins,
-    mutateAllCheckins,
-    mutateStats: user?.role === "athlete" ? mutateStats : undefined,
+    queryClient,
+    logsQueryKey,
   });
 
   const prevUserIdForFiltersRef = useRef<string | undefined>(undefined);
@@ -151,26 +141,22 @@ export default function DashboardPage() {
     prevUserIdForFiltersRef.current = user?.id;
   }, [user?.id, handlers]);
 
+  // BUG FIX #2: handleGroupChanged now invalidates tags and stats
   const handleGroupChanged = useCallback((newGroupId?: string) => {
     setIsGroupSwitching(true);
-    switchingGroupIdRef.current = user?.groupId;
+    switchingGroupIdRef.current = user?.groupId ?? undefined;
     if (newGroupId !== undefined) {
       setActiveGroupId(newGroupId);
     }
-    mutateAuth();
-    setSize(1);
-    mutateLogs(() => undefined, { revalidate: false });
-    mutateAnnouncement();
-    mutateCheckins();
-    mutateAllCheckins();
+    queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+    queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
     handlers.clearAllOnGroupChange();
   }, [
-    mutateAuth,
-    mutateLogs,
-    setSize,
-    mutateAnnouncement,
-    mutateCheckins,
-    mutateAllCheckins,
+    queryClient,
     handlers,
     setIsGroupSwitching,
     user?.groupId,
@@ -183,7 +169,7 @@ export default function DashboardPage() {
     setIsGroupSwitching(false);
   }, [isGroupSwitching, user?.groupId, announcementLoading, checkinsLoading]);
 
-  const { data: myGroupsData } = useSWR<{
+  const { data: myGroupsData } = useQuery<{
     groups: {
       id: string;
       name: string;
@@ -191,10 +177,11 @@ export default function DashboardPage() {
       coachId: string;
       trainingScheduleUpdatedAt?: string | null;
     }[];
-  }>(
-    user ? ["/api/groups?mode=my-groups", user.id] : null,
-    urlFetcher,
-  );
+  }>({
+    queryKey: [...queryKeys.groups.myGroups, user?.id],
+    queryFn: () => apiFetcher("/api/groups?mode=my-groups"),
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!user || user.role !== "athlete") return;
@@ -283,7 +270,7 @@ export default function DashboardPage() {
                 }
               : undefined
           }
-          onMutateStats={mutateStats}
+          onMutateStats={() => queryClient.invalidateQueries({ queryKey: queryKeys.stats.all })}
         />
 
         <DashboardFeed
@@ -303,23 +290,22 @@ export default function DashboardPage() {
           panelMode={panelState.panelMode}
           announcements={announcementData?.announcements ?? []}
           checkins={checkinsData?.checkins ?? []}
-          announcementLoading={isGroupSwitching || announcementLoading || announcementValidating}
-          checkinsLoading={isGroupSwitching || checkinsLoading || checkinsValidating}
+          announcementLoading={isGroupSwitching || announcementLoading || announcementFetching}
+          checkinsLoading={isGroupSwitching || checkinsLoading || checkinsFetching}
           onEditCheckinLog={(logId) => {
             const log = logs.find((l) => l.id === logId);
             if (log) panelHandlers.handleEditLog(log);
           }}
           trainingScheduleTemplate={membersData?.trainingScheduleTemplate}
           isLoading={logsLoading}
-          hasMoreLogs={hasMoreLogs}
+          hasMoreLogs={hasMoreLogs ?? false}
           isLoadingMore={logsValidating}
-          onLoadMore={() => setSize(size + 1)}
-          onMutateAnnouncement={() => mutateAnnouncement()}
+          onLoadMore={() => fetchNextPage()}
+          onMutateAnnouncement={() => queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all })}
           onMutateCheckins={() => {
-            mutateCheckins();
-            mutateAllCheckins();
+            queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
           }}
-          onMutateLogs={() => mutateLogs()}
+          onMutateLogs={() => queryClient.invalidateQueries({ queryKey: queryKeys.logs.all })}
         />
 
         <DashboardPanel

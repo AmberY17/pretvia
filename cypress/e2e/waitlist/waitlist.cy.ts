@@ -1,4 +1,12 @@
 describe("Waitlist page", () => {
+  before(() => {
+    cy.task("cleanupTestData");
+  });
+
+  after(() => {
+    cy.task("cleanupTestData");
+  });
+
   beforeEach(() => {
     cy.visit("/waitlist");
   });

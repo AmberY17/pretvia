@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { mutate } from "swr";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onForgotPassword, onSwitchToSignUp }: LoginFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,11 +41,10 @@ export function LoginForm({ onForgotPassword, onSwitchToSignUp }: LoginFormProps
           setLoading(false);
           return;
         }
-        mutate(
-          "/api/auth/session",
-          { user: { ...data.user, group: null } },
-          { revalidate: true },
-        );
+        queryClient.setQueryData(queryKeys.auth.session, {
+          user: { ...data.user, group: null },
+        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
         router.push("/dashboard");
       } catch {
         toast.error("Network error. Please try again.");
@@ -51,7 +52,7 @@ export function LoginForm({ onForgotPassword, onSwitchToSignUp }: LoginFormProps
         setLoading(false);
       }
     },
-    [email, password, router],
+    [email, password, router, queryClient],
   );
 
   return (

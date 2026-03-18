@@ -31,7 +31,7 @@ export function PageHeader({ title, backHref = "/dashboard" }: PageHeaderProps) 
               className="h-6 w-6 object-contain dark:hidden"
             />
             <Image
-              src="/logo_dark_white.png"
+              src="/logo_dark.png"
               alt="Pretvia"
               width={24}
               height={24}

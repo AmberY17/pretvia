@@ -3,8 +3,9 @@
 import React from "react";
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useSWR from "swr";
-import { urlFetcher } from "@/lib/swr-utils";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiFetcher } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
 import {
   MessageCircle,
   Send,
@@ -38,18 +39,24 @@ export function CommentSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const canParticipate = isLogOwner || isCoach;
 
-  const { data, mutate } = useSWR<{ comments: Comment[]; unreadCount: number }>(
-    canParticipate
-      ? [`/api/comments?logId=${logId}`, currentUserId, groupId ?? ""]
-      : null,
-    urlFetcher,
-  );
+  const commentsQueryKey = [...queryKeys.comments.byLog(logId), currentUserId, groupId ?? ""];
+
+  const { data } = useQuery<{ comments: Comment[]; unreadCount: number }>({
+    queryKey: commentsQueryKey,
+    queryFn: () => apiFetcher(`/api/comments?logId=${logId}`),
+    enabled: canParticipate,
+  });
 
   const comments = data?.comments ?? [];
   const unreadCount = data?.unreadCount ?? 0;
+
+  const invalidateComments = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.comments.byLog(logId) });
+  }, [queryClient, logId]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -69,14 +76,14 @@ export function CommentSection({
           return;
         }
         setNewComment("");
-        mutate();
+        invalidateComments();
       } catch {
         toast.error("Network error");
       } finally {
         setSending(false);
       }
     },
-    [logId, newComment, mutate],
+    [logId, newComment, invalidateComments],
   );
 
   const handleEdit = useCallback(
@@ -96,14 +103,14 @@ export function CommentSection({
         }
         setEditingId(null);
         setEditText("");
-        mutate();
+        invalidateComments();
       } catch {
         toast.error("Network error");
       } finally {
         setActionLoading(null);
       }
     },
-    [editText, mutate],
+    [editText, invalidateComments],
   );
 
   const handleDelete = useCallback(
@@ -117,14 +124,14 @@ export function CommentSection({
           toast.error("Failed to delete comment");
           return;
         }
-        mutate();
+        invalidateComments();
       } catch {
         toast.error("Network error");
       } finally {
         setActionLoading(null);
       }
     },
-    [mutate],
+    [invalidateComments],
   );
 
   const markAsRead = useCallback(async () => {
@@ -134,11 +141,11 @@ export function CommentSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ logId }),
       });
-      mutate();
+      invalidateComments();
     } catch {
       // Silently fail - this is not critical
     }
-  }, [logId, mutate]);
+  }, [logId, invalidateComments]);
 
   if (!canParticipate) return null;
 

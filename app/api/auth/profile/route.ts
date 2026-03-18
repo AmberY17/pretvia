@@ -45,6 +45,23 @@ export async function PUT(req: Request) {
           { status: 400 }
         )
       }
+
+      const currentUser = await db.collection("users").findOne(
+        { _id: new ObjectId(session.userId) },
+        { projection: { trainingSlots: 1, deletedSlots: 1 } }
+      )
+
+      type StoredSlot = { dayOfWeek: number; time: string; sourceGroupId?: string; addedAt?: Date; removedAt?: Date }
+      const now = new Date()
+      const existingByKey = new Map<string, StoredSlot>(
+        ((currentUser?.trainingSlots ?? []) as StoredSlot[]).map(
+          (s) => [`${s.dayOfWeek}:${s.time}`, s]
+        )
+      )
+      const submittedKeys = new Set(
+        trainingSlots.map((s: { dayOfWeek: number; time: string }) => `${s.dayOfWeek}:${s.time}`)
+      )
+
       updates.trainingSlots = trainingSlots.map(
         (s: { dayOfWeek: number; time: string; sourceGroupId?: string }) => {
           const t = String(s.time).trim()
@@ -53,15 +70,19 @@ export async function PUT(req: Request) {
             ? `${match[1].padStart(2, "0")}:${match[2]}`
             : "09:00"
           const dayOfWeek = Math.max(0, Math.min(6, Number(s.dayOfWeek) || 0))
-          const base = {
-            dayOfWeek,
-            time,
-          }
+          const existing = existingByKey.get(`${dayOfWeek}:${time}`)
+          const addedAt = existing?.addedAt ?? now
+          const base = { dayOfWeek, time, addedAt }
           return s.sourceGroupId
             ? { ...base, sourceGroupId: String(s.sourceGroupId) }
             : base
         }
       )
+
+      const nowDeleted = [...existingByKey.entries()]
+        .filter(([key]) => !submittedKeys.has(key))
+        .map(([, slot]) => ({ ...slot, removedAt: now }))
+      updates.deletedSlots = [...((currentUser?.deletedSlots ?? []) as StoredSlot[]), ...nowDeleted]
     }
 
     if (displayName !== undefined) {
