@@ -1,11 +1,3 @@
-/**
- * Cross-Role: Streak behaviour under coach-driven schedule changes
- *
- * Tests 4-5 cover schedule mutations the coach applies to the whole group.
- * Each nested describe cleans up its own logs in an after() hook so the
- * daily log cap is reset before the next describe's before() runs.
- */
-
 export {}
 
 const MON = 1
@@ -26,6 +18,10 @@ describe("Cross-Role: Streak under coach schedule changes", () => {
   let groupId: string
 
   before(() => {
+    // cleanupTestData (global before) deletes "E2E Test Group" — re-seed to restore it
+    cy.exec("pnpm seed:test", { timeout: 30000 })
+    // Clear stale cy.session() cache so loginAsCoach gets a fresh JWT with the new groupId
+    cy.then(() => Cypress.session.clearAllSavedSessions())
     cy.loginAsCoach()
     cy.request("/api/groups?mode=coach-groups").then((res) => {
       groupId = res.body.groups[0]?.id
@@ -36,9 +32,7 @@ describe("Cross-Role: Streak under coach schedule changes", () => {
     cy.request("/api/logs").then((res) => {
       ;(res.body.logs ?? [])
         .filter((l: { notes?: string }) => l.notes?.startsWith("E2E streak-coach"))
-        .forEach((l: { id?: string; _id?: string }) =>
-          cy.deleteLog(l.id ?? l._id ?? "")
-        )
+        .forEach((l: { id?: string; _id?: string }) => cy.deleteLog(l.id ?? l._id ?? ""))
     })
   })
 
@@ -51,10 +45,7 @@ describe("Cross-Role: Streak under coach schedule changes", () => {
     })
   })
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Test 4 — Coach changes slot time: old logs still count toward streak
-  // ─────────────────────────────────────────────────────────────────────────────
-  describe("Test 4 — Coach changes slot time preserves streak", () => {
+  describe("Coach changes slot time preserves streak", () => {
     let streakBefore: number
     const logIds: string[] = []
 
@@ -100,10 +91,7 @@ describe("Cross-Role: Streak under coach schedule changes", () => {
     })
   })
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Test 5 — Coach removes slot entirely: past logs still count toward streak
-  // ─────────────────────────────────────────────────────────────────────────────
-  describe("Test 5 — Coach removes a slot entirely preserves streak", () => {
+  describe("Coach removes a slot entirely preserves streak", () => {
     let streakBefore: number
     const logIds: string[] = []
 

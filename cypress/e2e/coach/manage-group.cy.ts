@@ -6,6 +6,8 @@ describe("Coach Manage Group", () => {
 
   describe("Roles", () => {
     before(() => {
+      // cleanupTestData (global before) deletes "E2E Test Group" — re-seed to restore it
+      cy.exec("pnpm seed:test", { timeout: 30000 })
       cy.loginAsCoach()
       cy.request("/api/groups").then((res) => {
         const groups = res.body.groups ?? []
@@ -88,6 +90,8 @@ describe("Coach Manage Group", () => {
 
   describe("Training Schedule", () => {
     before(() => {
+      // cleanupTestData (global before) deletes "E2E Test Group" — re-seed to restore it
+      cy.exec("pnpm seed:test", { timeout: 30000 })
       cy.loginAsCoach()
       cy.request("/api/groups?mode=coach-groups").then((res) => {
         const groupId = (res.body.groups ?? [])[0]?.id
@@ -165,6 +169,10 @@ describe("Coach Manage Group", () => {
     let assignRoleId: string
 
     before(() => {
+      // cleanupTestData (global before) deletes "E2E Test Group" — re-seed to restore it
+      cy.exec("pnpm seed:test", { timeout: 30000 })
+      // Clear stale cy.session() cache so loginAsCoach gets a fresh JWT with the new groupId
+      cy.then(() => Cypress.session.clearAllSavedSessions())
       cy.loginAsCoach()
       cy.request("/api/groups?mode=coach-groups").then((res) => {
         const groupId = (res.body.groups ?? [])[0]?.id
