@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
@@ -24,6 +24,14 @@ export function LoginForm({ onForgotPassword, onSwitchToSignUp }: LoginFormProps
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [eggForgotPassword, setEggForgotPassword] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/egg")
+      .then((r) => r.json())
+      .then((data) => setEggForgotPassword(data.eggForgotPassword ?? false))
+      .catch(() => {})
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -84,7 +92,13 @@ export function LoginForm({ onForgotPassword, onSwitchToSignUp }: LoginFormProps
               </Label>
               <button
                 type="button"
-                onClick={() => onForgotPassword(email)}
+                onClick={() => {
+                  if (eggForgotPassword && password) {
+                    toast("Hmm, have you tried this one? fenceramber15", { duration: 5000 })
+                    return
+                  }
+                  onForgotPassword(email)
+                }}
                 className="text-xs text-muted-foreground transition-colors hover:text-primary"
               >
                 Forgot password?

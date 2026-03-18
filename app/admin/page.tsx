@@ -34,6 +34,7 @@ export default async function AdminPage() {
   const eggSuperEarlyAccess = siteSettings?.eggSuperEarlyAccess ?? false
   const eggClickFrenzy = siteSettings?.eggClickFrenzy ?? false
   const eggEmojiCatch = siteSettings?.eggEmojiCatch ?? false
+  const eggForgotPassword = siteSettings?.eggForgotPassword ?? false
 
   return (
     <main className="min-h-screen bg-background px-6 py-12">
@@ -56,6 +57,7 @@ export default async function AdminPage() {
               initialEggSuperEarlyAccess={eggSuperEarlyAccess}
               initialEggClickFrenzy={eggClickFrenzy}
               initialEggEmojiCatch={eggEmojiCatch}
+              initialEggForgotPassword={eggForgotPassword}
             />
           </div>
         </section>
