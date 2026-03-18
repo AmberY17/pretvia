@@ -269,7 +269,7 @@ function InviteUnder13Form({
         <Card className="border-border bg-card">
           <CardHeader>
             <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
-            <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
             <CardTitle>Set up your child&apos;s account</CardTitle>
             <CardDescription>
               {invite.groupName ? `Join ${invite.groupName}` : "Create an athlete account"}
@@ -445,7 +445,7 @@ function InviteAthleteForm({
         <Card className="border-border bg-card">
           <CardHeader>
             <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
-            <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
             <CardTitle>Join {invite.groupName ?? "the group"}</CardTitle>
             <CardDescription>
               {invite.email} — create an account or sign in to join
@@ -569,7 +569,7 @@ function InviteParentForm({
         <Card className="border-border bg-card">
           <CardHeader>
             <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
-            <Image src="/logo_dark_white.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
             <CardTitle>{isLogin ? "Sign in" : "Create your parent account"}</CardTitle>
             <CardDescription>
               View your athlete&apos;s progress in {invite.groupName ?? "the group"}

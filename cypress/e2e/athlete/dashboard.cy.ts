@@ -13,6 +13,14 @@ describe("Athlete Dashboard", () => {
   })
 
   describe("Counter / Streaks", () => {
+    before(() => {
+      cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
+    })
+
     beforeEach(() => {
       cy.loginAsAthlete()
       cy.viewport(1280, 900)
@@ -55,6 +63,10 @@ describe("Athlete Dashboard", () => {
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
@@ -127,21 +139,64 @@ describe("Athlete Dashboard", () => {
     })
   })
 
+  describe("New Log dialog", () => {
+    before(() => {
+      cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
+    })
+
+    after(() => {
+      cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+      })
+    })
+
+    beforeEach(() => {
+      cy.loginAsAthlete()
+      cy.viewport(1280, 900)
+      cy.visit("/dashboard")
+    })
+
+    it("can create a log — appears in feed", () => {
+      cy.findByRole("button", { name: "New Log" }).click()
+      cy.contains("New Log Entry").should("be.visible")
+
+      // Pick an emoji — the picker is an em-emoji-picker web component (shadow DOM)
+      cy.findByRole("button", { name: "Select emoji" }).click()
+      cy.get("em-emoji-picker").shadow().find("button[aria-posinset]").first().click()
+
+      // Type notes
+      cy.get("textarea#notes").first().type("E2E new log test")
+
+      // Submit (default visibility is "Shared")
+      cy.contains("button", "Save Log Entry").click()
+
+      // Assert the new log card appears in the feed
+      cy.get("main", { timeout: 15000 }).contains("E2E new log test").should("be.visible")
+    })
+  })
+
   describe("Log", () => {
     let logId: string
     let privateLogId: string
-    let deleteLogId: string
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
           .filter(
             (l: { notes?: string }) =>
               l.notes?.includes("E2E athlete-dashboard") ||
-              l.notes?.includes("E2E athlete-private") ||
-              l.notes?.includes("E2E athlete-delete me"),
+              l.notes?.includes("E2E athlete-private"),
           )
           .forEach((l: { id: string }) => {
             cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false })
@@ -165,40 +220,18 @@ describe("Athlete Dashboard", () => {
       }).then((log) => {
         privateLogId = log?.id ?? log?._id
       })
-      cy.createLog({
-        emoji: "🗑️",
-        notes: "E2E athlete-delete me",
-        visibility: "private",
-        timestamp: new Date().toISOString(),
-        tags: [],
-      }).then((log) => {
-        deleteLogId = log?.id ?? log?._id
-      })
     })
 
     after(() => {
       cy.loginAsAthlete()
       if (logId) cy.deleteLog(logId)
       if (privateLogId) cy.deleteLog(privateLogId)
-      if (deleteLogId) {
-        cy.request({
-          method: "DELETE",
-          url: `/api/logs?id=${deleteLogId}`,
-          failOnStatusCode: false,
-        })
-      }
     })
 
     beforeEach(() => {
       cy.loginAsAthlete()
       cy.viewport(1280, 900)
       cy.visit("/dashboard")
-    })
-
-    it("can create a log — appears in feed", () => {
-      cy.findByRole("button", { name: "New Log" }).click()
-      cy.contains("New Log Entry").should("be.visible")
-      cy.findByRole("button", { name: "Select emoji" }).should("be.visible")
     })
 
     it("opens log panel when clicking a log card", () => {
@@ -234,13 +267,14 @@ describe("Athlete Dashboard", () => {
     })
 
     it("can delete a log with confirmation — removed from feed", () => {
-      cy.contains("E2E athlete-delete me").click()
+      // logId was edited in the previous test; its notes are now "E2E athlete-dashboard updated"
+      cy.contains("E2E athlete-dashboard updated").click()
       cy.contains("Log Details").should("be.visible")
       cy.contains("button", "Delete").click()
       cy.contains("This log entry will be permanently removed.").should("be.visible")
       cy.findByRole("button", { name: "Delete" }).click()
-      cy.get("main").should("not.contain", "E2E athlete-delete me")
-      deleteLogId = ""
+      cy.get("main").should("not.contain", "E2E athlete-dashboard updated")
+      logId = ""
     })
   })
 
@@ -249,6 +283,10 @@ describe("Athlete Dashboard", () => {
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
@@ -362,6 +400,10 @@ describe("Athlete Dashboard", () => {
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
@@ -386,7 +428,7 @@ describe("Athlete Dashboard", () => {
       cy.createLog({
         emoji: "📝",
         notes: "E2E filter-section untagged",
-        visibility: "coach",
+        visibility: "private",
         tags: [],
         timestamp: new Date().toISOString(),
       }).then((log) => {

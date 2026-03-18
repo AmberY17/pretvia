@@ -19,9 +19,9 @@ describe("Athlete Account Settings", () => {
     cy.visit("/dashboard/account")
   })
 
-  it.skip("can select the profile emoji — confirmed on dashboard", () => {
+  it("can select the profile emoji — confirmed on dashboard", () => {
     cy.findByRole("button", { name: /Select emoji|emoji/i }).click()
-    cy.get("em-emoji-picker").shadow().find("button[aria-label]").first().click({ force: true })
+    cy.get("em-emoji-picker").shadow().find("button[aria-posinset]").first().click()
     cy.findByRole("button", { name: /Select emoji|emoji/i })
       .invoke("text")
       .should("not.eq", "?")
@@ -29,7 +29,7 @@ describe("Athlete Account Settings", () => {
     cy.get("nav, aside").should("exist")
   })
 
-  it.only("can create a training schedule — slot appears and wheels are interactive", () => {
+  it("can create a training schedule — slot appears and wheels are interactive", () => {
     cy.loginAsAthlete()
     cy.request({ method: "PUT", url: "/api/auth/profile", body: { trainingSlots: [] } })
     cy.visit("/dashboard/account")
@@ -76,10 +76,10 @@ describe("Athlete Account Settings", () => {
     // Navigate away and back — confirm slot persists
     cy.visit("/dashboard")
     cy.visit("/dashboard/account")
-    cy.get(
-      '[aria-label="Remove slot"], [aria-label*="Remove slot"]',
-      { timeout: 10000 },
-    ).should("have.length.at.least", 1)
+    cy.get('[aria-label="Remove slot"], [aria-label*="Remove slot"]', { timeout: 10000 }).should(
+      "have.length.at.least",
+      1,
+    )
   })
 
   it("can toggle the celebration on new log — toggle state persists", () => {

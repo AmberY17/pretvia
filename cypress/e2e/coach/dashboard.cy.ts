@@ -31,6 +31,10 @@ describe("Coach Dashboard", () => {
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
@@ -247,7 +251,7 @@ describe("Coach Dashboard", () => {
       cy.contains("Create Session Check-In").click()
       cy.contains("New Session Check-In").should("be.visible")
       cy.findByLabelText(/Title/i).type("E2E Checkin Session")
-      cy.contains("button", "Create").click()
+      cy.findByRole("button", { name: "Create" }).click()
       cy.contains('[data-testid="checkin-card"]', "E2E Checkin Session")
         .scrollIntoView()
         .should("be.visible")
@@ -270,18 +274,17 @@ describe("Coach Dashboard", () => {
 
   describe("Log", () => {
     let logId: string
-    let reviewLogId: string
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
-          .filter(
-            (l: { notes?: string }) =>
-              l.notes?.includes("E2E coach-log fixture") ||
-              l.notes?.includes("E2E coach-review-pending"),
-          )
+          .filter((l: { notes?: string }) => l.notes?.includes("E2E coach-log fixture"))
           .forEach((l: { id: string }) => {
             cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false })
           })
@@ -295,21 +298,11 @@ describe("Coach Dashboard", () => {
       }).then((log) => {
         logId = log?.id ?? log?._id
       })
-      cy.createLog({
-        emoji: "🔍",
-        notes: "E2E coach-review-pending",
-        visibility: "coach",
-        timestamp: new Date().toISOString(),
-        tags: [],
-      }).then((log) => {
-        reviewLogId = log?.id ?? log?._id
-      })
     })
 
     after(() => {
       cy.loginAsAthlete()
       if (logId) cy.deleteLog(logId)
-      if (reviewLogId) cy.deleteLog(reviewLogId)
     })
 
     beforeEach(() => {
@@ -321,17 +314,6 @@ describe("Coach Dashboard", () => {
     it("can click the log and see details in the right panel", () => {
       cy.contains("E2E coach-log fixture").click()
       cy.contains("Log Details").should("be.visible")
-    })
-
-    it("review status changes to Reviewed when log is opened", () => {
-      cy.contains('[role="button"]', "E2E coach-review-pending").within(() => {
-        cy.contains(/Pending/i).should("exist")
-      })
-      cy.contains("E2E coach-review-pending").click()
-      cy.contains("Log Details").should("be.visible")
-      cy.contains('[role="button"]', "E2E coach-review-pending").within(() => {
-        cy.contains(/Reviewed/i).should("exist")
-      })
     })
 
     it("can change the review status via dropdown", () => {
@@ -347,11 +329,66 @@ describe("Coach Dashboard", () => {
     })
   })
 
+  describe("Log — Review Status", () => {
+    let reviewLogId: string
+
+    before(() => {
+      cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
+      cy.request("/api/logs").then((res) => {
+        const logs = res.body.logs ?? []
+        logs
+          .filter((l: { notes?: string }) => l.notes?.includes("E2E coach-review-pending"))
+          .forEach((l: { id: string }) => {
+            cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false })
+          })
+      })
+      cy.createLog({
+        emoji: "🔍",
+        notes: "E2E coach-review-pending",
+        visibility: "coach",
+        timestamp: new Date().toISOString(),
+        tags: [],
+      }).then((log) => {
+        reviewLogId = log?.id ?? log?._id
+      })
+    })
+
+    after(() => {
+      cy.loginAsAthlete()
+      if (reviewLogId) cy.deleteLog(reviewLogId)
+    })
+
+    beforeEach(() => {
+      cy.loginAsCoach()
+      cy.viewport(1280, 900)
+      cy.visit("/dashboard")
+    })
+
+    it("review status changes to Reviewed when log is opened", () => {
+      cy.contains('[role="button"]', "E2E coach-review-pending").within(() => {
+        cy.contains(/Pending/i).should("exist")
+      })
+      cy.contains("E2E coach-review-pending").click()
+      cy.contains("Log Details").should("be.visible")
+      cy.contains('[role="button"]', "E2E coach-review-pending").within(() => {
+        cy.contains(/Reviewed/i).should("exist")
+      })
+    })
+  })
+
   describe("Comments", () => {
     let logId: string
 
     before(() => {
       cy.loginAsAthlete()
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
       cy.request("/api/logs").then((res) => {
         const logs = res.body.logs ?? []
         logs
@@ -471,28 +508,24 @@ describe("Coach Dashboard", () => {
 
   describe("Filters", () => {
     let logId: string
-    let untaggedLogId: string
 
     before(() => {
+      // cleanupTestData (global before) deletes "E2E Test Group", wiping the role and
+      // athlete-role assignment the filter test depends on. Re-seed to restore them.
+      cy.exec("pnpm seed:test", { timeout: 30000 })
       cy.loginAsAthlete()
-
-      // Delete ALL accumulated fixture logs across pages
-      const deleteFixtureLogs = () => {
-        cy.request("/api/logs?limit=100").then((res) => {
-          const logs: { id: string; notes?: string }[] = res.body.logs ?? []
-          const toDelete = logs.filter(
-            (l) =>
-              l.notes?.includes("E2E coach-filters-section fixture") ||
-              l.notes?.includes("E2E coach-filters-section untagged"),
-          )
-          if (toDelete.length === 0) return
-          toDelete.forEach((l) =>
+      cy.request("/api/logs/today").then((res) => {
+        if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)
+        if (res.body.privateLogId) cy.deleteLog(res.body.privateLogId)
+      })
+      cy.request("/api/logs").then((res) => {
+        const logs: { id: string; notes?: string }[] = res.body.logs ?? []
+        logs
+          .filter((l) => l.notes?.includes("E2E coach-filters-section fixture"))
+          .forEach((l) =>
             cy.request({ method: "DELETE", url: `/api/logs?id=${l.id}`, failOnStatusCode: false }),
           )
-          if (toDelete.length === logs.length) deleteFixtureLogs()
-        })
-      }
-      deleteFixtureLogs()
+      })
       cy.createLog({
         emoji: "🎽",
         notes: "E2E coach-filters-section fixture",
@@ -502,21 +535,11 @@ describe("Coach Dashboard", () => {
       }).then((log) => {
         logId = log?.id ?? log?._id
       })
-      cy.createLog({
-        emoji: "📝",
-        notes: "E2E coach-filters-section untagged",
-        visibility: "coach",
-        tags: [],
-        timestamp: new Date().toISOString(),
-      }).then((log) => {
-        untaggedLogId = log?.id ?? log?._id
-      })
     })
 
     after(() => {
       cy.loginAsAthlete()
       if (logId) cy.deleteLog(logId)
-      if (untaggedLogId) cy.deleteLog(untaggedLogId)
     })
 
     beforeEach(() => {

@@ -24,6 +24,7 @@ export function SignedInChoice() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       queryClient.clear();
+      router.replace("/auth");
     } catch {
       toast.error("Could not sign out. Please try again.");
     }

@@ -24,7 +24,7 @@ export function LandingNav({
             className="h-7 w-7 object-contain dark:hidden"
           />
           <Image
-            src="/logo_dark_white.png"
+            src="/logo_dark.png"
             alt="Pretvia"
             width={28}
             height={28}

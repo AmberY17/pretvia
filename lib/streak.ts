@@ -120,7 +120,8 @@ export async function computeStreak(
   trainingSlots: TrainingSlot[],
   localDate?: string,
   prefetchedLogs?: { timestamp: Date | string }[],
-  prefetchedSkips?: { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
+  prefetchedSkips?: { date: Date | string; dayOfWeek: number; scheduledTime: string }[],
+  deletedSlots?: TrainingSlot[]
 ): Promise<StreakResult> {
   const totalLogs = await db
     .collection("logs")
@@ -160,7 +161,8 @@ export async function computeStreak(
   }))
 
   // Streak = consecutive calendar days (one day = one point, even with multiple slots)
-  const trainingDayOfWeeks = [...new Set(trainingSlots.map((s) => s.dayOfWeek))]
+  const allSlotsForDays = [...trainingSlots, ...(deletedSlots ?? [])]
+  const trainingDayOfWeeks = [...new Set(allSlotsForDays.map((s) => s.dayOfWeek))]
   let streak = 0
 
   // Start iteration from the end of the user's local calendar date so that day-of-week
@@ -177,11 +179,29 @@ export async function computeStreak(
     }
 
     const occurrenceDate = getLastOccurrenceOfDay(iterDate, dayOfWeek)
-    const slotsOnDay = trainingSlots.filter((s) => s.dayOfWeek === dayOfWeek)
-    let dayHit = false
+    const slotsOnDay = [
+      ...trainingSlots.filter((s) => s.dayOfWeek === dayOfWeek),
+      ...(deletedSlots ?? []).filter((s) => s.dayOfWeek === dayOfWeek),
+    ]
+    let dayHasLog = false
+    let dayHasSkip = false
+    let dayHasPassedSlot = false
+
     for (const slot of slotsOnDay) {
       const slotTime = slotInstanceForDate(occurrenceDate, slot)
       if (slotTime > now) continue
+
+      if (slot.addedAt) {
+        const addedAt = slot.addedAt instanceof Date ? slot.addedAt : new Date(slot.addedAt)
+        if (slotTime < addedAt) continue
+      }
+      if (slot.removedAt) {
+        const removedAt = slot.removedAt instanceof Date ? slot.removedAt : new Date(slot.removedAt)
+        if (slotTime >= removedAt) continue
+      }
+
+      dayHasPassedSlot = true
+
       const hasLog = logs.some((l) => {
         const logTs = l.timestamp instanceof Date ? l.timestamp : new Date(l.timestamp)
         return logMatchesSlot(logTs, slotTime)
@@ -189,15 +209,19 @@ export async function computeStreak(
       const hasSkip = skipRecords.some((s) =>
         skipMatchesSlot(s, slotTime, dayOfWeek, slot.time)
       )
-      if (hasLog || hasSkip) {
-        dayHit = true
-        break
-      }
+
+      if (hasLog) dayHasLog = true
+      if (hasSkip) dayHasSkip = true
     }
-    if (dayHit) {
+
+    if (!dayHasPassedSlot) {
+      // All slots still in the future — advance without counting or breaking
+    } else if (dayHasLog) {
       streak++
+    } else if (dayHasSkip) {
+      // Skip-only: neutral — don't increment, don't break
     } else {
-      break
+      break // Miss — streak ends
     }
     iterDate.setUTCDate(iterDate.getUTCDate() - 1)
   }
