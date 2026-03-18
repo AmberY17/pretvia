@@ -1,7 +1,12 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 import { floatingEmojis } from "@/components/landing/landing-data";
+import { Button } from "@/components/ui/button";
+import { EmojiInputBox } from "./emoji-input-box";
+import { EmojiCatchGame } from "./emoji-catch-game";
 
 export function HeroSection() {
   const { scrollY } = useScroll();
@@ -12,6 +17,42 @@ export function HeroSection() {
     typeof window !== "undefined"
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
       : false;
+
+  const [phase, setPhase] = useState<"input" | "floating" | "complete">("input");
+  const [emojis, setEmojis] = useState<string[]>([...floatingEmojis]);
+  const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
+
+  // Scroll lock during floating phase
+  useEffect(() => {
+    if (phase === "complete") return;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const nav = document.querySelector<HTMLElement>("nav");
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    if (nav) {
+      nav.style.paddingRight = `${scrollbarWidth}px`;
+      nav.style.pointerEvents = "none";
+    }
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.paddingRight = "";
+      if (nav) {
+        nav.style.paddingRight = "";
+        nav.style.pointerEvents = "";
+      }
+    };
+  }, [phase]);
+
+  // Confetti on complete
+  useEffect(() => {
+    if (phase !== "complete" || prefersReduced) return;
+    const end = Date.now() + 2000;
+    const frame = () => {
+      confetti({ particleCount: 5, spread: 70, origin: { y: 0.3 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
+  }, [phase, prefersReduced]);
 
   return (
     <motion.section
@@ -49,63 +90,102 @@ export function HeroSection() {
           Emoji-first training logs that make tracking sessions intuitive.
         </p>
 
-        {/* Floating emojis */}
+        {/* Emoji grid */}
         <div className="mt-10 flex flex-wrap justify-center gap-2 sm:mt-16 sm:gap-4">
-          {floatingEmojis.map((emoji, i) => (
-            <motion.span
-              key={i}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-xl shadow-lg sm:h-14 sm:w-14 sm:text-2xl"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={
-                prefersReduced
-                  ? { opacity: 1, scale: 1 }
-                  : { opacity: 1, scale: 1, y: [0, -8, 0] }
-              }
-              transition={
-                prefersReduced
-                  ? { delay: 0.5 + i * 0.1, duration: 0.3 }
-                  : {
-                      opacity: { delay: 0.5 + i * 0.1, duration: 0.3 },
-                      scale: { delay: 0.5 + i * 0.1, duration: 0.3 },
-                      y: {
-                        duration: 3,
-                        delay: i * 0.3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      },
-                    }
-              }
-            >
-              {emoji}
-            </motion.span>
-          ))}
+          {phase === "input" &&
+            emojis.map((emoji, i) => (
+              <EmojiInputBox
+                key={i}
+                emoji={emoji}
+                index={i}
+                isEditing={activeEditIndex === i}
+                prefersReduced={prefersReduced}
+                onStartEdit={setActiveEditIndex}
+                onConfirm={(idx, e) => {
+                  setEmojis((prev) =>
+                    prev.map((v, j) => (j === idx ? e : v))
+                  );
+                  setActiveEditIndex(null);
+                }}
+                onDismiss={() => setActiveEditIndex(null)}
+              />
+            ))}
+          {phase === "complete" &&
+            emojis.map((emoji, i) => (
+              <span
+                key={i}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-xl shadow-lg sm:h-14 sm:w-14 sm:text-2xl"
+              >
+                {emoji}
+              </span>
+            ))}
         </div>
+
+        {/* Phase 1 CTA */}
+        {phase === "input" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+          >
+            <p className="mt-4 text-sm text-muted-foreground">
+              Click any emoji to swap it, then launch!
+            </p>
+            <Button className="mt-4" onClick={() => setPhase("floating")}>
+              Launch 🚀
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Phase 3 message */}
+        {phase === "complete" && (
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 text-sm font-medium text-primary"
+          >
+            You caught them all! Scroll to explore ↓
+          </motion.p>
+        )}
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-      >
+      {/* Scroll indicator — visible only after game complete */}
+      {phase === "complete" && (
         <motion.div
-          animate={prefersReduced ? {} : { y: [0, 8, 0] }}
-          transition={prefersReduced ? {} : { duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center gap-2 text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
         >
-          <span className="text-xs font-medium">Scroll to explore</span>
-          <div className="h-8 w-5 rounded-full border-2 border-muted-foreground/50">
-            <motion.div
-              animate={prefersReduced ? {} : { y: [2, 14, 2] }}
-              transition={
-                prefersReduced ? {} : { duration: 1.5, repeat: Infinity }
-              }
-              className="mx-auto mt-1 h-2 w-1.5 rounded-full bg-primary"
-            />
-          </div>
+          <motion.div
+            animate={prefersReduced ? {} : { y: [0, 8, 0] }}
+            transition={prefersReduced ? {} : { duration: 2, repeat: Infinity }}
+            className="flex flex-col items-center gap-2 text-muted-foreground"
+          >
+            <span className="text-xs font-medium">Scroll to explore</span>
+            <div className="h-8 w-5 rounded-full border-2 border-muted-foreground/50">
+              <motion.div
+                animate={prefersReduced ? {} : { y: [2, 14, 2] }}
+                transition={
+                  prefersReduced ? {} : { duration: 1.5, repeat: Infinity }
+                }
+                className="mx-auto mt-1 h-2 w-1.5 rounded-full bg-primary"
+              />
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
+
+      {/* Game overlay */}
+      <AnimatePresence>
+        {phase === "floating" && (
+          <EmojiCatchGame
+            emojis={emojis}
+            prefersReduced={prefersReduced}
+            onAllCaught={() => setPhase("complete")}
+          />
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }
