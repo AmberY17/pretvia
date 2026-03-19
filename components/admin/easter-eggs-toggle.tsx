@@ -10,6 +10,7 @@ interface EasterEggsToggleProps {
   initialEggEmojiCatch: boolean
   initialEggForgotPassword: boolean
   initialEggSlotMachineEmoji: boolean
+  initialEggRunawayTrash: boolean
 }
 
 function EggRow({
@@ -42,12 +43,14 @@ export function EasterEggsToggle({
   initialEggEmojiCatch,
   initialEggForgotPassword,
   initialEggSlotMachineEmoji,
+  initialEggRunawayTrash,
 }: EasterEggsToggleProps) {
   const [eggSuperEarlyAccess, setEggSuperEarlyAccess] = useState(initialEggSuperEarlyAccess)
   const [eggClickFrenzy, setEggClickFrenzy] = useState(initialEggClickFrenzy)
   const [eggEmojiCatch, setEggEmojiCatch] = useState(initialEggEmojiCatch)
   const [eggForgotPassword, setEggForgotPassword] = useState(initialEggForgotPassword)
   const [eggSlotMachineEmoji, setEggSlotMachineEmoji] = useState(initialEggSlotMachineEmoji)
+  const [eggRunawayTrash, setEggRunawayTrash] = useState(initialEggRunawayTrash)
 
   const setters: Record<string, (val: boolean) => void> = {
     eggSuperEarlyAccess: setEggSuperEarlyAccess,
@@ -55,6 +58,7 @@ export function EasterEggsToggle({
     eggEmojiCatch: setEggEmojiCatch,
     eggForgotPassword: setEggForgotPassword,
     eggSlotMachineEmoji: setEggSlotMachineEmoji,
+    eggRunawayTrash: setEggRunawayTrash,
   }
 
   const values: Record<string, boolean> = {
@@ -63,6 +67,7 @@ export function EasterEggsToggle({
     eggEmojiCatch,
     eggForgotPassword,
     eggSlotMachineEmoji,
+    eggRunawayTrash,
   }
 
   const handleToggle = async (field: string, checked: boolean) => {
@@ -123,6 +128,13 @@ export function EasterEggsToggle({
         description="Athletes spin a slot machine to pick their profile emoji"
         field="eggSlotMachineEmoji"
         checked={eggSlotMachineEmoji}
+        onToggle={handleToggle}
+      />
+      <EggRow
+        label="Runaway trash"
+        description="Trash icon escapes when hovered — athletes have to catch it to delete a slot"
+        field="eggRunawayTrash"
+        checked={eggRunawayTrash}
         onToggle={handleToggle}
       />
     </div>

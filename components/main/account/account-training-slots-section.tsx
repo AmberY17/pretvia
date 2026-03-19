@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useRef, useCallback } from "react";
 import { Calendar, Plus, Loader2, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DayWheelPicker } from "@/components/main/shared/day-wheel-picker";
 import { TimeWheelPicker } from "@/components/main/shared/time-wheel-picker";
 import {
@@ -32,6 +34,7 @@ interface AccountTrainingSlotsSectionProps {
   onSyncGroupSchedule: () => void;
   onConfirmRemoveGroupSlot: () => void;
   isGroupSlot: (slot: TrainingSlotItem) => boolean;
+  eggRunawayTrash?: boolean;
 }
 
 export function AccountTrainingSlotsSection({
@@ -46,7 +49,22 @@ export function AccountTrainingSlotsSection({
   onSyncGroupSchedule,
   onConfirmRemoveGroupSlot,
   isGroupSlot,
+  eggRunawayTrash,
 }: AccountTrainingSlotsSectionProps) {
+  const [eggSlotIndex, setEggSlotIndex] = useState<number | null>(null);
+  const [eggPos, setEggPos] = useState<{ x: number; y: number } | null>(null);
+  const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const handleTrashHover = useCallback((index: number) => {
+    const row = rowRefs.current[index];
+    if (!row) return;
+    const btnSize = 32;
+    const newX = Math.random() * Math.max(0, row.clientWidth - btnSize);
+    const newY = Math.random() * Math.max(0, row.clientHeight - btnSize);
+    setEggPos({ x: newX, y: newY });
+    setEggSlotIndex(index);
+  }, []);
+
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -83,7 +101,9 @@ export function AccountTrainingSlotsSection({
           return (
             <div
               key={index}
-              className="flex min-w-0 flex-nowrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
+              ref={(el) => { rowRefs.current[index] = el; }}
+              className="relative flex min-w-0 flex-nowrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
+              onMouseLeave={() => eggSlotIndex === index && setEggSlotIndex(null)}
             >
               <DayWheelPicker
                 value={slot.dayOfWeek}
@@ -95,10 +115,22 @@ export function AccountTrainingSlotsSection({
                 onChange={(v) => onUpdateSlot(index, "time", v)}
                 disabled={!!isGroup}
               />
+              {eggRunawayTrash && eggSlotIndex === index && (
+                <div className="ml-auto h-8 w-8 shrink-0" aria-hidden />
+              )}
               <Button
                 variant="ghost-secondary"
                 size="icon"
-                className="ml-auto h-8 w-8 shrink-0"
+                className={cn(
+                  "h-8 w-8 shrink-0 transition-[left,top] duration-100",
+                  eggRunawayTrash && eggSlotIndex === index ? "absolute z-10" : "ml-auto",
+                )}
+                style={
+                  eggRunawayTrash && eggSlotIndex === index && eggPos
+                    ? { left: eggPos.x, top: eggPos.y }
+                    : undefined
+                }
+                onMouseEnter={eggRunawayTrash ? () => handleTrashHover(index) : undefined}
                 onClick={() =>
                   isGroup
                     ? setDeleteGroupSlotConfirmIndex(index)

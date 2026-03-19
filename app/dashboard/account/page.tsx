@@ -29,6 +29,7 @@ export default function AccountPage() {
   const [profileEmoji, setProfileEmoji] = useState<string>("");
   const [savingEmoji, setSavingEmoji] = useState(false);
   const [slotMachineEnabled, setSlotMachineEnabled] = useState(false);
+  const [runawayTrashEnabled, setRunawayTrashEnabled] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [filterOrder, setFilterOrder] = useState<CoachFilterId[]>([
@@ -102,6 +103,9 @@ export default function AccountPage() {
       .then((data) => {
         if (typeof data.eggSlotMachineEmoji === "boolean") {
           setSlotMachineEnabled(data.eggSlotMachineEmoji);
+        }
+        if (typeof data.eggRunawayTrash === "boolean") {
+          setRunawayTrashEnabled(data.eggRunawayTrash);
         }
       })
       .catch(() => {});
@@ -279,6 +283,7 @@ export default function AccountPage() {
               onSyncGroupSchedule={handleSyncGroupSchedule}
               onConfirmRemoveGroupSlot={handleConfirmRemoveGroupSlot}
               isGroupSlot={isGroupSlot}
+              eggRunawayTrash={runawayTrashEnabled}
             />
           )}
 

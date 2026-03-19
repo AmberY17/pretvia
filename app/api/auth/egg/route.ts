@@ -8,6 +8,7 @@ export async function GET() {
     return NextResponse.json({
       eggForgotPassword: doc?.eggForgotPassword ?? false,
       eggSlotMachineEmoji: doc?.eggSlotMachineEmoji ?? false,
+      eggRunawayTrash: doc?.eggRunawayTrash ?? false,
     })
   } catch (err) {
     console.error("GET /api/auth/egg:", err)
