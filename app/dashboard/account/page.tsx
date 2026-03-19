@@ -28,6 +28,7 @@ export default function AccountPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth } = useRequireAuth();
   const [profileEmoji, setProfileEmoji] = useState<string>("");
   const [savingEmoji, setSavingEmoji] = useState(false);
+  const [slotMachineEnabled, setSlotMachineEnabled] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [filterOrder, setFilterOrder] = useState<CoachFilterId[]>([
@@ -94,6 +95,17 @@ export default function AccountPage() {
       setProfileEmoji(user.profileEmoji || "");
     }
   }, [user?.profileEmoji]);
+
+  useEffect(() => {
+    fetch("/api/auth/egg")
+      .then((r) => r.json())
+      .then((data) => {
+        if (typeof data.eggSlotMachineEmoji === "boolean") {
+          setSlotMachineEnabled(data.eggSlotMachineEmoji);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Sync training slots from server only on initial load (user id), so other
   // profile updates (e.g. emoji) don’t overwrite unsaved schedule changes.
@@ -251,6 +263,7 @@ export default function AccountPage() {
             profileEmoji={profileEmoji}
             savingEmoji={savingEmoji}
             onEmojiChange={handleEmojiChange}
+            slotMachineEnabled={slotMachineEnabled}
           />
 
           {user.role === "athlete" && (

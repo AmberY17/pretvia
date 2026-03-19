@@ -9,6 +9,7 @@ interface EasterEggsToggleProps {
   initialEggClickFrenzy: boolean
   initialEggEmojiCatch: boolean
   initialEggForgotPassword: boolean
+  initialEggSlotMachineEmoji: boolean
 }
 
 function EggRow({
@@ -40,17 +41,20 @@ export function EasterEggsToggle({
   initialEggClickFrenzy,
   initialEggEmojiCatch,
   initialEggForgotPassword,
+  initialEggSlotMachineEmoji,
 }: EasterEggsToggleProps) {
   const [eggSuperEarlyAccess, setEggSuperEarlyAccess] = useState(initialEggSuperEarlyAccess)
   const [eggClickFrenzy, setEggClickFrenzy] = useState(initialEggClickFrenzy)
   const [eggEmojiCatch, setEggEmojiCatch] = useState(initialEggEmojiCatch)
   const [eggForgotPassword, setEggForgotPassword] = useState(initialEggForgotPassword)
+  const [eggSlotMachineEmoji, setEggSlotMachineEmoji] = useState(initialEggSlotMachineEmoji)
 
   const setters: Record<string, (val: boolean) => void> = {
     eggSuperEarlyAccess: setEggSuperEarlyAccess,
     eggClickFrenzy: setEggClickFrenzy,
     eggEmojiCatch: setEggEmojiCatch,
     eggForgotPassword: setEggForgotPassword,
+    eggSlotMachineEmoji: setEggSlotMachineEmoji,
   }
 
   const values: Record<string, boolean> = {
@@ -58,6 +62,7 @@ export function EasterEggsToggle({
     eggClickFrenzy,
     eggEmojiCatch,
     eggForgotPassword,
+    eggSlotMachineEmoji,
   }
 
   const handleToggle = async (field: string, checked: boolean) => {
@@ -111,6 +116,13 @@ export function EasterEggsToggle({
         description='Shows typed password back at user — "Hmm, have you tried this one?"'
         field="eggForgotPassword"
         checked={eggForgotPassword}
+        onToggle={handleToggle}
+      />
+      <EggRow
+        label="Slot machine emoji picker"
+        description="Athletes spin a slot machine to pick their profile emoji"
+        field="eggSlotMachineEmoji"
+        checked={eggSlotMachineEmoji}
         onToggle={handleToggle}
       />
     </div>

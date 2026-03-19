@@ -7,17 +7,23 @@ const EmojiPicker = dynamic(
   () => import("@/components/main/shared/emoji-picker").then((m) => m.EmojiPicker),
   { ssr: false }
 );
+const SlotMachineEmojiPicker = dynamic(
+  () => import("@/components/main/account/slot-machine-emoji-picker").then((m) => m.SlotMachineEmojiPicker),
+  { ssr: false }
+);
 
 interface AccountProfileEmojiSectionProps {
   profileEmoji: string;
   savingEmoji: boolean;
   onEmojiChange: (emoji: string) => void;
+  slotMachineEnabled: boolean;
 }
 
 export function AccountProfileEmojiSection({
   profileEmoji,
   savingEmoji,
   onEmojiChange,
+  slotMachineEnabled,
 }: AccountProfileEmojiSectionProps) {
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -31,11 +37,17 @@ export function AccountProfileEmojiSection({
       </p>
       <div className="flex items-center gap-4">
         <div className="relative">
-          <EmojiPicker value={profileEmoji} onChange={onEmojiChange} />
-          {savingEmoji && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-background/60">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
+          {slotMachineEnabled ? (
+            <SlotMachineEmojiPicker value={profileEmoji} onChange={onEmojiChange} />
+          ) : (
+            <>
+              <EmojiPicker value={profileEmoji} onChange={onEmojiChange} />
+              {savingEmoji && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-background/60">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              )}
+            </>
           )}
         </div>
         <div className="flex flex-1 items-center gap-2">

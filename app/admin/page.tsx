@@ -35,6 +35,7 @@ export default async function AdminPage() {
   const eggClickFrenzy = siteSettings?.eggClickFrenzy ?? false
   const eggEmojiCatch = siteSettings?.eggEmojiCatch ?? false
   const eggForgotPassword = siteSettings?.eggForgotPassword ?? false
+  const eggSlotMachineEmoji = siteSettings?.eggSlotMachineEmoji ?? false
 
   return (
     <main className="min-h-screen bg-background px-6 py-12">
@@ -58,6 +59,7 @@ export default async function AdminPage() {
               initialEggClickFrenzy={eggClickFrenzy}
               initialEggEmojiCatch={eggEmojiCatch}
               initialEggForgotPassword={eggForgotPassword}
+              initialEggSlotMachineEmoji={eggSlotMachineEmoji}
             />
           </div>
         </section>

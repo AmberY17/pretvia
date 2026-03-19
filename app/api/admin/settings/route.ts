@@ -24,6 +24,7 @@ export async function GET() {
       eggClickFrenzy: doc?.eggClickFrenzy ?? false,
       eggEmojiCatch: doc?.eggEmojiCatch ?? false,
       eggForgotPassword: doc?.eggForgotPassword ?? false,
+      eggSlotMachineEmoji: doc?.eggSlotMachineEmoji ?? false,
     })
   } catch (err) {
     console.error("GET /api/admin/settings:", err)
@@ -38,7 +39,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json()
-    const allowedFields = ["pricingPageVisible", "eggSuperEarlyAccess", "eggClickFrenzy", "eggEmojiCatch", "eggForgotPassword"]
+    const allowedFields = ["pricingPageVisible", "eggSuperEarlyAccess", "eggClickFrenzy", "eggEmojiCatch", "eggForgotPassword", "eggSlotMachineEmoji"]
     const $set: Record<string, boolean> = {}
     for (const field of allowedFields) {
       if (typeof body[field] === "boolean") $set[field] = body[field]
