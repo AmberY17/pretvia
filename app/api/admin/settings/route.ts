@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json()
-    const allowedFields = ["pricingPageVisible", "eggSuperEarlyAccess", "eggClickFrenzy", "eggEmojiCatch", "eggForgotPassword", "eggSlotMachineEmoji", "eggRunawayTrash"]
+    const allowedFields = ["pricingPageVisible", "eggSuperEarlyAccess", "eggClickFrenzy", "eggEmojiCatch", "eggForgotPassword", "eggSlotMachineEmoji", "eggRunawayTrash", "eggChaosReset"]
     const $set: Record<string, boolean> = {}
     for (const field of allowedFields) {
       if (typeof body[field] === "boolean") $set[field] = body[field]

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { RotateCcw } from "lucide-react";
+import { FilterChaosOverlay } from "@/components/main/dashboard/filters/filter-chaos-overlay";
 import { SidebarProfile } from "@/components/main/dashboard/sidebar/sidebar-profile";
 import { CollapsibleFilterSection } from "@/components/main/dashboard/filters/collapsible-filter-section";
 import { TagFilter } from "@/components/main/dashboard/filters/tag-filter";
@@ -76,8 +77,58 @@ export function DashboardSidebar({
         : { tags: false, date: false, logType: false },
   );
 
+  const [eggChaosReset, setEggChaosReset] = useState(false);
+  const [resetRotation, setResetRotation] = useState(0);
+  const [chaosMode, setChaosMode] = useState(false);
+  const [chaosSectionData, setChaosSectionData] = useState<
+    { rect: DOMRect; title: string }[]
+  >([]);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const resetClicksRef = useRef<number[]>([]);
+  const pendingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/egg")
+      .then((r) => r.json())
+      .then((data) => {
+        if (typeof data.eggChaosReset === "boolean") {
+          setEggChaosReset(data.eggChaosReset);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleResetAll = () => {
-    handlers.clearAllFilters();
+    const now = Date.now();
+    if (pendingClearRef.current) clearTimeout(pendingClearRef.current);
+    resetClicksRef.current = resetClicksRef.current.filter(
+      (t) => now - t < 1500,
+    );
+    resetClicksRef.current.push(now);
+    setResetRotation((r) => r - 360);
+
+    if (resetClicksRef.current.length >= 5 && eggChaosReset) {
+      resetClicksRef.current = [];
+      const sections: { rect: DOMRect; title: string }[] = [];
+      sectionRefs.current.forEach((el, i) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const title =
+            user.role === "coach"
+              ? (coachSections[i]?.title ?? "")
+              : (["Tags", "Date", "Log Type"][i] ?? "");
+          sections.push({ rect, title });
+        }
+      });
+      setChaosSectionData(sections);
+      setChaosMode(true);
+      return;
+    }
+
+    pendingClearRef.current = setTimeout(() => {
+      handlers.clearAllFilters();
+      resetClicksRef.current = [];
+    }, 400);
   };
 
   useEffect(() => {
@@ -215,83 +266,123 @@ export function DashboardSidebar({
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               FILTER BY
             </h3>
-            {hasAnyFilter && (
+            {(hasAnyFilter || chaosMode) && (
               <button
                 type="button"
                 onClick={handleResetAll}
                 className="rounded-md p-0.5 text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Reset all filters"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw
+                  className="h-3.5 w-3.5"
+                  style={{
+                    transform: `rotate(${resetRotation}deg)`,
+                    transition: "transform 0.35s ease",
+                  }}
+                />
               </button>
             )}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className={`flex flex-col gap-3${chaosMode ? " opacity-0" : ""}`}>
             {user.role === "coach" ? (
-              coachSections.map((s) => (
-                <CollapsibleFilterSection
+              coachSections.map((s, i) => (
+                <div
                   key={s.id}
-                  title={s.title}
-                  open={openSections[s.id] ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, [s.id]: open }))
-                  }
+                  ref={(el) => {
+                    sectionRefs.current[i] = el;
+                  }}
                 >
-                  {s.node}
-                </CollapsibleFilterSection>
+                  <CollapsibleFilterSection
+                    title={s.title}
+                    open={openSections[s.id] ?? false}
+                    onOpenChange={(open) =>
+                      setOpenSections((prev) => ({ ...prev, [s.id]: open }))
+                    }
+                  >
+                    {s.node}
+                  </CollapsibleFilterSection>
+                </div>
               ))
             ) : (
               <>
-                <CollapsibleFilterSection
-                  title="Tags"
-                  open={openSections.tags ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, tags: open }))
-                  }
+                <div
+                  ref={(el) => {
+                    sectionRefs.current[0] = el;
+                  }}
                 >
-                  <TagFilter
-                    tags={tags}
-                    activeTags={filters.activeTags}
-                    onToggle={handlers.handleToggleTag}
-                    onClear={handlers.handleClearTags}
-                    hideHeader
-                    variant="sidebar"
-                  />
-                </CollapsibleFilterSection>
-                <CollapsibleFilterSection
-                  title="Date"
-                  open={openSections.date ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, date: open }))
-                  }
+                  <CollapsibleFilterSection
+                    title="Tags"
+                    open={openSections.tags ?? false}
+                    onOpenChange={(open) =>
+                      setOpenSections((prev) => ({ ...prev, tags: open }))
+                    }
+                  >
+                    <TagFilter
+                      tags={tags}
+                      activeTags={filters.activeTags}
+                      onToggle={handlers.handleToggleTag}
+                      onClear={handlers.handleClearTags}
+                      hideHeader
+                      variant="sidebar"
+                    />
+                  </CollapsibleFilterSection>
+                </div>
+                <div
+                  ref={(el) => {
+                    sectionRefs.current[1] = el;
+                  }}
                 >
-                  <DateFilter
-                    variant="sidebar"
-                    dateFilter={filters.dateFilter}
-                    customDates={filters.customDates}
-                    onDateFilterChange={handlers.setDateFilter}
-                    onCustomDatesChange={handlers.setCustomDates}
-                    onClear={handlers.clearDateFilter}
-                    hideHeader
-                  />
-                </CollapsibleFilterSection>
-                <CollapsibleFilterSection
-                  title="Log Type"
-                  open={openSections.logType ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, logType: open }))
-                  }
+                  <CollapsibleFilterSection
+                    title="Date"
+                    open={openSections.date ?? false}
+                    onOpenChange={(open) =>
+                      setOpenSections((prev) => ({ ...prev, date: open }))
+                    }
+                  >
+                    <DateFilter
+                      variant="sidebar"
+                      dateFilter={filters.dateFilter}
+                      customDates={filters.customDates}
+                      onDateFilterChange={handlers.setDateFilter}
+                      onCustomDatesChange={handlers.setCustomDates}
+                      onClear={handlers.clearDateFilter}
+                      hideHeader
+                    />
+                  </CollapsibleFilterSection>
+                </div>
+                <div
+                  ref={(el) => {
+                    sectionRefs.current[2] = el;
+                  }}
                 >
-                  <VisibilityFilter
-                    variant="sidebar"
-                    filterVisibility={filters.filterVisibility}
-                    onFilter={handlers.setFilterVisibility}
-                    hideHeader
-                  />
-                </CollapsibleFilterSection>
+                  <CollapsibleFilterSection
+                    title="Log Type"
+                    open={openSections.logType ?? false}
+                    onOpenChange={(open) =>
+                      setOpenSections((prev) => ({ ...prev, logType: open }))
+                    }
+                  >
+                    <VisibilityFilter
+                      variant="sidebar"
+                      filterVisibility={filters.filterVisibility}
+                      onFilter={handlers.setFilterVisibility}
+                      hideHeader
+                    />
+                  </CollapsibleFilterSection>
+                </div>
               </>
             )}
           </div>
+          {chaosMode && chaosSectionData.length > 0 && (
+            <FilterChaosOverlay
+              sections={chaosSectionData}
+              onComplete={() => {
+                setChaosMode(false);
+                setChaosSectionData([]);
+                handlers.clearAllFilters();
+              }}
+            />
+          )}
         </div>
       )}
     </aside>

@@ -11,6 +11,7 @@ interface EasterEggsToggleProps {
   initialEggForgotPassword: boolean
   initialEggSlotMachineEmoji: boolean
   initialEggRunawayTrash: boolean
+  initialEggChaosReset: boolean
 }
 
 function EggRow({
@@ -44,6 +45,7 @@ export function EasterEggsToggle({
   initialEggForgotPassword,
   initialEggSlotMachineEmoji,
   initialEggRunawayTrash,
+  initialEggChaosReset,
 }: EasterEggsToggleProps) {
   const [eggSuperEarlyAccess, setEggSuperEarlyAccess] = useState(initialEggSuperEarlyAccess)
   const [eggClickFrenzy, setEggClickFrenzy] = useState(initialEggClickFrenzy)
@@ -51,6 +53,7 @@ export function EasterEggsToggle({
   const [eggForgotPassword, setEggForgotPassword] = useState(initialEggForgotPassword)
   const [eggSlotMachineEmoji, setEggSlotMachineEmoji] = useState(initialEggSlotMachineEmoji)
   const [eggRunawayTrash, setEggRunawayTrash] = useState(initialEggRunawayTrash)
+  const [eggChaosReset, setEggChaosReset] = useState(initialEggChaosReset)
 
   const setters: Record<string, (val: boolean) => void> = {
     eggSuperEarlyAccess: setEggSuperEarlyAccess,
@@ -59,6 +62,7 @@ export function EasterEggsToggle({
     eggForgotPassword: setEggForgotPassword,
     eggSlotMachineEmoji: setEggSlotMachineEmoji,
     eggRunawayTrash: setEggRunawayTrash,
+    eggChaosReset: setEggChaosReset,
   }
 
   const values: Record<string, boolean> = {
@@ -68,6 +72,7 @@ export function EasterEggsToggle({
     eggForgotPassword,
     eggSlotMachineEmoji,
     eggRunawayTrash,
+    eggChaosReset,
   }
 
   const handleToggle = async (field: string, checked: boolean) => {
@@ -135,6 +140,13 @@ export function EasterEggsToggle({
         description="Trash icon escapes when hovered — athletes have to catch it to delete a slot"
         field="eggRunawayTrash"
         checked={eggRunawayTrash}
+        onToggle={handleToggle}
+      />
+      <EggRow
+        label="Chaos reset"
+        description="Spam the reset button 5× — filter sections fly around the screen"
+        field="eggChaosReset"
+        checked={eggChaosReset}
         onToggle={handleToggle}
       />
     </div>

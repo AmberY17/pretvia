@@ -37,6 +37,7 @@ export default async function AdminPage() {
   const eggForgotPassword = siteSettings?.eggForgotPassword ?? false
   const eggSlotMachineEmoji = siteSettings?.eggSlotMachineEmoji ?? false
   const eggRunawayTrash = siteSettings?.eggRunawayTrash ?? false
+  const eggChaosReset = siteSettings?.eggChaosReset ?? false
 
   return (
     <main className="min-h-screen bg-background px-6 py-12">
@@ -62,6 +63,7 @@ export default async function AdminPage() {
               initialEggForgotPassword={eggForgotPassword}
               initialEggSlotMachineEmoji={eggSlotMachineEmoji}
               initialEggRunawayTrash={eggRunawayTrash}
+              initialEggChaosReset={eggChaosReset}
             />
           </div>
         </section>

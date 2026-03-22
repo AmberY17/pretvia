@@ -9,6 +9,7 @@ export async function GET() {
       eggForgotPassword: doc?.eggForgotPassword ?? false,
       eggSlotMachineEmoji: doc?.eggSlotMachineEmoji ?? false,
       eggRunawayTrash: doc?.eggRunawayTrash ?? false,
+      eggChaosReset: doc?.eggChaosReset ?? false,
     })
   } catch (err) {
     console.error("GET /api/auth/egg:", err)
