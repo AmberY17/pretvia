@@ -44,6 +44,12 @@ export const metadata: Metadata = {
     title: 'Pretvia',
     description: siteDescription,
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Pretvia',
+  },
 };
 
 export const viewport: Viewport = {
