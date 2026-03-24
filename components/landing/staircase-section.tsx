@@ -155,7 +155,7 @@ function MomentReadyCard({
 
 export function StaircaseSection() {
   const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { amount: 0.1, once: false });
+  const inView = useInView(ref, { amount: 0.1, once: true });
   const [showConfetti, setShowConfetti] = useState(false);
   const [badgeRevealed, setBadgeRevealed] = useState(false);
   const isSm = useMediaQuery("(min-width: 640px)");

@@ -4,7 +4,6 @@ import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingFooter } from "@/components/landing/landing-footer"
 import { HeroSection } from "@/components/landing/hero-section"
 import { ProductSection } from "@/components/landing/product-section"
-import { GrowthTreeSection } from "@/components/landing/growth-tree-section"
 import { StaircaseSection } from "@/components/landing/staircase-section"
 import { BuiltForRoleSection } from "@/components/landing/built-for-role-section"
 import { FinalHookSection } from "@/components/landing/final-hook-section"
@@ -42,7 +41,6 @@ export default async function LandingPage() {
 
       <HeroSection />
       <ProductSection />
-      <GrowthTreeSection />
       <StaircaseSection />
       <BuiltForRoleSection />
       <FinalHookSection />

@@ -1,23 +1,13 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { floatingEmojis } from "@/components/landing/landing-data";
 
 export function HeroSection() {
-  const { scrollY } = useScroll();
-  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
-  const heroScale = useTransform(scrollY, [0, 400], [1, 0.95]);
-  const heroY = useTransform(scrollY, [0, 400], [0, 100]);
-  const prefersReduced =
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false;
+  const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.section
-      style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
-      className="relative flex min-h-screen flex-col items-center justify-center px-4 pt-16 sm:px-6"
-    >
+    <section className="relative flex min-h-screen flex-col items-center justify-center px-4 pt-16 sm:px-6">
       {/* Gradient orb background */}
       <div
         className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -54,27 +44,11 @@ export function HeroSection() {
           {floatingEmojis.map((emoji, i) => (
             <motion.span
               key={i}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-xl shadow-lg sm:h-14 sm:w-14 sm:text-2xl"
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-xl shadow-lg sm:h-14 sm:w-14 sm:text-2xl${shouldReduceMotion ? "" : " animate-float"}`}
+              style={shouldReduceMotion ? undefined : { animationDelay: `${i * 0.3}s` }}
               initial={{ opacity: 0, scale: 0 }}
-              animate={
-                prefersReduced
-                  ? { opacity: 1, scale: 1 }
-                  : { opacity: 1, scale: 1, y: [0, -8, 0] }
-              }
-              transition={
-                prefersReduced
-                  ? { delay: 0.5 + i * 0.1, duration: 0.3 }
-                  : {
-                      opacity: { delay: 0.5 + i * 0.1, duration: 0.3 },
-                      scale: { delay: 0.5 + i * 0.1, duration: 0.3 },
-                      y: {
-                        duration: 3,
-                        delay: i * 0.3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      },
-                    }
-              }
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 + i * 0.1, duration: 0.3 }}
             >
               {emoji}
             </motion.span>
@@ -89,23 +63,19 @@ export function HeroSection() {
         transition={{ delay: 1.2 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
       >
-        <motion.div
-          animate={prefersReduced ? {} : { y: [0, 8, 0] }}
-          transition={prefersReduced ? {} : { duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center gap-2 text-muted-foreground"
-        >
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <span className="text-xs font-medium">Scroll to explore</span>
           <div className="h-8 w-5 rounded-full border-2 border-muted-foreground/50">
             <motion.div
-              animate={prefersReduced ? {} : { y: [2, 14, 2] }}
+              animate={shouldReduceMotion ? {} : { y: [2, 14, 2] }}
               transition={
-                prefersReduced ? {} : { duration: 1.5, repeat: Infinity }
+                shouldReduceMotion ? {} : { duration: 1.5, repeat: Infinity }
               }
               className="mx-auto mt-1 h-2 w-1.5 rounded-full bg-primary"
             />
           </div>
-        </motion.div>
+        </div>
       </motion.div>
-    </motion.section>
+    </section>
   );
 }
