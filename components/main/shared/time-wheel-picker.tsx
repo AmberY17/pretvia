@@ -1,5 +1,6 @@
 "use client";
 
+import "@ncdai/react-wheel-picker/style.css";
 import { useState } from "react";
 import { Clock } from "lucide-react";
 import { WheelPicker, WheelPickerWrapper } from "@ncdai/react-wheel-picker";

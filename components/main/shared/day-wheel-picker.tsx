@@ -1,5 +1,6 @@
 "use client";
 
+import "@ncdai/react-wheel-picker/style.css";
 import { useState } from "react";
 import { WheelPicker, WheelPickerWrapper } from "@ncdai/react-wheel-picker";
 import {

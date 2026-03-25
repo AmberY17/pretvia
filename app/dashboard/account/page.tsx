@@ -10,6 +10,7 @@ import { AccountTrainingSlotsSection } from "@/components/main/account/account-t
 import { AccountCelebrationSection } from "@/components/main/account/account-celebration-section";
 import { AccountFilterOrderSection } from "@/components/main/account/account-filter-order-section";
 import { AccountDeleteSection } from "@/components/main/account/account-delete-section";
+import { AccountInstallSection } from "@/components/main/account/account-install-section";
 import { toast } from "sonner";
 import {
   CELEBRATION_KEY,
@@ -283,6 +284,8 @@ export default function AccountPage() {
               onFilterDragEnd={handleFilterDragEnd}
             />
           )}
+
+          <AccountInstallSection />
 
           <AccountDeleteSection
             deleteConfirmOpen={deleteConfirmOpen}

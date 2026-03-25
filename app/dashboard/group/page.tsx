@@ -136,6 +136,9 @@ export default function GroupManagementPage() {
           return;
         }
         lastSavedTrainingScheduleRef.current = trainingSchedule;
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.groups.trainingSchedule(user.groupId),
+        });
         toast.success("Training schedule updated.");
       } catch {
         toast.error("Network error");
