@@ -14,7 +14,7 @@ const TAGLINES: Record<string, string> = {
 }
 
 interface WelcomeBannerProps {
-  user: { displayName?: string; role?: string }
+  user: { displayName?: string | null; role?: string | null }
 }
 
 export function WelcomeBanner({ user }: WelcomeBannerProps) {
