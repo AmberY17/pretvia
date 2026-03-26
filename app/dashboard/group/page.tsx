@@ -118,6 +118,7 @@ export default function GroupManagementPage() {
   // Auto-save training schedule when it changes (debounced). Skip the first run after load.
   useEffect(() => {
     if (!user?.groupId) return;
+    const groupId = user.groupId;
     if (!trainingScheduleSaveSkippedRef.current) {
       trainingScheduleSaveSkippedRef.current = true;
       return;
@@ -125,7 +126,7 @@ export default function GroupManagementPage() {
     if (trainingSchedule === lastSavedTrainingScheduleRef.current) return;
     const timeout = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/groups/${user.groupId}/training-schedule`, {
+        const res = await fetch(`/api/groups/${groupId}/training-schedule`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ trainingSchedule }),
@@ -137,7 +138,7 @@ export default function GroupManagementPage() {
         }
         lastSavedTrainingScheduleRef.current = trainingSchedule;
         queryClient.invalidateQueries({
-          queryKey: queryKeys.groups.trainingSchedule(user.groupId),
+          queryKey: queryKeys.groups.trainingSchedule(groupId),
         });
         toast.success("Training schedule updated.");
       } catch {
