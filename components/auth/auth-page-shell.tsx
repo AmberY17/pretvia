@@ -47,6 +47,20 @@ export function AuthPageShell({
           </button>
         )}
         {children}
+        <div className="mt-8 flex justify-center gap-4">
+          <Link
+            href="/privacy"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/terms"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Terms of Service
+          </Link>
+        </div>
       </div>
     </main>
   );

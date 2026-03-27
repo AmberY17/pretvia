@@ -5,9 +5,20 @@ import { getDb } from "@/lib/mongodb"
 import { createSession } from "@/lib/auth"
 import { isTestAccount } from "@/lib/auth-config"
 import { sendVerificationEmail } from "@/lib/resend"
+import { signupRateLimiter, getIp } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
   try {
+    if (signupRateLimiter) {
+      const { success } = await signupRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many signup attempts. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
+
     const { email, password, displayName, firstName, lastName, dateOfBirth, role, waitlistToken } = await req.json()
 
     if (!email || !password) {

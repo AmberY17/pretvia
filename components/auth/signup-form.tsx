@@ -9,6 +9,7 @@ import { Loader2, Users, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CardContent } from "@/components/ui/card";
 import { AuthCardHeader } from "@/components/auth/auth-card-header";
 import { GoogleAuthButton } from "@/components/auth/google-auth-button";
@@ -35,6 +36,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
     searchParams.get("signup") === "coach" ? "coach" : "athlete"
   );
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // Chrome does not enforce minLength on password inputs; use setCustomValidity
@@ -55,6 +57,10 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
       const ln = lastName.trim();
       if (fn.length < 2 || ln.length < 2) {
         toast.error("First and last name must be at least 2 characters each");
+        return;
+      }
+      if (!agreedToTerms) {
+        toast.error("Please agree to the Terms of Service and Privacy Policy");
         return;
       }
       setLoading(true);
@@ -97,7 +103,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         setLoading(false);
       }
     },
-    [firstName, lastName, email, password, dateOfBirth, role, waitlistToken, router, queryClient],
+    [firstName, lastName, email, password, dateOfBirth, role, waitlistToken, agreedToTerms, router, queryClient],
   );
 
   const isCoach = role === "coach";
@@ -244,9 +250,27 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
                   className="bg-secondary border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(v) => setAgreedToTerms(v === true)}
+                  className="mt-0.5"
+                />
+                <label htmlFor="terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                  I agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !agreedToTerms}
                 className="mt-2 w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {loading ? (

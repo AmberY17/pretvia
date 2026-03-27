@@ -85,6 +85,7 @@ describe("Sign Up", () => {
     cy.findByLabelText("Last name").type("B");
     cy.findByLabelText("Email").type("newuser@test.pretvia.com");
     cy.findByLabelText("Password").type("TestPass123!", { log: false });
+    cy.get("#terms").click();
     cy.findByRole("button", { name: "Create Account" }).click();
     cy.contains("First and last name must be at least 2 characters each").should("be.visible");
   });
@@ -94,6 +95,7 @@ describe("Sign Up", () => {
     cy.findByLabelText("Last name").type("User");
     cy.findByLabelText("Email").type("newuser@test.pretvia.com");
     cy.findByLabelText("Password").type("12345", { log: false });
+    cy.get("#terms").click();
     cy.findByRole("button", { name: "Create Account" }).click();
     cy.findByLabelText("Password").then(($el) => {
       expect(($el[0] as HTMLInputElement).validity.valid).to.be.false;
@@ -105,6 +107,7 @@ describe("Sign Up", () => {
     cy.findByLabelText("Last name").type("Athlete");
     cy.findByLabelText("Email").type("athlete@test.pretvia.com");
     cy.findByLabelText("Password").type("TestPass123!", { log: false });
+    cy.get("#terms").click();
     cy.findByRole("button", { name: "Create Account" }).click();
     cy.contains("An account with this email already exists").should("be.visible");
   });
@@ -173,11 +176,13 @@ describe("Reset Password", () => {
   });
 
   it("shows form with invalid token and error on submit", () => {
+    cy.intercept("POST", "/api/auth/reset-password").as("resetPassword");
     cy.visit("/auth/reset-password?token=invalid-token-123");
     cy.contains("Set new password").should("be.visible");
     cy.findByLabelText("New password").type("NewPass123!", { log: false });
     cy.findByLabelText("Confirm password").type("NewPass123!", { log: false });
     cy.findByRole("button", { name: "Update password" }).click();
+    cy.wait("@resetPassword");
     cy.contains("Invalid or expired").should("be.visible");
   });
 });

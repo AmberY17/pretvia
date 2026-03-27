@@ -3,9 +3,20 @@ import bcrypt from "bcryptjs"
 import { getDb } from "@/lib/mongodb"
 import { createSession } from "@/lib/auth"
 import { isTestAccount } from "@/lib/auth-config"
+import { loginRateLimiter, getIp } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
   try {
+    if (loginRateLimiter) {
+      const { success } = await loginRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many login attempts. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
+
     const { email, password } = await req.json()
 
     if (!email || !password) {
