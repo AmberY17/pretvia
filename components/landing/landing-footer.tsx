@@ -48,6 +48,18 @@ export function LandingFooter({
               {secondaryLink.label}
             </Link>
           )}
+          <Link
+            href="/privacy"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Privacy
+          </Link>
+          <Link
+            href="/terms"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Terms
+          </Link>
           <div className="flex items-center gap-1">
             <ChartNoAxesCombined className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">

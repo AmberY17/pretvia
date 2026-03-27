@@ -2,9 +2,20 @@ import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { getDb } from "@/lib/mongodb"
 import { sendPasswordResetEmail } from "@/lib/resend"
+import { passwordResetRateLimiter, getIp } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
   try {
+    if (passwordResetRateLimiter) {
+      const { success } = await passwordResetRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 }
+        )
+      }
+    }
+
     const { email } = await req.json()
 
     if (!email) {

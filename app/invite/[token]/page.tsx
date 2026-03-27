@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { apiFetcher } from "@/lib/query-client";
 import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -197,12 +198,17 @@ function InviteUnder13Form({
   const [parentFirstName, setParentFirstName] = useState("");
   const [parentLastName, setParentLastName] = useState("");
   const [parentPassword, setParentPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [requiresChildVerification, setRequiresChildVerification] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (childEmail.trim().toLowerCase() === invite.email.toLowerCase()) {
       toast.error("Child's email must be different from your email");
+      return;
+    }
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Terms of Service and Privacy Policy");
       return;
     }
     const result = await redeem({
@@ -368,7 +374,26 @@ function InviteUnder13Form({
                   className="bg-secondary border-border"
                 />
               </div>
-              <Button type="submit" disabled={redeeming} className="mt-2 w-full">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="under13-terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(v) => setAgreedToTerms(v === true)}
+                  className="mt-0.5"
+                />
+                <label htmlFor="under13-terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                  I agree to the{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                    Privacy Policy
+                  </a>
+                  , and I consent to creating an account for my child as their parent or guardian.
+                </label>
+              </div>
+              <Button type="submit" disabled={redeeming || !agreedToTerms} className="mt-2 w-full">
                 {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : "Set up and continue"}
               </Button>
             </form>
@@ -398,6 +423,7 @@ function InviteAthleteForm({
   const [email, setEmail] = useState(invite.email);
   const [password, setPassword] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     setEmail(invite.email);
@@ -422,6 +448,10 @@ function InviteAthleteForm({
         email: invite.email,
       });
     } else {
+      if (!agreedToTerms) {
+        toast.error("Please agree to the Terms of Service and Privacy Policy");
+        return;
+      }
       await redeem({
         createAccount: true,
         firstName,
@@ -487,7 +517,27 @@ function InviteAthleteForm({
                   className="bg-secondary border-border"
                 />
               </div>
-              <Button type="submit" disabled={redeeming} className="mt-2 w-full">
+              {!isLogin && (
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="athlete-terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(v) => setAgreedToTerms(v === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="athlete-terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                    I agree to the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+              )}
+              <Button type="submit" disabled={redeeming || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
                 {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and join" : "Create account and join"}
               </Button>
               <button
@@ -530,6 +580,7 @@ function InviteParentForm({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -547,6 +598,10 @@ function InviteParentForm({
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
       await redeem({ createAccount: false, email: invite.email });
     } else {
+      if (!agreedToTerms) {
+        toast.error("Please agree to the Terms of Service and Privacy Policy");
+        return;
+      }
       await redeem({
         createAccount: true,
         firstName,
@@ -605,7 +660,27 @@ function InviteParentForm({
                   className="bg-secondary border-border"
                 />
               </div>
-              <Button type="submit" disabled={redeeming} className="mt-2 w-full">
+              {!isLogin && (
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="parent-terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(v) => setAgreedToTerms(v === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="parent-terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                    I agree to the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+              )}
+              <Button type="submit" disabled={redeeming || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
                 {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and continue" : "Create account"}
               </Button>
               <button

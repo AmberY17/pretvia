@@ -1,10 +1,10 @@
 import { MongoClient, type Db } from "mongodb";
+import { validateEnv } from "@/lib/env";
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("Please add your MONGODB_URI to environment variables");
-}
+validateEnv();
 
-const uri = process.env.MONGODB_URI;
+// validateEnv() above guarantees MONGODB_URI is set
+const uri = process.env.MONGODB_URI as string;
 const options: Record<string, unknown> = {
   // Disable automatic IPv4/IPv6 family selection — the sandbox's IPv6
   // path triggers an OpenSSL TLS handshake failure with Atlas.
