@@ -128,6 +128,7 @@ describe("Coach signup with waitlist token", () => {
     cy.findByLabelText("Last name").type("Waitlist");
     cy.findByLabelText("Email").type(uniqueEmail);
     cy.findByLabelText("Password").type("TestPass123!", { log: false });
+    cy.get("#terms").click();
     cy.findByRole("button", { name: "Create Account" }).click();
 
     cy.contains("Check your email to verify your account.").should("be.visible");

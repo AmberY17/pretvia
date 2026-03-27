@@ -109,7 +109,7 @@ describe("Athlete Account Settings", () => {
     it("shows Delete Account section", () => {
       cy.login(DELETE_EMAIL, DELETE_PASSWORD)
       cy.visit("/dashboard/account")
-      cy.contains(/Delete Account/i).should("be.visible")
+      cy.contains(/Delete Account/i).scrollIntoView().should("be.visible")
     })
 
     it("shows confirmation dialog and can cancel", () => {
