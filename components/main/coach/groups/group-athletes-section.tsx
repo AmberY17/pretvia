@@ -1,43 +1,40 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
-import { Users, Search, UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { InviteAthleteModal } from "./invite-athlete-modal";
-import { AthleteRow } from "./athlete-row";
-import type { Member, Role } from "@/types/dashboard";
+import React, { useState } from "react"
+import { Users, Search, UserPlus, Upload } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { InviteAthleteModal } from "./invite-athlete-modal"
+import { BulkInviteModal } from "./bulk-invite-modal"
+import { AthleteRow } from "./athlete-row"
+import type { Member, Role } from "@/types/dashboard"
 
 interface GroupAthletesSectionProps {
-  groupId: string;
-  athletes: Member[];
-  allAthletes: Member[];
-  athleteSearch: string;
-  setAthleteSearch: (v: string) => void;
-  onMutateMembers?: () => void;
-  roles: Role[];
-  roleDropdownAthleteId: string | null;
-  setRoleDropdownAthleteId: React.Dispatch<
-    React.SetStateAction<string | null>
-  >;
-  transferUserId: string | null;
-  setTransferUserId: React.Dispatch<React.SetStateAction<string | null>>;
-  transferGroupId: string;
-  setTransferGroupId: (v: string) => void;
-  transferDropdownOpen: boolean;
-  setTransferDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  transferSearch: string;
-  setTransferSearch: (v: string) => void;
-  transferableGroups: { id: string; name: string }[];
-  filteredTransferGroups: { id: string; name: string }[];
-  removeConfirmUserId: string | null;
-  setRemoveConfirmUserId: React.Dispatch<
-    React.SetStateAction<string | null>
-  >;
-  saving: boolean;
-  onAssignRoles: (userId: string, roleIds: string[]) => void;
-  onTransfer: () => void;
-  onRemoveAthlete: (userId: string) => void;
+  groupId: string
+  athletes: Member[]
+  allAthletes: Member[]
+  athleteSearch: string
+  setAthleteSearch: (v: string) => void
+  onMutateMembers?: () => void
+  roles: Role[]
+  roleDropdownAthleteId: string | null
+  setRoleDropdownAthleteId: React.Dispatch<React.SetStateAction<string | null>>
+  transferUserId: string | null
+  setTransferUserId: React.Dispatch<React.SetStateAction<string | null>>
+  transferGroupId: string
+  setTransferGroupId: (v: string) => void
+  transferDropdownOpen: boolean
+  setTransferDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>
+  transferSearch: string
+  setTransferSearch: (v: string) => void
+  transferableGroups: { id: string; name: string }[]
+  filteredTransferGroups: { id: string; name: string }[]
+  removeConfirmUserId: string | null
+  setRemoveConfirmUserId: React.Dispatch<React.SetStateAction<string | null>>
+  saving: boolean
+  onAssignRoles: (userId: string, roleIds: string[]) => void
+  onTransfer: () => void
+  onRemoveAthlete: (userId: string) => void
 }
 
 export function GroupAthletesSection({
@@ -67,7 +64,8 @@ export function GroupAthletesSection({
   onTransfer,
   onRemoveAthlete,
 }: GroupAthletesSectionProps) {
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -76,19 +74,36 @@ export function GroupAthletesSection({
           <Users className="h-4 w-4" />
           Athletes
         </h2>
-        <Button
-          size="sm"
-          variant="ghost-primary"
-          onClick={() => setInviteOpen(true)}
-          className="gap-1 text-xs"
-        >
-          <UserPlus className="h-3.5 w-3.5" />
-          Invite
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setBulkOpen(true)}
+            className="gap-1 text-xs"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Import CSV
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost-primary"
+            onClick={() => setInviteOpen(true)}
+            className="gap-1 text-xs"
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            Invite
+          </Button>
+        </div>
       </div>
       <InviteAthleteModal
         open={inviteOpen}
         onOpenChange={setInviteOpen}
+        groupId={groupId}
+        onSent={onMutateMembers ?? (() => {})}
+      />
+      <BulkInviteModal
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
         groupId={groupId}
         onSent={onMutateMembers ?? (() => {})}
       />
@@ -109,15 +124,11 @@ export function GroupAthletesSection({
           No athletes in this group yet. Invite athletes by email to add them.
         </p>
       ) : athletes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No athletes match your search.
-        </p>
+        <p className="text-sm text-muted-foreground">No athletes match your search.</p>
       ) : (
         <div
           className={`space-y-4 ${
-            athletes.length > 4
-              ? "max-h-[340px] overflow-y-auto scrollbar-hidden"
-              : ""
+            athletes.length > 4 ? "max-h-[340px] overflow-y-auto scrollbar-hidden" : ""
           }`}
         >
           {athletes.map((a) => (
@@ -149,5 +160,5 @@ export function GroupAthletesSection({
         </div>
       )}
     </section>
-  );
+  )
 }

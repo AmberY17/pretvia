@@ -2,47 +2,39 @@ import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 
-interface FilterParams {
-  userId: string
-  userRole: string | undefined
-  userGroupId: string | null
-  tags: string[]
-  filterUserId: string | null
-  filterRoleId: string | null
-  filterCheckinId: string | null
-  dateFrom: string | null
-  dateTo: string | null
-  datesParam: string | null
-  cursor: string | null
-}
-
 /**
  * Build the base visibility filter for log queries.
  * Determines which logs a user can see based on their role and group membership.
  */
 export async function buildVisibilityFilter(
   db: Db,
-  params: Pick<FilterParams, "userId" | "userRole" | "userGroupId" | "filterUserId" | "filterRoleId">,
+  params: {
+    userId: string
+    userRole: string | undefined
+    userGroupId: string | null
+    filterUserIds: string[]
+    filterRoleIds: string[]
+  },
 ): Promise<Record<string, unknown>> {
-  const { userId, userRole, userGroupId, filterUserId, filterRoleId } = params
+  const { userId, userRole, userGroupId, filterUserIds, filterRoleIds } = params
 
   if (!userGroupId) {
     return { userId }
   }
 
-  // Get all members of the same group (support both old groupId and new groupIds)
+  // Get all members of the same group
   const groupMembers = await db
     .collection("users")
-    .find({ $or: [{ groupIds: userGroupId }, { groupId: userGroupId }] })
+    .find({ groupIds: userGroupId })
     .project({ _id: 1 })
     .toArray()
   let memberIds = groupMembers.map((m) => m._id.toString())
 
-  // Filter by role: restrict to athletes with that roleId
-  if (filterRoleId && userRole === "coach") {
+  // Filter by roles: restrict to athletes with any of the selected roleIds
+  if (filterRoleIds.length > 0 && userRole === "coach") {
     const withRole = await db
       .collection("groupMemberships")
-      .find({ groupId: userGroupId, roleIds: filterRoleId })
+      .find({ groupId: userGroupId, roleIds: { $in: filterRoleIds } })
       .project({ userId: 1 })
       .toArray()
     const roleMemberIds = (withRole as { userId: string }[]).map((m) => m.userId)
@@ -50,25 +42,18 @@ export async function buildVisibilityFilter(
   }
 
   const coachVisibilityCondition = {
-    $or: [
-      { visibility: "coach" },
-      { visibility: { $exists: false }, isGroup: true },
-    ],
+    $or: [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }],
   }
 
-  if (filterUserId && userRole === "coach") {
-    if (memberIds.includes(filterUserId)) {
-      return { userId: filterUserId, ...coachVisibilityCondition }
-    }
-    return { _id: null } // no results — athlete doesn't match filters
+  if (filterUserIds.length > 0 && userRole === "coach") {
+    const validIds = filterUserIds.filter((id) => memberIds.includes(id))
+    if (validIds.length === 0) return { _id: null } // no results
+    return { userId: { $in: validIds }, ...coachVisibilityCondition }
   }
 
   if (userRole === "coach") {
     return {
-      $or: [
-        { userId },
-        { userId: { $in: memberIds }, ...coachVisibilityCondition },
-      ],
+      $or: [{ userId }, { userId: { $in: memberIds }, ...coachVisibilityCondition }],
     }
   }
 
@@ -129,10 +114,7 @@ export function applyCursorFilter(
     const cursorId = safeObjectId(idStr)
     if (!Number.isNaN(cursorTs.getTime()) && cursorId) {
       const cursorCondition = {
-        $or: [
-          { timestamp: { $lt: cursorTs } },
-          { timestamp: cursorTs, _id: { $lt: cursorId } },
-        ],
+        $or: [{ timestamp: { $lt: cursorTs } }, { timestamp: cursorTs, _id: { $lt: cursorId } }],
       }
       return { $and: [filter, cursorCondition] }
     }

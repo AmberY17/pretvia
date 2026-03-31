@@ -105,7 +105,7 @@ export async function POST(req: Request) {
         lastName: ln || undefined,
         dateOfBirth: dateOfBirth ?? null,
         role: userRole,
-        groupId: null,
+        activeGroupId: null,
         profileComplete: true,
         authProvider: "email",
         emailVerified: true,
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         displayName: name,
         role: userRole,
-        groupId: undefined,
+        activeGroupId: undefined,
       })
 
       return NextResponse.json({
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
           email: normalizedEmail,
           displayName: name,
           role: userRole,
-          groupId: null,
+          activeGroupId: null,
           profileComplete: true,
         },
       })

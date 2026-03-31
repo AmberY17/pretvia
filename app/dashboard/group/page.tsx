@@ -61,9 +61,9 @@ export default function GroupManagementPage() {
     roles: Role[];
     pendingAthletes?: PendingAthlete[];
   }>({
-    queryKey: [...queryKeys.members.all, user?.id, user?.groupId],
-    queryFn: () => apiFetcher(`/api/groups?groupId=${user!.groupId}`),
-    enabled: !!user?.groupId,
+    queryKey: [...queryKeys.members.all, user?.id, user?.activeGroupId],
+    queryFn: () => apiFetcher(`/api/groups?groupId=${user!.activeGroupId}`),
+    enabled: !!user?.activeGroupId,
   });
 
   const mutateMembers = useCallback(() => {
@@ -92,14 +92,14 @@ export default function GroupManagementPage() {
     : allAthletes;
   const roles = membersData?.roles ?? [];
   const coachGroups = coachGroupsData?.groups ?? [];
-  const transferableGroups = coachGroups.filter((g) => g.id !== user?.groupId);
+  const transferableGroups = coachGroups.filter((g) => g.id !== user?.activeGroupId);
 
   const { data: trainingScheduleData, isLoading: trainingScheduleLoading } = useQuery<{
     trainingScheduleTemplate: { dayOfWeek: number; time: string }[];
   }>({
-    queryKey: [...queryKeys.groups.trainingSchedule(user?.groupId ?? ""), user?.id],
-    queryFn: () => apiFetcher(`/api/groups/${user!.groupId}/training-schedule`),
-    enabled: !!user?.groupId,
+    queryKey: [...queryKeys.groups.trainingSchedule(user?.activeGroupId ?? ""), user?.id],
+    queryFn: () => apiFetcher(`/api/groups/${user!.activeGroupId}/training-schedule`),
+    enabled: !!user?.activeGroupId,
   });
 
   useEffect(() => {
@@ -117,8 +117,8 @@ export default function GroupManagementPage() {
 
   // Auto-save training schedule when it changes (debounced). Skip the first run after load.
   useEffect(() => {
-    if (!user?.groupId) return;
-    const groupId = user.groupId;
+    if (!user?.activeGroupId) return;
+    const groupId = user.activeGroupId;
     if (!trainingScheduleSaveSkippedRef.current) {
       trainingScheduleSaveSkippedRef.current = true;
       return;
@@ -146,7 +146,7 @@ export default function GroupManagementPage() {
       }
     }, 600);
     return () => clearTimeout(timeout);
-  }, [user?.groupId, trainingSchedule]);
+  }, [user?.activeGroupId, trainingSchedule]);
 
   const filteredTransferGroups = transferSearch.trim()
     ? transferableGroups.filter((g) =>
@@ -161,10 +161,10 @@ export default function GroupManagementPage() {
 
   // BUG FIX #5: Role CRUD now also invalidates tags and logs
   const handleAddRole = async () => {
-    if (!newRoleName.trim() || !user?.groupId) return;
+    if (!newRoleName.trim() || !user?.activeGroupId) return;
     setAddingRole(true);
     try {
-      const res = await fetch(`/api/groups/${user.groupId}/roles`, {
+      const res = await fetch(`/api/groups/${user.activeGroupId}/roles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newRoleName.trim() }),
@@ -186,10 +186,10 @@ export default function GroupManagementPage() {
   };
 
   const handleUpdateRole = async () => {
-    if (!editingRoleId || !newRoleName.trim() || !user?.groupId) return;
+    if (!editingRoleId || !newRoleName.trim() || !user?.activeGroupId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.groupId}/roles`, {
+      const res = await fetch(`/api/groups/${user.activeGroupId}/roles`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -215,11 +215,11 @@ export default function GroupManagementPage() {
 
   const handleDeleteRole = async (roleId?: string) => {
     const id = roleId ?? editingRoleId;
-    if (!user?.groupId || !id) return;
+    if (!user?.activeGroupId || !id) return;
     setDeleteRoleConfirmOpen(false);
     try {
       const res = await fetch(
-        `/api/groups/${user.groupId}/roles?roleId=${id}`,
+        `/api/groups/${user.activeGroupId}/roles?roleId=${id}`,
         { method: "DELETE" },
       );
       if (!res.ok) {
@@ -237,10 +237,10 @@ export default function GroupManagementPage() {
   };
 
   const handleAssignRoles = async (userId: string, roleIds: string[]) => {
-    if (!user?.groupId) return;
+    if (!user?.activeGroupId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.groupId}/members`, {
+      const res = await fetch(`/api/groups/${user.activeGroupId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "assignRoles", userId, roleIds }),
@@ -260,11 +260,11 @@ export default function GroupManagementPage() {
 
   // BUG FIX #1: Remove/transfer now properly invalidates logs, checkins, and stats
   const handleRemoveAthlete = async (userId: string) => {
-    if (!user?.groupId) return;
+    if (!user?.activeGroupId) return;
     setRemoveConfirmUserId(null);
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.groupId}/members`, {
+      const res = await fetch(`/api/groups/${user.activeGroupId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "remove", userId }),
@@ -286,10 +286,10 @@ export default function GroupManagementPage() {
   };
 
   const handleTransfer = async () => {
-    if (!transferUserId || !transferGroupId || !user?.groupId) return;
+    if (!transferUserId || !transferGroupId || !user?.activeGroupId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.groupId}/members`, {
+      const res = await fetch(`/api/groups/${user.activeGroupId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -329,7 +329,7 @@ export default function GroupManagementPage() {
       <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
         <div className="mx-auto max-w-2xl space-y-8">
           <AnimatePresence mode="wait">
-            {!user.groupId ? (
+            {!user.activeGroupId ? (
               <motion.div
                 key="empty-no-group"
                 initial={{ opacity: 0 }}
@@ -342,7 +342,7 @@ export default function GroupManagementPage() {
                   message="Join a group to manage it."
                 />
               </motion.div>
-            ) : user.groupId && (membersLoading || trainingScheduleLoading) ? (
+            ) : user.activeGroupId && (membersLoading || trainingScheduleLoading) ? (
               <motion.div
                 key="skeleton"
                 initial={{ opacity: 0 }}
@@ -386,7 +386,7 @@ export default function GroupManagementPage() {
                 onUpdateSlot={updateTrainingSlot}
               />
               <GroupAthletesSection
-                groupId={user.groupId}
+                groupId={user.activeGroupId}
                 athletes={athletes}
                 allAthletes={allAthletes}
                 athleteSearch={athleteSearch}

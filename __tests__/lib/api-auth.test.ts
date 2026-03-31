@@ -74,9 +74,9 @@ describe("canManageGroup", () => {
     expect(await canManageGroup(db, "user1", "group1")).toBe(true)
   })
 
-  it("falls back to singular groupId on user", async () => {
+  it("falls back to singular activeGroupId on user", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "coach", groupId: "group1" },
+      { _id: "user1", role: "coach", activeGroupId: "group1" },
       { _id: "group1", coachIds: ["other"] },
     )
     expect(await canManageGroup(db, "user1", "group1")).toBe(true)

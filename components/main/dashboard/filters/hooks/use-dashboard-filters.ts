@@ -1,136 +1,153 @@
-"use client";
+"use client"
 
-import { useState, useCallback } from "react";
-import type {
-  DateFilterKey,
-  CustomDateSelection,
-} from "@/lib/date-utils";
+import { useState, useCallback } from "react"
+import type { DateFilterKey, CustomDateSelection } from "@/lib/date-utils"
 import {
   useLogsUrl,
   type LogsUrlFilters,
-} from "@/components/main/dashboard/filters/hooks/use-logs-url";
-import type { ReviewStatusFilterValue, VisibilityFilterValue } from "@/types/dashboard";
+} from "@/components/main/dashboard/filters/hooks/use-logs-url"
+import type { ReviewStatus, VisibilityFilterValue } from "@/types/dashboard"
 
 export interface DashboardFiltersState {
-  activeTags: string[];
-  dateFilter: DateFilterKey;
-  customDates: CustomDateSelection | null;
-  filterAthleteId: string | null;
-  filterSessionId: string | null;
-  filterRoleId: string | null;
-  filterReviewStatus: ReviewStatusFilterValue;
-  filterVisibility: VisibilityFilterValue;
+  activeTags: string[]
+  dateFilter: DateFilterKey
+  customDates: CustomDateSelection | null
+  filterAthleteIds: string[]
+  filterSessionIds: string[]
+  filterRoleIds: string[]
+  filterReviewStatuses: ReviewStatus[]
+  filterVisibility: VisibilityFilterValue
 }
 
 export interface DashboardFiltersHandlers {
-  handleToggleTag: (tag: string) => void;
-  handleClearTags: () => void;
-  setDateFilter: (value: DateFilterKey) => void;
-  setCustomDates: (value: CustomDateSelection | null) => void;
-  handleFilterAthlete: (athleteId: string | null) => void;
-  setFilterSessionId: (id: string | null | ((prev: string | null) => string | null)) => void;
-  setFilterRoleId: (id: string | null | ((prev: string | null) => string | null)) => void;
-  setFilterReviewStatus: (value: ReviewStatusFilterValue) => void;
-  setFilterVisibility: (value: VisibilityFilterValue) => void;
-  clearDateFilter: () => void;
-  clearAllOnGroupChange: () => void;
-  clearAllFilters: () => void;
+  handleToggleTag: (tag: string) => void
+  handleClearTags: () => void
+  setDateFilter: (value: DateFilterKey) => void
+  setCustomDates: (value: CustomDateSelection | null) => void
+  toggleFilterAthleteId: (id: string) => void
+  clearFilterAthleteIds: () => void
+  toggleFilterSessionId: (id: string) => void
+  clearFilterSessionIds: () => void
+  toggleFilterRoleId: (id: string) => void
+  clearFilterRoleIds: () => void
+  toggleFilterReviewStatus: (value: ReviewStatus) => void
+  clearFilterReviewStatuses: () => void
+  setFilterVisibility: (value: VisibilityFilterValue) => void
+  clearDateFilter: () => void
+  clearAllOnGroupChange: () => void
+  clearAllFilters: () => void
+}
+
+function toggle<T>(arr: T[], value: T): T[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
 }
 
 export function useDashboardFilters() {
-  const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [dateFilter, setDateFilter] = useState<DateFilterKey>("all");
-  const [customDates, setCustomDates] = useState<CustomDateSelection | null>(
-    null,
-  );
-  const [filterAthleteId, setFilterAthleteId] = useState<string | null>(null);
-  const [filterSessionId, setFilterSessionId] = useState<string | null>(null);
-  const [filterRoleId, setFilterRoleId] = useState<string | null>(null);
-  const [filterReviewStatus, setFilterReviewStatus] =
-    useState<ReviewStatusFilterValue>(null);
-  const [filterVisibility, setFilterVisibility] =
-    useState<VisibilityFilterValue>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([])
+  const [dateFilter, setDateFilter] = useState<DateFilterKey>("all")
+  const [customDates, setCustomDates] = useState<CustomDateSelection | null>(null)
+  const [filterAthleteIds, setFilterAthleteIds] = useState<string[]>([])
+  const [filterSessionIds, setFilterSessionIds] = useState<string[]>([])
+  const [filterRoleIds, setFilterRoleIds] = useState<string[]>([])
+  const [filterReviewStatuses, setFilterReviewStatuses] = useState<ReviewStatus[]>([])
+  const [filterVisibility, setFilterVisibility] = useState<VisibilityFilterValue>(null)
 
   const filters: LogsUrlFilters = {
     activeTags,
-    filterAthleteId,
-    filterSessionId,
-    filterRoleId,
-    filterReviewStatus,
+    filterAthleteIds,
+    filterSessionIds,
+    filterRoleIds,
+    filterReviewStatuses,
     filterVisibility,
     dateFilter,
     customDates,
-  };
+  }
 
-  const logsUrl = useLogsUrl(filters);
+  const logsUrl = useLogsUrl(filters)
 
   const handleToggleTag = useCallback((tag: string) => {
-    setActiveTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  }, []);
+    setActiveTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
+  }, [])
 
-  const handleClearTags = useCallback(() => {
-    setActiveTags([]);
-  }, []);
+  const handleClearTags = useCallback(() => setActiveTags([]), [])
 
-  const handleFilterAthlete = useCallback((athleteId: string | null) => {
-    setFilterAthleteId(athleteId);
-  }, []);
+  const toggleFilterAthleteId = useCallback((id: string) => {
+    setFilterAthleteIds((prev) => toggle(prev, id))
+  }, [])
+  const clearFilterAthleteIds = useCallback(() => setFilterAthleteIds([]), [])
+
+  const toggleFilterSessionId = useCallback((id: string) => {
+    setFilterSessionIds((prev) => toggle(prev, id))
+  }, [])
+  const clearFilterSessionIds = useCallback(() => setFilterSessionIds([]), [])
+
+  const toggleFilterRoleId = useCallback((id: string) => {
+    setFilterRoleIds((prev) => toggle(prev, id))
+  }, [])
+  const clearFilterRoleIds = useCallback(() => setFilterRoleIds([]), [])
+
+  const toggleFilterReviewStatus = useCallback((value: ReviewStatus) => {
+    setFilterReviewStatuses((prev) => toggle(prev, value))
+  }, [])
+  const clearFilterReviewStatuses = useCallback(() => setFilterReviewStatuses([]), [])
 
   const clearDateFilter = useCallback(() => {
-    setDateFilter("all");
-    setCustomDates(null);
-  }, []);
+    setDateFilter("all")
+    setCustomDates(null)
+  }, [])
 
   const clearAllOnGroupChange = useCallback(() => {
-    setFilterAthleteId(null);
-    setFilterSessionId(null);
-    setFilterRoleId(null);
-    setFilterReviewStatus(null);
-    setFilterVisibility(null);
-  }, []);
+    setFilterAthleteIds([])
+    setFilterSessionIds([])
+    setFilterRoleIds([])
+    setFilterReviewStatuses([])
+    setFilterVisibility(null)
+  }, [])
 
   const clearAllFilters = useCallback(() => {
-    setActiveTags([]);
-    setDateFilter("all");
-    setCustomDates(null);
-    setFilterAthleteId(null);
-    setFilterSessionId(null);
-    setFilterRoleId(null);
-    setFilterReviewStatus(null);
-    setFilterVisibility(null);
-  }, []);
+    setActiveTags([])
+    setDateFilter("all")
+    setCustomDates(null)
+    setFilterAthleteIds([])
+    setFilterSessionIds([])
+    setFilterRoleIds([])
+    setFilterReviewStatuses([])
+    setFilterVisibility(null)
+  }, [])
 
   const filtersState: DashboardFiltersState = {
     activeTags,
     dateFilter,
     customDates,
-    filterAthleteId,
-    filterSessionId,
-    filterRoleId,
-    filterReviewStatus,
+    filterAthleteIds,
+    filterSessionIds,
+    filterRoleIds,
+    filterReviewStatuses,
     filterVisibility,
-  };
+  }
 
   const handlers: DashboardFiltersHandlers = {
     handleToggleTag,
     handleClearTags,
     setDateFilter,
     setCustomDates,
-    handleFilterAthlete,
-    setFilterSessionId,
-    setFilterRoleId,
-    setFilterReviewStatus,
+    toggleFilterAthleteId,
+    clearFilterAthleteIds,
+    toggleFilterSessionId,
+    clearFilterSessionIds,
+    toggleFilterRoleId,
+    clearFilterRoleIds,
+    toggleFilterReviewStatus,
+    clearFilterReviewStatuses,
     setFilterVisibility,
     clearDateFilter,
     clearAllOnGroupChange,
     clearAllFilters,
-  };
+  }
 
   return {
     filters: filtersState,
     handlers,
     logsUrl,
-  };
+  }
 }

@@ -75,7 +75,7 @@ export async function GET(req: Request) {
           id: a._id.toString(),
           name: (a.displayName ?? ([a.firstName, a.lastName].filter(Boolean).join(" ") || a.email || "Athlete")) as string,
           groupIds: [
-            ...(a.groupId ? [a.groupId] : []),
+            ...(a.activeGroupId ? [a.activeGroupId] : []),
             ...(Array.isArray(a.groupIds) ? a.groupIds : []),
           ].filter((id, i, arr) => arr.indexOf(id) === i),
           trainingSlots: Array.isArray(a.trainingSlots)
@@ -289,11 +289,11 @@ export async function GET(req: Request) {
       const athletesWithGroups = await db
         .collection("users")
         .find({ _id: { $in: filterAthleteIds.map((id) => new ObjectId(id)) } })
-        .project({ _id: 1, groupId: 1, groupIds: 1 })
+        .project({ _id: 1, activeGroupId: 1, groupIds: 1 })
         .toArray()
       const groupIds = new Set<string>()
       for (const a of athletesWithGroups) {
-        const gid = (a as { groupId?: string; groupIds?: string[] }).groupId
+        const gid = (a as { activeGroupId?: string; groupIds?: string[] }).activeGroupId
         const gids = (a as { groupIds?: string[] }).groupIds
         if (gid) groupIds.add(gid)
         if (Array.isArray(gids)) gids.forEach((id: string) => groupIds.add(id))

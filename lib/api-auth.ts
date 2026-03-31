@@ -15,7 +15,7 @@ export async function canManageGroup(db: Db, userId: string, groupId: string) {
   if (group.coachId?.toString() === userId) return true
   if (Array.isArray(group.coachIds) && group.coachIds.some((id: unknown) => id?.toString() === userId)) return true
 
-  if (user.groupId?.toString() === groupId) return true
+  if (user.activeGroupId?.toString() === groupId) return true
   if (Array.isArray(user.groupIds) && user.groupIds.some((id: unknown) => id?.toString() === groupId)) return true
 
   return false

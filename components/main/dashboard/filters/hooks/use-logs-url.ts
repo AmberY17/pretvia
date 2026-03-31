@@ -1,46 +1,37 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import type {
-  DateFilterKey,
-  CustomDateSelection,
-} from "@/lib/date-utils";
-import { getDateFilterParams } from "@/lib/date-utils";
-import type { ReviewStatusFilterValue, VisibilityFilterValue } from "@/types/dashboard";
+import { useMemo } from "react"
+import type { DateFilterKey, CustomDateSelection } from "@/lib/date-utils"
+import { getDateFilterParams } from "@/lib/date-utils"
+import type { ReviewStatus, VisibilityFilterValue } from "@/types/dashboard"
 
 export interface LogsUrlFilters {
-  activeTags: string[];
-  filterAthleteId: string | null;
-  filterSessionId: string | null;
-  filterRoleId: string | null;
-  filterReviewStatus: ReviewStatusFilterValue;
-  filterVisibility: VisibilityFilterValue;
-  dateFilter: DateFilterKey;
-  customDates: CustomDateSelection | null;
+  activeTags: string[]
+  filterAthleteIds: string[]
+  filterSessionIds: string[]
+  filterRoleIds: string[]
+  filterReviewStatuses: ReviewStatus[]
+  filterVisibility: VisibilityFilterValue
+  dateFilter: DateFilterKey
+  customDates: CustomDateSelection | null
 }
 
 export function buildLogsUrl(filters: LogsUrlFilters): string {
-  const params = new URLSearchParams();
-  filters.activeTags.forEach((t) => params.append("tag", t));
-  if (filters.filterAthleteId) params.set("userId", filters.filterAthleteId);
-  if (filters.filterSessionId)
-    params.set("checkinId", filters.filterSessionId);
-  if (filters.filterRoleId) params.set("roleId", filters.filterRoleId);
-  if (filters.filterReviewStatus)
-    params.set("reviewStatus", filters.filterReviewStatus);
-  if (filters.filterVisibility)
-    params.set("visibility", filters.filterVisibility);
+  const params = new URLSearchParams()
+  filters.activeTags.forEach((t) => params.append("tag", t))
+  filters.filterAthleteIds.forEach((id) => params.append("userId", id))
+  filters.filterSessionIds.forEach((id) => params.append("checkinId", id))
+  filters.filterRoleIds.forEach((id) => params.append("roleId", id))
+  filters.filterReviewStatuses.forEach((s) => params.append("reviewStatus", s))
+  if (filters.filterVisibility) params.set("visibility", filters.filterVisibility)
 
-  const { dateFrom, dateTo, dates } = getDateFilterParams(
-    filters.dateFilter,
-    filters.customDates,
-  );
-  if (dateFrom) params.set("dateFrom", dateFrom);
-  if (dateTo) params.set("dateTo", dateTo);
-  if (dates) params.set("dates", dates);
+  const { dateFrom, dateTo, dates } = getDateFilterParams(filters.dateFilter, filters.customDates)
+  if (dateFrom) params.set("dateFrom", dateFrom)
+  if (dateTo) params.set("dateTo", dateTo)
+  if (dates) params.set("dates", dates)
 
-  const qs = params.toString();
-  return qs ? `/api/logs?${qs}` : "/api/logs";
+  const qs = params.toString()
+  return qs ? `/api/logs?${qs}` : "/api/logs"
 }
 
 export function useLogsUrl(filters: LogsUrlFilters): string {
@@ -48,13 +39,13 @@ export function useLogsUrl(filters: LogsUrlFilters): string {
     () => buildLogsUrl(filters),
     [
       filters.activeTags.join(","),
-      filters.filterAthleteId,
-      filters.filterSessionId,
-      filters.filterRoleId,
-      filters.filterReviewStatus,
+      filters.filterAthleteIds.join(","),
+      filters.filterSessionIds.join(","),
+      filters.filterRoleIds.join(","),
+      filters.filterReviewStatuses.join(","),
       filters.filterVisibility,
       filters.dateFilter,
       filters.customDates?.join(",") ?? "",
     ],
-  );
+  )
 }

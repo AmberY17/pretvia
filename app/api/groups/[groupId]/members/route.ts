@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { canManageGroup } from "@/lib/api-auth"
+import { safeObjectId } from "@/lib/objectid"
 
 // PATCH: update member (assign roles, remove from group, transfer)
 export async function PATCH(
@@ -31,15 +32,20 @@ export async function PATCH(
       )
     }
 
+    const userOid = safeObjectId(userId)
+    if (!userOid) {
+      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 })
+    }
+
     const targetUser = await db.collection("users").findOne({
-      _id: new ObjectId(userId),
+      _id: userOid,
     })
     if (!targetUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     const isMember =
-      targetUser.groupIds?.includes(groupId) || targetUser.groupId === groupId
+      targetUser.groupIds?.includes(groupId) || targetUser.activeGroupId === groupId
     if (!isMember) {
       return NextResponse.json(
         { error: "User is not a member of this group" },
@@ -52,13 +58,13 @@ export async function PATCH(
         (id: string) => id !== groupId
       )
       const newGroupId =
-        targetUser.groupId === groupId
+        targetUser.activeGroupId === groupId
           ? updatedGroupIds[0] ?? null
-          : targetUser.groupId
+          : targetUser.activeGroupId
 
       await db.collection("users").updateOne(
-        { _id: new ObjectId(userId) },
-        { $set: { groupIds: updatedGroupIds, groupId: newGroupId } }
+        { _id: userOid },
+        { $set: { groupIds: updatedGroupIds, activeGroupId: newGroupId } }
       )
       await db.collection("groupMemberships").deleteOne({ userId, groupId })
       return NextResponse.json({ success: true })
@@ -72,8 +78,12 @@ export async function PATCH(
           { status: 400 }
         )
       }
+      const targetGroupOid = safeObjectId(targetGroupId)
+      if (!targetGroupOid) {
+        return NextResponse.json({ error: "Invalid target group ID" }, { status: 400 })
+      }
       const targetGroup = await db.collection("groups").findOne({
-        _id: new ObjectId(targetGroupId),
+        _id: targetGroupOid,
       })
       if (!targetGroup) {
         return NextResponse.json({ error: "Target group not found" }, { status: 404 })
@@ -97,11 +107,11 @@ export async function PATCH(
         targetGroupId,
       ]
       const newGroupId =
-        targetUser.groupId === groupId ? targetGroupId : targetUser.groupId
+        targetUser.activeGroupId === groupId ? targetGroupId : targetUser.activeGroupId
 
       await db.collection("users").updateOne(
-        { _id: new ObjectId(userId) },
-        { $set: { groupIds: updatedGroupIds, groupId: newGroupId } }
+        { _id: userOid },
+        { $set: { groupIds: updatedGroupIds, activeGroupId: newGroupId } }
       )
       await db.collection("groupMemberships").deleteOne({ userId, groupId })
       await db.collection("groupMemberships").updateOne(

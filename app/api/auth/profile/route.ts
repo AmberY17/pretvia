@@ -128,7 +128,7 @@ export async function PUT(req: Request) {
       email: session.email,
       displayName: user.displayName ?? session.displayName,
       role: session.role,
-      groupId: session.groupId,
+      activeGroupId: session.activeGroupId,
     })
 
     return NextResponse.json({

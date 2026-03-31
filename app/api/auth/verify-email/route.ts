@@ -44,7 +44,7 @@ export async function GET(req: Request) {
       lastName: pending.lastName,
       dateOfBirth: pending.dateOfBirth ?? null,
       role: pending.role,
-      groupId: null,
+      activeGroupId: null,
       profileComplete: true,
       authProvider: "email",
       emailVerified: true,
@@ -58,7 +58,7 @@ export async function GET(req: Request) {
       email: pending.email,
       displayName: pending.displayName,
       role: pending.role,
-      groupId: undefined,
+      activeGroupId: undefined,
     })
 
     return NextResponse.redirect(`${APP_URL}/dashboard`)

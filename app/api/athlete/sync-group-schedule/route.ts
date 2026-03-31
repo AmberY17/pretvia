@@ -15,7 +15,7 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const groupId = session.groupId
+    const groupId = session.activeGroupId
     if (!groupId) {
       return NextResponse.json(
         { error: "You are not in a group" },

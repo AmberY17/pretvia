@@ -77,7 +77,7 @@ export async function POST(
       const isMember =
         Array.isArray(athleteUser.groupIds)
           ? athleteUser.groupIds.includes(groupId)
-          : athleteUser.groupId === groupId
+          : athleteUser.activeGroupId === groupId
       if (!isMember) {
         return NextResponse.json(
           { error: "Athlete is not in this group" },

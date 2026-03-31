@@ -128,7 +128,7 @@ export async function GET(req: Request) {
         password: null,
         displayName: name?.trim() || normalizedEmail.split("@")[0],
         role,
-        groupId: null,
+        activeGroupId: null,
         profileComplete: true,
         authProvider: "google",
         googleId,
@@ -150,7 +150,7 @@ export async function GET(req: Request) {
       email: user.email,
       displayName: user.displayName,
       role: user.role || "athlete",
-      groupId: user.groupId || undefined,
+      activeGroupId: user.activeGroupId || undefined,
     })
 
     const inviteToken = cookieStore.get("oauth_invite")?.value

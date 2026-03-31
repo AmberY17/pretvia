@@ -29,7 +29,7 @@ export async function GET(
     }
 
     const isMember =
-      athlete.groupIds?.includes(groupId) || athlete.groupId === groupId
+      athlete.groupIds?.includes(groupId) || athlete.activeGroupId === groupId
     if (!isMember) {
       return NextResponse.json(
         { error: "Athlete is not in this group" },

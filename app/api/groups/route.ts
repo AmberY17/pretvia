@@ -79,8 +79,8 @@ export async function GET(req: Request) {
       }
 
       const groupIds = Array.isArray(user.groupIds) ? user.groupIds : []
-      if (user.groupId && !groupIds.includes(user.groupId)) {
-        groupIds.push(user.groupId)
+      if (user.activeGroupId && !groupIds.includes(user.activeGroupId)) {
+        groupIds.push(user.activeGroupId)
       }
 
       if (groupIds.length === 0) {
@@ -130,7 +130,7 @@ export async function GET(req: Request) {
 
     const members = await db
       .collection("users")
-      .find({ $or: [{ groupIds: groupId }, { groupId: groupId }] })
+      .find({ groupIds: groupId })
       .project({ password: 0 })
       .toArray()
 

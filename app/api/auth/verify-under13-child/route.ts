@@ -69,7 +69,7 @@ export async function GET(req: Request) {
       lastName: pending.childLastName,
       dateOfBirth: pending.childDateOfBirth ?? null,
       role: "athlete",
-      groupId,
+      activeGroupId: groupId,
       groupIds: [groupId],
       profileComplete: true,
       authProvider: "email",
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
         firstName: pending.parentFirstName,
         lastName: pending.parentLastName,
         role: "guardian",
-        groupId: null,
+        activeGroupId: null,
         groupIds: [],
         profileComplete: true,
         authProvider: "email",
@@ -137,7 +137,7 @@ export async function GET(req: Request) {
       email: parentEmailNorm,
       displayName: user?.displayName,
       role: "guardian",
-      groupId: undefined,
+      activeGroupId: undefined,
     })
 
     return NextResponse.redirect(`${APP_URL}/dashboard/parent`)

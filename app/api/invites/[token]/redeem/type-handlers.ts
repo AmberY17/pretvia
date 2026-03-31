@@ -137,7 +137,7 @@ export async function handleUnder13ParentInvite(
     lastName: childLastName.trim(),
     dateOfBirth: childDateOfBirth ?? null,
     role: "athlete",
-    groupId,
+    activeGroupId: groupId,
     groupIds: [groupId],
     profileComplete: true,
     authProvider: "email",
@@ -191,7 +191,7 @@ export async function handleUnder13ParentInvite(
       firstName: pFirst,
       lastName: pLast,
       role: "guardian",
-      groupId: null,
+      activeGroupId: null,
       groupIds: [],
       profileComplete: true,
       authProvider: "email",
@@ -209,7 +209,7 @@ export async function handleUnder13ParentInvite(
     email: parentEmailNorm,
     displayName: (await db.collection("users").findOne({ _id: new ObjectId(guardianId) }))?.displayName,
     role: "guardian",
-    groupId: undefined,
+    activeGroupId: undefined,
   })
 
   return NextResponse.json({
@@ -268,7 +268,7 @@ export async function handleAthleteInvite(
       groupIds.push(groupId)
       await db.collection("users").updateOne(
         { _id: existing._id },
-        { $set: { groupIds, groupId } },
+        { $set: { groupIds, activeGroupId: groupId } },
       )
       await db.collection("groupMemberships").updateOne(
         { userId, groupId },
@@ -307,7 +307,7 @@ export async function handleAthleteInvite(
       lastName: (lastName as string).trim(),
       dateOfBirth: dateOfBirth ?? null,
       role: "athlete",
-      groupId,
+      activeGroupId: groupId,
       groupIds: [groupId],
       profileComplete: true,
       authProvider: "email",
@@ -352,13 +352,13 @@ export async function handleAthleteInvite(
     email: user?.email ?? emailNorm,
     displayName: user?.displayName,
     role: "athlete",
-    groupId,
+    activeGroupId: groupId,
   })
 
   return NextResponse.json({
     success: true,
     redirect: "/dashboard",
-    user: { id: userId, role: "athlete", groupId },
+    user: { id: userId, role: "athlete", activeGroupId: groupId },
   })
 }
 
@@ -425,7 +425,7 @@ export async function handleParentInvite(
       firstName: (firstName as string).trim(),
       lastName: (lastName as string).trim(),
       role: "guardian",
-      groupId: null,
+      activeGroupId: null,
       groupIds: [],
       profileComplete: true,
       authProvider: "email",
@@ -464,7 +464,7 @@ export async function handleParentInvite(
     email: user?.email ?? emailNorm,
     displayName: user?.displayName,
     role: "guardian",
-    groupId: undefined,
+    activeGroupId: undefined,
   })
 
   return NextResponse.json({

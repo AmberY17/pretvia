@@ -1,26 +1,26 @@
-"use client";
+"use client"
 
-import { RotateCcw } from "lucide-react";
-import { TagFilter } from "@/components/main/dashboard/filters/tag-filter";
-import { DateFilter } from "@/components/main/dashboard/filters/date-filter";
-import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter";
-import { RoleFilter } from "@/components/main/dashboard/filters/role-filter";
-import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter";
-import type { User } from "@/hooks/use-auth";
+import { RotateCcw } from "lucide-react"
+import { TagFilter } from "@/components/main/dashboard/filters/tag-filter"
+import { DateFilter } from "@/components/main/dashboard/filters/date-filter"
+import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter"
+import { RoleFilter } from "@/components/main/dashboard/filters/role-filter"
+import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter"
+import type { User } from "@/hooks/use-auth"
 import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
-} from "@/components/main/dashboard/filters/hooks/use-dashboard-filters";
-import type { Athlete, Role } from "@/types/dashboard";
+} from "@/components/main/dashboard/filters/hooks/use-dashboard-filters"
+import type { Athlete, Role } from "@/types/dashboard"
 
 interface MobileFiltersProps {
-  user: User;
-  tags: { id: string; name: string }[];
-  groupRoles: Role[];
-  athletes: Athlete[];
-  filters: DashboardFiltersState;
-  handlers: DashboardFiltersHandlers;
-  isFiltered: boolean;
+  user: User
+  tags: { id: string; name: string }[]
+  groupRoles: Role[]
+  athletes: Athlete[]
+  filters: DashboardFiltersState
+  handlers: DashboardFiltersHandlers
+  isFiltered: boolean
 }
 
 export function MobileFilters({
@@ -66,19 +66,22 @@ export function MobileFilters({
           <RoleFilter
             variant="mobile"
             roles={groupRoles}
-            filterRoleId={filters.filterRoleId}
-            onFilter={(id) => handlers.setFilterRoleId(id)}
+            filterRoleIds={filters.filterRoleIds}
+            onToggle={handlers.toggleFilterRoleId}
+            onClear={handlers.clearFilterRoleIds}
           />
           <AthleteFilter
             variant="mobile"
             athletes={athletes}
-            filterAthleteId={filters.filterAthleteId}
-            onFilter={handlers.handleFilterAthlete}
+            filterAthleteIds={filters.filterAthleteIds}
+            onToggle={handlers.toggleFilterAthleteId}
+            onClear={handlers.clearFilterAthleteIds}
           />
           <ReviewStatusFilter
             variant="mobile"
-            filterReviewStatus={filters.filterReviewStatus}
-            onFilter={handlers.setFilterReviewStatus}
+            filterReviewStatuses={filters.filterReviewStatuses}
+            onToggle={handlers.toggleFilterReviewStatus}
+            onClear={handlers.clearFilterReviewStatuses}
           />
         </>
       )}
@@ -93,5 +96,5 @@ export function MobileFilters({
         onClear={handlers.clearDateFilter}
       />
     </div>
-  );
+  )
 }
