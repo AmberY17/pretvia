@@ -19,7 +19,7 @@ for (const file of [".env.local", ".env"]) {
       const match = line.match(/^([^#=]+)=(.*)$/)
       if (match) {
         const key = match[1].trim()
-        const val = match[2].trim().replace(/^[\"']|[\"']$/g, "")
+        const val = match[2].trim().replace(/^["']|["']$/g, "")
         if (!process.env[key]) process.env[key] = val
       }
     }

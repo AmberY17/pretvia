@@ -28,6 +28,9 @@ function useSteps(
   const goToGroup = (stepIndex: number) => () => {
     onNavigate(stepIndex + 1, "/dashboard/group")
   }
+  const goToDashboardMain = (stepIndex: number) => () => {
+    onNavigate(stepIndex + 1, "/dashboard")
+  }
   const goToDashboard = () => onDone()
   const goToParent = () => {
     onDone()
@@ -93,6 +96,18 @@ function useSteps(
         ),
       },
       {
+        title: "You're an early user",
+        body: (
+          <p className="text-sm text-muted-foreground">
+            Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the
+            occasional bug or rough edge. If something looks off, use the{" "}
+            <strong className="text-foreground">feedback bubble</strong> at the bottom right corner
+            to let us know.
+          </p>
+        ),
+        actions: null,
+      },
+      {
         title: "You're all set!",
         body: (
           <p className="text-sm text-muted-foreground">
@@ -133,6 +148,18 @@ function useSteps(
             How to install →
           </Button>
         ),
+      },
+      {
+        title: "You're an early user",
+        body: (
+          <p className="text-sm text-muted-foreground">
+            Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the
+            occasional bug or rough edge. If something looks off, use the{" "}
+            <strong className="text-foreground">feedback bubble</strong> at the bottom right corner
+            to let us know.
+          </p>
+        ),
+        actions: null,
       },
       {
         title: "You're all set!",
@@ -176,6 +203,18 @@ function useSteps(
           How to install →
         </Button>
       ),
+    },
+    {
+      title: "You're an early user",
+      body: (
+        <p className="text-sm text-muted-foreground">
+          Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the
+          occasional bug or rough edge. If something looks off, use the{" "}
+          <strong className="text-foreground">feedback bubble</strong> at the bottom right corner
+          to let us know.
+        </p>
+      ),
+      actions: null,
     },
     {
       title: "You're all set!",
