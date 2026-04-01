@@ -4,8 +4,8 @@ import React, { useState } from "react"
 import { Users, Search, UserPlus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { InviteAthleteModal } from "./invite-athlete-modal"
-import { BulkInviteModal } from "./bulk-invite-modal"
+import { InviteAthleteModal } from "./invitations/invite-athlete-modal"
+import { BulkInviteModal } from "./invitations/bulk-invite-modal"
 import { AthleteRow } from "./athlete-row"
 import type { Member, Role } from "@/types/dashboard"
 
@@ -35,6 +35,7 @@ interface GroupAthletesSectionProps {
   onAssignRoles: (userId: string, roleIds: string[]) => void
   onTransfer: () => void
   onRemoveAthlete: (userId: string) => void
+  onCancelInvite?: (inviteId: string) => void
 }
 
 export function GroupAthletesSection({
@@ -63,6 +64,7 @@ export function GroupAthletesSection({
   onAssignRoles,
   onTransfer,
   onRemoveAthlete,
+  onCancelInvite,
 }: GroupAthletesSectionProps) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
@@ -155,6 +157,7 @@ export function GroupAthletesSection({
               onAssignRoles={onAssignRoles}
               onTransfer={onTransfer}
               onRemoveAthlete={onRemoveAthlete}
+              onCancelInvite={onCancelInvite}
             />
           ))}
         </div>

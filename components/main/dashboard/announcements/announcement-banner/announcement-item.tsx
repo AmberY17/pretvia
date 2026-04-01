@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Megaphone, Trash2, Send, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";

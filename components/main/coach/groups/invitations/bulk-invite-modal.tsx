@@ -223,11 +223,15 @@ export function BulkInviteModal({ open, onOpenChange, groupId, onSent }: BulkInv
               <code className="text-xs text-muted-foreground">
                 is_over_13, athlete_email, parent_email, athlete_name_placeholder
               </code>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Set <code className="text-foreground">is_over_13</code> to{" "}
-                <code className="text-foreground">false</code> for under-13 athletes (parent email
-                required, athlete email optional).
-              </p>
+              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <li>
+                  <code className="text-foreground">TRUE</code> (13+): athlete email required,
+                  guardian email optional
+                </li>
+                <li>
+                  <code className="text-foreground">FALSE</code> (under 13): guardian email only
+                </li>
+              </ul>
             </div>
           </div>
         ) : (

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { LogOut, Users, Plus, Copy, Check, User as UserIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
 import type { User } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { GroupSwitcher } from "./group-switcher";

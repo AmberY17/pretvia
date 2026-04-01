@@ -7,9 +7,9 @@ import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCheck } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { EmptyStateCard } from "@/components/main/shared/empty-state-card";
 import { PageHeader } from "@/components/main/shared/page-header";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingScreen } from "@/components/loading-screen";
 import { AttendancePageSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
 import {
   AttendanceSessionDropdown,

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/main/shared/page-header";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingScreen } from "@/components/loading-screen";
 import { AccountProfileEmojiSection } from "@/components/main/account/account-profile-emoji-section";
 import { AccountTrainingSlotsSection } from "@/components/main/account/account-training-slots-section";
 import { AccountCelebrationSection } from "@/components/main/account/account-celebration-section";

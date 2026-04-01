@@ -2,7 +2,7 @@
 
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
 
 interface AccountDeleteSectionProps {
   deleteConfirmOpen: boolean;

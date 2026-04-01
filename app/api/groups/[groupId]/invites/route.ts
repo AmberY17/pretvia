@@ -4,6 +4,46 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { canManageGroup } from "@/lib/api-auth"
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { groupId } = await params
+    const db = await getDb()
+
+    if (!(await canManageGroup(db, session.userId, groupId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const token = searchParams.get("token")
+    if (!token) {
+      return NextResponse.json({ error: "Token required" }, { status: 400 })
+    }
+
+    const invite = await db.collection("invites").findOne({ token, groupId })
+    if (!invite) {
+      return NextResponse.json({ error: "Invite not found" }, { status: 404 })
+    }
+
+    if (invite.type !== "athlete" && invite.type !== "under13_parent") {
+      return NextResponse.json({ error: "Cannot cancel this invite type" }, { status: 400 })
+    }
+
+    await db.collection("invites").deleteOne({ token, groupId })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Cancel invite error:", error)
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+  }
+}
 import {
   sendAthleteInviteEmail,
   sendUnder13ParentInviteEmail,

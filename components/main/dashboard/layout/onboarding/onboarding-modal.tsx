@@ -25,12 +25,6 @@ function useSteps(
   onNavigate: (nextStep: number, path: string) => void,
   router: ReturnType<typeof useRouter>,
 ) {
-  const goToGroup = (stepIndex: number) => () => {
-    onNavigate(stepIndex + 1, "/dashboard/group")
-  }
-  const goToDashboardMain = (stepIndex: number) => () => {
-    onNavigate(stepIndex + 1, "/dashboard")
-  }
   const goToDashboard = () => onDone()
   const goToParent = () => {
     onDone()
@@ -53,47 +47,14 @@ function useSteps(
         actions: null,
       },
       {
-        title: "Set up your group",
+        title: "Complete your setup",
         body: (
           <p className="text-sm text-muted-foreground">
-            Head to your Group page to create custom roles (e.g. Sabre, Foil) and set a weekly
-            training schedule for your athletes.
+            Your dashboard has an onboarding checklist to walk you through creating your group,
+            inviting athletes, and more. Check off each step as you go.
           </p>
         ),
-        actions: (
-          <Button variant="outline" size="sm" onClick={goToGroup(1)}>
-            Go to Group Page
-          </Button>
-        ),
-      },
-      {
-        title: "Invite your athletes",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Use the <strong className="text-foreground">Invite</strong> button (top right of the
-            Athletes section) to send individual invites, or{" "}
-            <strong className="text-foreground">Import CSV</strong> to add your whole roster at
-            once.
-          </p>
-        ),
-        actions: (
-          <Button variant="outline" size="sm" onClick={goToGroup(2)}>
-            Go to Group Page
-          </Button>
-        ),
-      },
-      {
-        title: "Install the app",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Add Pretvia to your home screen for the best experience — no app store needed.
-          </p>
-        ),
-        actions: (
-          <Button variant="outline" size="sm" onClick={goToInstall(3)}>
-            How to install →
-          </Button>
-        ),
+        actions: null,
       },
       {
         title: "You're an early user",
@@ -106,19 +67,6 @@ function useSteps(
           </p>
         ),
         actions: null,
-      },
-      {
-        title: "You're all set!",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Your dashboard is ready. Athletes will appear once they accept their invites.
-          </p>
-        ),
-        actions: (
-          <Button size="sm" onClick={goToDashboard}>
-            Go to Dashboard
-          </Button>
-        ),
       },
     ]
     return steps
@@ -208,10 +156,10 @@ function useSteps(
       title: "You're an early user",
       body: (
         <p className="text-sm text-muted-foreground">
-          Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the
-          occasional bug or rough edge. If something looks off, use the{" "}
-          <strong className="text-foreground">feedback bubble</strong> at the bottom right corner
-          to let us know.
+          Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the occasional
+          bug or rough edge. If something looks off, use the{" "}
+          <strong className="text-foreground">feedback bubble</strong> at the bottom right corner to
+          let us know.
         </p>
       ),
       actions: null,

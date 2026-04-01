@@ -10,8 +10,8 @@ import { useDashboardFilters } from "@/components/main/dashboard/filters/hooks/u
 import { useDashboardPanel } from "@/components/main/dashboard/logs/hooks/use-dashboard-panel"
 import dynamic from "next/dynamic"
 import { DashboardHeader } from "@/components/main/dashboard/layout/dashboard-header"
-import { OnboardingModal } from "@/components/main/dashboard/layout/onboarding-modal"
-import { LoadingScreen } from "@/components/ui/loading-screen"
+import { OnboardingModal } from "@/components/main/dashboard/layout/onboarding/onboarding-modal"
+import { LoadingScreen } from "@/components/loading-screen"
 
 const DashboardSidebar = dynamic(() =>
   import("@/components/main/dashboard/layout/dashboard-sidebar").then((m) => m.DashboardSidebar),

@@ -11,7 +11,7 @@ import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { SignedInChoice } from "@/components/auth/signed-in-choice";
 import { Card } from "@/components/ui/card";
 import { AUTH_ERROR_MESSAGES } from "@/lib/auth-errors";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingScreen } from "@/components/loading-screen";
 import { toast } from "sonner";
 
 export function AuthForm() {

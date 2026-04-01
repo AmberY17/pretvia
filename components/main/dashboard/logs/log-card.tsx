@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Pencil, User } from "lucide-react";
 import { format } from "date-fns";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
 import { VisibilityBadge } from "@/components/main/dashboard/logs/visibility-badge";
 import { TagPill } from "@/components/main/dashboard/logs/tag-pill";
 import { CommentSection } from "./comment-section";

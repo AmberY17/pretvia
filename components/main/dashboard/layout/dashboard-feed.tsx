@@ -1,9 +1,13 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  CoachOnboardingChecklist,
+  isCoachOnboardingDone,
+} from "@/components/main/dashboard/layout/onboarding/coach-onboarding-checklist"
 import { LogCard, type LogEntry } from "@/components/main/dashboard/logs/log-card"
 import { LogCardSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons"
 import { MobileFilters } from "@/components/main/dashboard/layout/dashboard-feed/mobile-filters"
@@ -79,6 +83,16 @@ export function DashboardFeed({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingTriggeredRef = useRef(false)
 
+  // For coaches: start with checklist visible, hide once onboarding confirmed done
+  const [coachOnboardingDone, setCoachOnboardingDone] = useState(
+    user.role !== "coach",
+  )
+
+  useEffect(() => {
+    if (user.role !== "coach") return
+    setCoachOnboardingDone(isCoachOnboardingDone())
+  }, [user.role])
+
   useEffect(() => {
     if (!isLoadingMore) loadingTriggeredRef.current = false
   }, [isLoadingMore])
@@ -152,7 +166,9 @@ export function DashboardFeed({
 
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Training Feed</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              {!coachOnboardingDone ? "Onboarding" : "Training Feed"}
+            </h1>
           </div>
           {user.role !== "coach" && (
             <Button
@@ -168,6 +184,12 @@ export function DashboardFeed({
         </div>
 
         <div className="flex flex-col gap-3">
+          {!coachOnboardingDone ? (
+            <CoachOnboardingChecklist
+              hasGroup={!!user.activeGroupId}
+              onComplete={() => setCoachOnboardingDone(true)}
+            />
+          ) : (
           <AnimatePresence mode="popLayout">
             {isLoading ? (
               <motion.div
@@ -219,6 +241,7 @@ export function DashboardFeed({
               </motion.div>
             )}
           </AnimatePresence>
+          )}
           {hasMoreLogs && (
             <div
               ref={sentinelRef}

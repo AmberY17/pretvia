@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Check,
   ChevronDown,
@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
 import { formatAgeAndBirthday } from "@/lib/date-utils";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { GuardiansPopover } from "./guardians-popover";
@@ -37,6 +37,7 @@ interface AthleteRowProps {
   onAssignRoles: (userId: string, roleIds: string[]) => void;
   onTransfer: () => void;
   onRemoveAthlete: (userId: string) => void;
+  onCancelInvite?: (inviteId: string) => void;
 }
 
 export function AthleteRow({
@@ -61,9 +62,11 @@ export function AthleteRow({
   onAssignRoles,
   onTransfer,
   onRemoveAthlete,
+  onCancelInvite,
 }: AthleteRowProps) {
   const transferDropdownRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
   useClickOutside(
     transferDropdownRef,
@@ -285,7 +288,27 @@ export function AthleteRow({
               }
             />
           </>
-        ) : null}
+        ) : (
+          <>
+            <Button
+              size="sm"
+              variant="ghost-destructive"
+              onClick={() => setCancelConfirmOpen(true)}
+              className="gap-1 text-xs"
+              title="Cancel invite"
+            >
+              <UserMinus className="h-3 w-3" />
+              <span className="hidden sm:inline">Cancel</span>
+            </Button>
+            <DeleteConfirmDialog
+              open={cancelConfirmOpen}
+              onOpenChange={setCancelConfirmOpen}
+              title="Cancel this invite?"
+              description="The invite will be revoked and this athlete will no longer be able to join using it."
+              onConfirm={() => onCancelInvite?.(a.id)}
+            />
+          </>
+        )}
       </div>
     </div>
   );

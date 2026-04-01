@@ -8,8 +8,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Settings } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/main/shared/page-header";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { LoadingScreen } from "@/components/loading-screen";
+import { EmptyStateCard } from "@/components/main/shared/empty-state-card";
 import { ManageGroupPageSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
 import { GroupRolesSection } from "@/components/main/coach/groups/group-roles-section";
 import { GroupTrainingScheduleSection } from "@/components/main/coach/groups/group-training-schedule-section";
@@ -318,6 +318,26 @@ export default function GroupManagementPage() {
     }
   };
 
+  const handleCancelInvite = async (inviteId: string) => {
+    if (!user?.activeGroupId) return;
+    const token = inviteId.replace("pending-", "");
+    try {
+      const res = await fetch(
+        `/api/groups/${user.activeGroupId}/invites?token=${token}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to cancel invite");
+        return;
+      }
+      toast.success("Invite cancelled");
+      mutateMembers();
+    } catch {
+      toast.error("Network error");
+    }
+  };
+
   if (authLoading || !user || user.role !== "coach") {
     return <LoadingScreen />;
   }
@@ -411,6 +431,7 @@ export default function GroupManagementPage() {
                 onAssignRoles={handleAssignRoles}
                 onTransfer={handleTransfer}
                 onRemoveAthlete={handleRemoveAthlete}
+                onCancelInvite={handleCancelInvite}
               />
               </motion.div>
             )}
