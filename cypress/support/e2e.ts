@@ -5,10 +5,11 @@ before(() => {
   cy.task("cleanupTestData");
 });
 
-// Skip the onboarding modal in all tests by pre-setting the localStorage flag.
+// Skip onboarding UI in all tests by pre-setting localStorage flags.
 beforeEach(() => {
   cy.on("window:before:load", (win) => {
     win.localStorage.setItem("pretvia-onboarded", "1");
+    win.localStorage.setItem("pretvia-coach-onboarding-done", "1");
   });
 });
 
