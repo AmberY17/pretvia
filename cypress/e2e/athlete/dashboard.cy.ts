@@ -345,13 +345,13 @@ describe("Athlete Dashboard", () => {
     it("shows Feedback toggle on coach-shared log card", () => {
       cy.get("main").should("contain", "E2E athlete-comments log")
       cy.contains('[role="button"]', "E2E athlete-comments log").within(() => {
-        cy.contains("Feedback").should("be.visible")
+        cy.contains("button", /feedback|comment/i).should("be.visible")
       })
     })
 
     it("can create a comment — comment appears in feedback section", () => {
       cy.contains('[role="button"]', "E2E athlete-comments log").within(() => {
-        cy.contains("Feedback").click()
+        cy.contains("button", /feedback|comment/i).click()
         cy.findByRole("textbox").type("E2E comment from athlete")
         cy.get('[aria-label="Send comment"]').click()
         cy.contains("E2E comment from athlete").scrollIntoView().should("be.visible")

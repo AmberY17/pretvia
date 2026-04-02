@@ -73,38 +73,39 @@ describe("Coach Account Settings", () => {
     })
   })
 
-  describe("Delete Account", () => {
-    before(() => {
-      cy.exec("pnpm seed:test", { timeout: 30000 })
-    })
-    it("shows Delete Account section", () => {
-      cy.login(DELETE_EMAIL, DELETE_PASSWORD)
-      cy.visit("/dashboard/account")
-      cy.contains(/Delete Account/i).scrollIntoView().should("be.visible")
-    })
+})
 
-    it("shows confirmation dialog and can cancel", () => {
-      cy.login(DELETE_EMAIL, DELETE_PASSWORD)
-      cy.visit("/dashboard/account")
-      cy.contains("button", /Delete Account/i).click()
-      cy.contains(/cannot be undone|permanently/i).should("be.visible")
-      cy.findByRole("button", { name: /Cancel/i }).click()
-      cy.contains("Account Settings").should("be.visible")
-    })
+describe("Delete Account", () => {
+  before(() => {
+    cy.exec("pnpm seed:test", { timeout: 30000 })
+  })
+  it("shows Delete Account section", () => {
+    cy.login(DELETE_EMAIL, DELETE_PASSWORD)
+    cy.visit("/dashboard/account")
+    cy.contains(/Delete Account/i).scrollIntoView().should("be.visible")
+  })
 
-    it("deletes account, redirects to landing", { retries: 0 }, () => {
-      cy.login(DELETE_EMAIL, DELETE_PASSWORD)
-      cy.visit("/dashboard/account")
-      cy.contains("button", /Delete Account/i).click()
-      cy.contains(/cannot be undone|permanently/i).should("be.visible")
-      cy.findByRole("button", { name: "Delete" }).click()
-      cy.url({ timeout: 10000 }).should("not.include", "/dashboard")
-    })
+  it("shows confirmation dialog and can cancel", () => {
+    cy.login(DELETE_EMAIL, DELETE_PASSWORD)
+    cy.visit("/dashboard/account")
+    cy.contains("button", /Delete Account/i).click()
+    cy.contains(/cannot be undone|permanently/i).should("be.visible")
+    cy.findByRole("button", { name: /Cancel/i }).click()
+    cy.contains("Account Settings").should("be.visible")
+  })
 
-    it("dashboard inaccessible after account deletion", () => {
-      cy.clearAllCookies()
-      cy.visit("/dashboard", { failOnStatusCode: false })
-      cy.url().should("not.include", "/dashboard")
-    })
+  it("deletes account, redirects to landing", { retries: 0 }, () => {
+    cy.login(DELETE_EMAIL, DELETE_PASSWORD)
+    cy.visit("/dashboard/account")
+    cy.contains("button", /Delete Account/i).click()
+    cy.contains(/cannot be undone|permanently/i).should("be.visible")
+    cy.findByRole("button", { name: "Delete" }).click()
+    cy.url({ timeout: 10000 }).should("not.include", "/dashboard")
+  })
+
+  it("dashboard inaccessible after account deletion", () => {
+    cy.clearAllCookies()
+    cy.visit("/dashboard", { failOnStatusCode: false })
+    cy.url().should("not.include", "/dashboard")
   })
 })
