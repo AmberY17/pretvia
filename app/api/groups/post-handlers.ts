@@ -45,7 +45,7 @@ export async function handleCreate(
 
   await db.collection("users").updateOne(
     { _id: new ObjectId(session.userId) },
-    { $set: { groupId }, $addToSet: { groupIds: groupId } },
+    { $set: { activeGroupId: groupId }, $addToSet: { groupIds: groupId } },
   )
 
   await db.collection("groupMemberships").insertOne({
@@ -54,7 +54,7 @@ export async function handleCreate(
     roleIds: [],
   })
 
-  await createSession({ ...session, groupId })
+  await createSession({ ...session, activeGroupId: groupId })
 
   return NextResponse.json({
     success: true,
@@ -101,7 +101,7 @@ export async function handleJoin(
   if (user.groupIds?.includes(groupId)) {
     await db.collection("users").updateOne(
       { _id: new ObjectId(session.userId) },
-      { $set: { groupId } },
+      { $set: { activeGroupId: groupId } },
     )
     if (user.role === "coach") {
       await db.collection("groups").updateOne(
@@ -109,7 +109,7 @@ export async function handleJoin(
         { $addToSet: { coachIds: session.userId } },
       )
     }
-    await createSession({ ...session, groupId })
+    await createSession({ ...session, activeGroupId: groupId })
     return NextResponse.json({
       success: true,
       group: { id: groupId, name: group.name, code: group.code },
@@ -159,9 +159,9 @@ export async function handleSwitch(
 
   await db.collection("users").updateOne(
     { _id: new ObjectId(session.userId) },
-    { $set: { groupId } },
+    { $set: { activeGroupId: groupId } },
   )
-  await createSession({ ...session, groupId })
+  await createSession({ ...session, activeGroupId: groupId })
 
   return NextResponse.json({
     success: true,
@@ -178,7 +178,7 @@ export async function handleLeave(
     return NextResponse.json({ error: "User not found" }, { status: 404 })
   }
 
-  const currentGroupId = user.groupId
+  const currentGroupId = user.activeGroupId
   if (!currentGroupId) {
     return NextResponse.json({ error: "Not in a group" }, { status: 400 })
   }
@@ -205,12 +205,12 @@ export async function handleLeave(
 
   await db.collection("users").updateOne(
     { _id: new ObjectId(session.userId) },
-    { $set: { groupId: newActiveGroupId, groupIds: updatedGroupIds } },
+    { $set: { activeGroupId: newActiveGroupId, groupIds: updatedGroupIds } },
   )
 
   await createSession({
     ...session,
-    groupId: newActiveGroupId || undefined,
+    activeGroupId: newActiveGroupId || undefined,
   })
 
   return NextResponse.json({ success: true, newActiveGroupId })

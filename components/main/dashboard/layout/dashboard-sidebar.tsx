@@ -1,54 +1,49 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useMemo } from "react";
-import { RotateCcw } from "lucide-react";
-import { SidebarProfile } from "@/components/main/dashboard/sidebar/sidebar-profile";
-import { CollapsibleFilterSection } from "@/components/main/dashboard/filters/collapsible-filter-section";
-import { TagFilter } from "@/components/main/dashboard/filters/tag-filter";
-import { SessionFilter } from "@/components/main/dashboard/filters/session-filter";
-import { DateFilter } from "@/components/main/dashboard/filters/date-filter";
-import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter";
-import { RoleFilter } from "@/components/main/dashboard/filters/role-filter";
-import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter";
-import { VisibilityFilter } from "@/components/main/dashboard/filters/visibility-filter";
-import { SidebarFilterSkeleton, SidebarStatsCardSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
-import { SidebarStatsCard } from "@/components/main/dashboard/sidebar/sidebar-stats-card";
-import type { User } from "@/hooks/use-auth";
+import { useState, useEffect, useMemo } from "react"
+import { RotateCcw } from "lucide-react"
+import { SidebarProfile } from "@/components/main/dashboard/sidebar/sidebar-profile"
+import { CollapsibleFilterSection } from "@/components/main/dashboard/filters/collapsible-filter-section"
+import { TagFilter } from "@/components/main/dashboard/filters/tag-filter"
+import { SessionFilter } from "@/components/main/dashboard/filters/session-filter"
+import { DateFilter } from "@/components/main/dashboard/filters/date-filter"
+import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter"
+import { RoleFilter } from "@/components/main/dashboard/filters/role-filter"
+import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter"
+import { VisibilityFilter } from "@/components/main/dashboard/filters/visibility-filter"
+import {
+  SidebarFilterSkeleton,
+  SidebarStatsCardSkeleton,
+} from "@/components/main/dashboard/layout/dashboard-skeletons"
+import { SidebarStatsCard } from "@/components/main/dashboard/sidebar/sidebar-stats-card"
+import type { User } from "@/hooks/use-auth"
 import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
-} from "@/components/main/dashboard/filters/hooks/use-dashboard-filters";
-import {
-  COACH_FILTER_ORDER_KEY,
-  DEFAULT_COACH_ORDER,
-  type CoachFilterId,
-} from "@/lib/constants";
-import type { Athlete, Role, SessionItem } from "@/types/dashboard";
+} from "@/components/main/dashboard/filters/hooks/use-dashboard-filters"
+import { COACH_FILTER_ORDER_KEY, DEFAULT_COACH_ORDER, type CoachFilterId } from "@/lib/constants"
+import type { Athlete, Role, SessionItem } from "@/types/dashboard"
 
 interface DashboardSidebarProps {
-  user: User;
-  onLogout: () => void;
-  onGroupChanged: (newGroupId?: string) => void;
-  filters: DashboardFiltersState;
-  handlers: DashboardFiltersHandlers;
-  tags: { id: string; name: string }[];
-  sessions: SessionItem[];
-  athletes: Athlete[];
-  groupRoles: Role[];
-  isLoading?: boolean;
-  statsLoading?: boolean;
+  user: User
+  onLogout: () => void
+  onGroupChanged: (newGroupId?: string) => void
+  filters: DashboardFiltersState
+  handlers: DashboardFiltersHandlers
+  tags: { id: string; name: string }[]
+  sessions: SessionItem[]
+  athletes: Athlete[]
+  groupRoles: Role[]
+  isLoading?: boolean
+  statsLoading?: boolean
   stats?: {
-    totalLogs: number;
-    streak: number;
-    hasTrainingSlots: boolean;
-    canSkipToday: boolean;
-    skipDisabledReason:
-      | "no_training"
-      | "already_skipped"
-      | "already_logged"
-      | null;
-  };
-  onMutateStats?: () => void;
+    totalLogs: number
+    streak: number
+    hasTrainingSlots: boolean
+    canSkipToday: boolean
+    skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null
+  }
+  onMutateStats?: () => void
 }
 
 export function DashboardSidebar({
@@ -66,64 +61,59 @@ export function DashboardSidebar({
   stats,
   onMutateStats = () => {},
 }: DashboardSidebarProps) {
-  const [coachFilterOrder, setCoachFilterOrder] = useState<CoachFilterId[]>(
-    () => [...DEFAULT_COACH_ORDER],
-  );
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>(
-    () =>
-      user.role === "coach"
-        ? Object.fromEntries(DEFAULT_COACH_ORDER.map((id) => [id, false]))
-        : { tags: false, date: false, logType: false },
-  );
+  const [coachFilterOrder, setCoachFilterOrder] = useState<CoachFilterId[]>(() => [
+    ...DEFAULT_COACH_ORDER,
+  ])
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
+    user.role === "coach"
+      ? Object.fromEntries(DEFAULT_COACH_ORDER.map((id) => [id, false]))
+      : { tags: false, date: false, logType: false },
+  )
 
   const handleResetAll = () => {
-    handlers.clearAllFilters();
-  };
+    handlers.clearAllFilters()
+  }
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return
     try {
-      const stored = localStorage.getItem(
-        `${COACH_FILTER_ORDER_KEY}-${user.id}`,
-      );
+      const stored = localStorage.getItem(`${COACH_FILTER_ORDER_KEY}-${user.id}`)
       if (stored) {
-        const parsed = JSON.parse(stored) as string[];
-        const valid = DEFAULT_COACH_ORDER.filter((id) => parsed.includes(id));
+        const parsed = JSON.parse(stored) as string[]
+        const valid = DEFAULT_COACH_ORDER.filter((id) => parsed.includes(id))
         if (valid.length === DEFAULT_COACH_ORDER.length) {
-          setCoachFilterOrder(parsed as CoachFilterId[]);
+          setCoachFilterOrder(parsed as CoachFilterId[])
         }
       }
     } catch {
       // ignore invalid localStorage
     }
-  }, [user.id]);
+  }, [user.id])
 
   const hasAnyFilter =
     filters.activeTags.length > 0 ||
     filters.dateFilter !== "all" ||
-    !!filters.filterSessionId ||
-    !!filters.filterAthleteId ||
-    !!filters.filterRoleId ||
-    !!filters.filterReviewStatus ||
-    !!filters.filterVisibility;
+    filters.filterSessionIds.length > 0 ||
+    filters.filterAthleteIds.length > 0 ||
+    filters.filterRoleIds.length > 0 ||
+    filters.filterReviewStatuses.length > 0 ||
+    !!filters.filterVisibility
 
   const coachSections = useMemo(() => {
-    const order = coachFilterOrder;
+    const order = coachFilterOrder
     const sections: {
-      id: CoachFilterId;
-      title: string;
-      node: React.ReactNode;
-    }[] = [];
+      id: CoachFilterId
+      title: string
+      node: React.ReactNode
+    }[] = []
 
     const byId: Record<CoachFilterId, React.ReactNode> = {
       sessions: (
         <SessionFilter
           sessions={sessions}
-          activeSessionId={filters.filterSessionId}
-          onSelect={(id) =>
-            handlers.setFilterSessionId((prev) => (prev === id ? null : id))
-          }
-          onClear={() => handlers.setFilterSessionId(null)}
+          activeSessionIds={filters.filterSessionIds}
+          onToggle={handlers.toggleFilterSessionId}
+          onClear={handlers.clearFilterSessionIds}
           hideHeader
         />
       ),
@@ -131,16 +121,18 @@ export function DashboardSidebar({
         <RoleFilter
           variant="sidebar"
           roles={groupRoles}
-          filterRoleId={filters.filterRoleId}
-          onFilter={handlers.setFilterRoleId}
+          filterRoleIds={filters.filterRoleIds}
+          onToggle={handlers.toggleFilterRoleId}
+          onClear={handlers.clearFilterRoleIds}
           hideHeader
         />
       ),
       reviewStatus: (
         <ReviewStatusFilter
           variant="sidebar"
-          filterReviewStatus={filters.filterReviewStatus}
-          onFilter={handlers.setFilterReviewStatus}
+          filterReviewStatuses={filters.filterReviewStatuses}
+          onToggle={handlers.toggleFilterReviewStatus}
+          onClear={handlers.clearFilterReviewStatuses}
           hideHeader
         />
       ),
@@ -148,8 +140,9 @@ export function DashboardSidebar({
         <AthleteFilter
           variant="sidebar"
           athletes={athletes}
-          filterAthleteId={filters.filterAthleteId}
-          onFilter={handlers.handleFilterAthlete}
+          filterAthleteIds={filters.filterAthleteIds}
+          onToggle={handlers.toggleFilterAthleteId}
+          onClear={handlers.clearFilterAthleteIds}
           hideHeader
         />
       ),
@@ -164,7 +157,7 @@ export function DashboardSidebar({
           hideHeader
         />
       ),
-    };
+    }
 
     const titles: Record<CoachFilterId, string> = {
       sessions: "Training Sessions",
@@ -172,26 +165,22 @@ export function DashboardSidebar({
       reviewStatus: "Review Status",
       athlete: "Athlete",
       date: "Date",
-    };
+    }
 
     for (const id of order) {
       sections.push({
         id,
         title: titles[id],
         node: byId[id],
-      });
+      })
     }
 
-    return sections;
-  }, [coachFilterOrder, sessions, filters, handlers, groupRoles, athletes]);
+    return sections
+  }, [coachFilterOrder, sessions, filters, handlers, groupRoles, athletes])
 
   return (
     <aside className="hidden w-72 shrink-0 flex-col gap-4 overflow-y-auto scrollbar-hidden border-r border-border p-4 lg:flex">
-      <SidebarProfile
-        user={user}
-        onLogout={onLogout}
-        onGroupChanged={onGroupChanged}
-      />
+      <SidebarProfile user={user} onLogout={onLogout} onGroupChanged={onGroupChanged} />
 
       {user.role === "athlete" &&
         (statsLoading ? (
@@ -233,9 +222,7 @@ export function DashboardSidebar({
                   key={s.id}
                   title={s.title}
                   open={openSections[s.id] ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, [s.id]: open }))
-                  }
+                  onOpenChange={(open) => setOpenSections((prev) => ({ ...prev, [s.id]: open }))}
                 >
                   {s.node}
                 </CollapsibleFilterSection>
@@ -245,9 +232,7 @@ export function DashboardSidebar({
                 <CollapsibleFilterSection
                   title="Tags"
                   open={openSections.tags ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, tags: open }))
-                  }
+                  onOpenChange={(open) => setOpenSections((prev) => ({ ...prev, tags: open }))}
                 >
                   <TagFilter
                     tags={tags}
@@ -261,9 +246,7 @@ export function DashboardSidebar({
                 <CollapsibleFilterSection
                   title="Date"
                   open={openSections.date ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, date: open }))
-                  }
+                  onOpenChange={(open) => setOpenSections((prev) => ({ ...prev, date: open }))}
                 >
                   <DateFilter
                     variant="sidebar"
@@ -278,9 +261,7 @@ export function DashboardSidebar({
                 <CollapsibleFilterSection
                   title="Log Type"
                   open={openSections.logType ?? false}
-                  onOpenChange={(open) =>
-                    setOpenSections((prev) => ({ ...prev, logType: open }))
-                  }
+                  onOpenChange={(open) => setOpenSections((prev) => ({ ...prev, logType: open }))}
                 >
                   <VisibilityFilter
                     variant="sidebar"
@@ -295,5 +276,5 @@ export function DashboardSidebar({
         </div>
       )}
     </aside>
-  );
+  )
 }

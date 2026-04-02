@@ -18,7 +18,7 @@ export async function GET(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    const userGroupId = currentUser?.groupId || null
+    const userGroupId = currentUser?.activeGroupId || null
     if (!userGroupId) {
       return NextResponse.json({ checkins: [] })
     }
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     const athletes = await db
       .collection("users")
       .find({
-        $or: [{ groupIds: userGroupId }, { groupId: userGroupId }],
+        groupIds: userGroupId,
         role: { $ne: "coach" },
       })
       .project({ _id: 1 })
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const userGroupId = currentUser.groupId
+    const userGroupId = currentUser.activeGroupId
     if (!userGroupId) {
       return NextResponse.json(
         { error: "You must be in a group to create check-ins" },

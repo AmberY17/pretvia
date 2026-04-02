@@ -17,8 +17,7 @@ export function generateGroupCode(): string {
 }
 
 /**
- * Ensure user's groupIds array is in sync with their groupId.
- * Handles migration from single groupId to groupIds array.
+ * Ensure user's groupIds array is in sync with their activeGroupId.
  */
 export async function ensureGroupIds(db: Db, userId: string) {
   const user = await db.collection("users").findOne({
@@ -26,9 +25,9 @@ export async function ensureGroupIds(db: Db, userId: string) {
   })
   if (!user) return user
 
-  if (user.groupId && (!Array.isArray(user.groupIds) || !user.groupIds.includes(user.groupId))) {
+  if (user.activeGroupId && (!Array.isArray(user.groupIds) || !user.groupIds.includes(user.activeGroupId))) {
     const groupIds = Array.isArray(user.groupIds) ? [...user.groupIds] : []
-    if (!groupIds.includes(user.groupId)) groupIds.push(user.groupId)
+    if (!groupIds.includes(user.activeGroupId)) groupIds.push(user.activeGroupId)
     await db.collection("users").updateOne(
       { _id: new ObjectId(userId) },
       { $set: { groupIds } },
@@ -67,9 +66,9 @@ export async function switchActiveGroup(
 ) {
   await db.collection("users").updateOne(
     { _id: new ObjectId(session.userId) },
-    { $set: { groupId } },
+    { $set: { activeGroupId: groupId } },
   )
-  await createSession({ ...session, groupId: groupId || undefined })
+  await createSession({ ...session, activeGroupId: groupId || undefined })
 }
 
 /**
@@ -85,7 +84,7 @@ export async function addUserToGroup(
   await db.collection("users").updateOne(
     { _id: new ObjectId(session.userId) },
     {
-      $set: { groupId },
+      $set: { activeGroupId: groupId },
       $addToSet: { groupIds: groupId },
     },
   )
@@ -112,5 +111,5 @@ export async function addUserToGroup(
     )
   }
 
-  await createSession({ ...session, groupId })
+  await createSession({ ...session, activeGroupId: groupId })
 }

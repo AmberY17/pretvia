@@ -7,9 +7,9 @@ import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCheck } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { EmptyStateCard } from "@/components/main/shared/empty-state-card";
 import { PageHeader } from "@/components/main/shared/page-header";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingScreen } from "@/components/loading-screen";
 import { AttendancePageSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
 import {
   AttendanceSessionDropdown,
@@ -60,9 +60,9 @@ export default function AttendancePage() {
   const { data: checkinsData, isLoading: checkinsLoading } = useQuery<{
     checkins: CheckinItem[];
   }>({
-    queryKey: [...queryKeys.checkins.all, "allSessions", user?.id, user?.groupId],
+    queryKey: [...queryKeys.checkins.all, "allSessions", user?.id, user?.activeGroupId],
     queryFn: () => apiFetcher("/api/checkins?mode=all"),
-    enabled: !!user?.groupId,
+    enabled: !!user?.activeGroupId,
   });
 
   const attendanceUrl =
@@ -70,7 +70,7 @@ export default function AttendancePage() {
       ? `/api/attendance?checkinId=${selectedCheckinId}`
       : null;
   const { data: attendanceData, isLoading: attendanceLoading } = useQuery<AttendanceData>({
-    queryKey: [...queryKeys.attendance.byCheckin(selectedCheckinId ?? ""), user?.id, user?.groupId],
+    queryKey: [...queryKeys.attendance.byCheckin(selectedCheckinId ?? ""), user?.id, user?.activeGroupId],
     queryFn: () => apiFetcher<AttendanceData>(attendanceUrl!),
     enabled: !!attendanceUrl && !!user,
   });
@@ -140,7 +140,7 @@ export default function AttendancePage() {
       <main className="flex-1 overflow-y-auto scrollbar-hidden p-6">
         <div className="mx-auto max-w-2xl">
           <AnimatePresence mode="wait">
-            {!user.groupId ? (
+            {!user.activeGroupId ? (
               <motion.div
                 key="empty-no-group"
                 initial={{ opacity: 0 }}
@@ -153,7 +153,7 @@ export default function AttendancePage() {
                   message="Join a group to take attendance."
                 />
               </motion.div>
-            ) : user.groupId && (checkinsLoading || attendanceLoading) ? (
+            ) : user.activeGroupId && (checkinsLoading || attendanceLoading) ? (
               <motion.div
                 key="skeleton"
                 initial={{ opacity: 0 }}

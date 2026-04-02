@@ -280,7 +280,9 @@ describe("Coach Manage Group", () => {
     })
 
     it("can close the invite modal", () => {
-      cy.contains("button", "Cancel").click()
+      cy.contains('[role="dialog"]', "Invite athlete").within(() => {
+        cy.contains("button", "Cancel").click()
+      })
       cy.contains("Invite athlete").should("not.exist")
     })
   })

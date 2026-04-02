@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       email: user.email,
       displayName: user.displayName,
       role: user.role || "athlete",
-      groupId: user.groupId || undefined,
+      activeGroupId: user.activeGroupId || undefined,
     })
 
     return NextResponse.json({
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         email: user.email,
         displayName: user.displayName,
         role: user.role || "athlete",
-        groupId: user.groupId || null,
+        activeGroupId: user.activeGroupId || null,
         profileComplete: user.profileComplete,
       },
     })

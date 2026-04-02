@@ -22,22 +22,21 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const tags = searchParams.getAll("tag")
-    const filterUserId = searchParams.get("userId")
-    const filterRoleId = searchParams.get("roleId")
+    const filterUserIds = searchParams.getAll("userId")
+    const filterRoleIds = searchParams.getAll("roleId")
     const dateFrom = searchParams.get("dateFrom")
     const dateTo = searchParams.get("dateTo")
     const datesParam = searchParams.get("dates")
-    const filterCheckinId = searchParams.get("checkinId")
+    const filterCheckinIds = searchParams.getAll("checkinId")
     const filterVisibility = searchParams.get("visibility")
-    const filterReviewStatus = searchParams.get("reviewStatus") as
+    const filterReviewStatuses = searchParams
+      .getAll("reviewStatus")
+      .filter((s) => ["pending", "reviewed", "revisit"].includes(s)) as (
       | "pending"
       | "reviewed"
       | "revisit"
-      | null
-    const limit = Math.min(
-      Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)),
-      50,
-    )
+    )[]
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)), 50)
     const cursor = searchParams.get("cursor") ?? null
 
     const db = await getDb()
@@ -45,22 +44,23 @@ export async function GET(req: Request) {
     const currentUser = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
-    const userGroupId = currentUser?.groupId || null
+    const userGroupId = currentUser?.activeGroupId || null
 
     // Build filter pipeline
     let filter = await buildVisibilityFilter(db, {
       userId: session.userId,
       userRole: currentUser?.role,
       userGroupId,
-      filterUserId,
-      filterRoleId,
+      filterUserIds,
+      filterRoleIds,
     })
 
     if (tags.length > 0) {
       filter.tags = { $all: tags }
     }
-    if (filterCheckinId) {
-      filter.checkinId = filterCheckinId
+    if (filterCheckinIds.length > 0) {
+      filter.checkinId =
+        filterCheckinIds.length === 1 ? filterCheckinIds[0] : { $in: filterCheckinIds }
     }
 
     filter = applyDateFilter(filter, dateFrom, dateTo, datesParam)
@@ -68,22 +68,28 @@ export async function GET(req: Request) {
 
     if (filterVisibility && currentUser?.role !== "coach") {
       if (filterVisibility === "coach") {
-        filter = { $and: [filter, { $or: [
-          { visibility: "coach" },
-          { visibility: { $exists: false }, isGroup: true },
-        ]}]}
+        filter = {
+          $and: [
+            filter,
+            { $or: [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }] },
+          ],
+        }
       } else if (filterVisibility === "private") {
-        filter = { $and: [filter, { $or: [
-          { visibility: "private" },
-          { visibility: { $exists: false }, isGroup: { $ne: true } },
-        ]}]}
+        filter = {
+          $and: [
+            filter,
+            {
+              $or: [
+                { visibility: "private" },
+                { visibility: { $exists: false }, isGroup: { $ne: true } },
+              ],
+            },
+          ],
+        }
       }
     }
 
-    const useAggregation =
-      currentUser?.role === "coach" &&
-      filterReviewStatus &&
-      ["pending", "reviewed", "revisit"].includes(filterReviewStatus)
+    const useAggregation = currentUser?.role === "coach" && filterReviewStatuses.length > 0
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let logs: any[]
@@ -121,7 +127,7 @@ export async function GET(req: Request) {
             },
           },
         },
-        { $match: { _reviewStatus: filterReviewStatus } },
+        { $match: { _reviewStatus: { $in: filterReviewStatuses } } },
         { $sort: { timestamp: -1 as const, _id: -1 as const } },
         { $limit: limit + 1 },
       ]
@@ -136,10 +142,7 @@ export async function GET(req: Request) {
 
       // Populate reviewMap from aggregation results
       for (const log of logs) {
-        reviewMap.set(
-          (log._id as ObjectId).toString(),
-          (log._reviewStatus as string) ?? "pending",
-        )
+        reviewMap.set((log._id as ObjectId).toString(), (log._reviewStatus as string) ?? "pending")
       }
     } else {
       logs = await db
@@ -163,10 +166,12 @@ export async function GET(req: Request) {
 
         const statusOrder: Record<string, number> = { pending: 0, revisit: 1, reviewed: 2 }
         logs.sort((a, b) => {
-          const aOrder = statusOrder[reviewMap.get((a._id as ObjectId).toString()) ?? "pending"] ?? 0
-          const bOrder = statusOrder[reviewMap.get((b._id as ObjectId).toString()) ?? "pending"] ?? 0
+          const aOrder =
+            statusOrder[reviewMap.get((a._id as ObjectId).toString()) ?? "pending"] ?? 0
+          const bOrder =
+            statusOrder[reviewMap.get((b._id as ObjectId).toString()) ?? "pending"] ?? 0
           if (aOrder !== bOrder) return aOrder - bOrder
-          return ((b.timestamp as Date).getTime()) - ((a.timestamp as Date).getTime())
+          return (b.timestamp as Date).getTime() - (a.timestamp as Date).getTime()
         })
       }
     }
@@ -178,9 +183,7 @@ export async function GET(req: Request) {
       logs: logs.map((log) => {
         const logId = (log._id as ObjectId).toString()
         const reviewStatus =
-          currentUser?.role === "coach"
-            ? (reviewMap.get(logId) ?? "pending")
-            : undefined
+          currentUser?.role === "coach" ? (reviewMap.get(logId) ?? "pending") : undefined
         return {
           id: logId,
           emoji: log.emoji,
@@ -200,10 +203,7 @@ export async function GET(req: Request) {
     })
   } catch (error) {
     console.error("Get logs error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }
 
@@ -217,10 +217,7 @@ export async function POST(req: Request) {
     const { emoji, timestamp, isGroup, visibility, notes, tags, checkinId } = await req.json()
 
     if (!emoji) {
-      return NextResponse.json(
-        { error: "An emoji is required" },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: "An emoji is required" }, { status: 400 })
     }
 
     const db = await getDb()
@@ -233,31 +230,29 @@ export async function POST(req: Request) {
       const now = new Date()
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-      const todayLogs = await db.collection("logs").find({
-        userId: session.userId,
-        createdAt: { $gte: startOfToday, $lt: endOfToday },
-        checkinId: { $exists: false },
-      }).project({ visibility: 1, isGroup: 1 }).toArray()
+      const todayLogs = await db
+        .collection("logs")
+        .find({
+          userId: session.userId,
+          createdAt: { $gte: startOfToday, $lt: endOfToday },
+          checkinId: { $exists: false },
+        })
+        .project({ visibility: 1, isGroup: 1 })
+        .toArray()
 
       const resolvedNew = visibility || (isGroup ? "coach" : "private")
-      const hasShared = todayLogs.some((l) =>
-        l.visibility === "coach" || (!l.visibility && l.isGroup === true)
+      const hasShared = todayLogs.some(
+        (l) => l.visibility === "coach" || (!l.visibility && l.isGroup === true),
       )
-      const hasPrivate = todayLogs.some((l) =>
-        l.visibility === "private" || (!l.visibility && l.isGroup !== true)
+      const hasPrivate = todayLogs.some(
+        (l) => l.visibility === "private" || (!l.visibility && l.isGroup !== true),
       )
 
       if (resolvedNew === "coach" && hasShared) {
-        return NextResponse.json(
-          { error: "Daily shared log limit reached" },
-          { status: 409 },
-        )
+        return NextResponse.json({ error: "Daily shared log limit reached" }, { status: 409 })
       }
       if (resolvedNew === "private" && hasPrivate) {
-        return NextResponse.json(
-          { error: "Daily private log limit reached" },
-          { status: 409 },
-        )
+        return NextResponse.json({ error: "Daily private log limit reached" }, { status: 409 })
       }
     }
 
@@ -280,9 +275,7 @@ export async function POST(req: Request) {
 
     const result = await db.collection("logs").insertOne(logEntry)
 
-    const totalCount = await db
-      .collection("logs")
-      .countDocuments({ userId: session.userId })
+    const totalCount = await db.collection("logs").countDocuments({ userId: session.userId })
 
     const logTimestamp = logEntry.timestamp as Date
     const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
@@ -309,10 +302,7 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error("Create log error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }
 
@@ -341,10 +331,7 @@ export async function PUT(req: Request) {
     })
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Log not found or not authorized" },
-        { status: 404 },
-      )
+      return NextResponse.json({ error: "Log not found or not authorized" }, { status: 404 })
     }
 
     const resolvedNewVisibility =
@@ -356,8 +343,7 @@ export async function PUT(req: Request) {
             : "private"
           : null
 
-    const existingVisibility =
-      existing.visibility || (existing.isGroup ? "coach" : "private")
+    const existingVisibility = existing.visibility || (existing.isGroup ? "coach" : "private")
 
     if (
       resolvedNewVisibility &&
@@ -365,16 +351,8 @@ export async function PUT(req: Request) {
       !existing.checkinId
     ) {
       const now = new Date()
-      const startOfToday = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-      )
-      const endOfToday = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1,
-      )
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
 
       const conflictLog = await db.collection("logs").findOne({
         _id: { $ne: logOid },
@@ -383,10 +361,7 @@ export async function PUT(req: Request) {
         checkinId: { $exists: false },
         $or:
           resolvedNewVisibility === "coach"
-            ? [
-                { visibility: "coach" },
-                { visibility: { $exists: false }, isGroup: true },
-              ]
+            ? [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }]
             : [
                 { visibility: "private" },
                 { visibility: { $exists: false }, isGroup: { $ne: true } },
@@ -419,10 +394,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Update log error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }
 
@@ -437,10 +409,7 @@ export async function DELETE(req: Request) {
     const logId = searchParams.get("id")
 
     if (!logId) {
-      return NextResponse.json(
-        { error: "Log ID is required" },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: "Log ID is required" }, { status: 400 })
     }
     const deleteLogOid = safeObjectId(logId)
     if (!deleteLogOid) {
@@ -454,10 +423,7 @@ export async function DELETE(req: Request) {
       userId: session.userId,
     })
     if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { error: "Log not found or not authorized" },
-        { status: 404 },
-      )
+      return NextResponse.json({ error: "Log not found or not authorized" }, { status: 404 })
     }
 
     await Promise.all([
@@ -469,9 +435,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Delete log error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }

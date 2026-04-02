@@ -67,7 +67,7 @@ export async function PATCH(
       )
     }
 
-    const userGroupId = currentUser.groupId || null
+    const userGroupId = currentUser.activeGroupId || null
     if (!userGroupId) {
       return NextResponse.json(
         { error: "Coach must belong to a group" },
@@ -77,7 +77,7 @@ export async function PATCH(
 
     const groupMembers = await db
       .collection("users")
-      .find({ $or: [{ groupIds: userGroupId }, { groupId: userGroupId }] })
+      .find({ groupIds: userGroupId })
       .project({ _id: 1 })
       .toArray()
     const memberIds = groupMembers.map((m) => m._id.toString())

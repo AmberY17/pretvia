@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
+import { safeObjectId } from "@/lib/objectid"
 
 // POST: mark comments as read for a specific log
 export async function POST(req: Request) {
@@ -17,6 +18,10 @@ export async function POST(req: Request) {
         { error: "Log ID is required" },
         { status: 400 }
       )
+    }
+
+    if (!safeObjectId(logId)) {
+      return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
     }
 
     const db = await getDb()

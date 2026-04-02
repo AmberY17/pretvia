@@ -53,7 +53,7 @@ export async function GET(req: Request) {
 
     // Only log owner or a coach in the same group can see comments
     if (!isLogOwner && !isCoach) {
-      return NextResponse.json({ comments: [] })
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     // Check they share a group (support multi-group membership)
@@ -62,15 +62,15 @@ export async function GET(req: Request) {
         _id: new ObjectId(log.userId),
       })
       if (!logOwner) {
-        return NextResponse.json({ comments: [] })
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
       const ownerGroups = Array.isArray(logOwner.groupIds) ? logOwner.groupIds : []
-      if (logOwner.groupId && !ownerGroups.includes(logOwner.groupId)) ownerGroups.push(logOwner.groupId)
+      if (logOwner.activeGroupId && !ownerGroups.includes(logOwner.activeGroupId)) ownerGroups.push(logOwner.activeGroupId)
       const currentGroups = Array.isArray(currentUser.groupIds) ? currentUser.groupIds : []
-      if (currentUser.groupId && !currentGroups.includes(currentUser.groupId)) currentGroups.push(currentUser.groupId)
+      if (currentUser.activeGroupId && !currentGroups.includes(currentUser.activeGroupId)) currentGroups.push(currentUser.activeGroupId)
       const sharesGroup = ownerGroups.some((g: string) => currentGroups.includes(g))
       if (!sharesGroup) {
-        return NextResponse.json({ comments: [] })
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
     }
 
@@ -218,9 +218,9 @@ export async function POST(req: Request) {
         )
       }
       const ownerGroups = Array.isArray(logOwner.groupIds) ? logOwner.groupIds : []
-      if (logOwner.groupId && !ownerGroups.includes(logOwner.groupId)) ownerGroups.push(logOwner.groupId)
+      if (logOwner.activeGroupId && !ownerGroups.includes(logOwner.activeGroupId)) ownerGroups.push(logOwner.activeGroupId)
       const currentGroups = Array.isArray(currentUser.groupIds) ? currentUser.groupIds : []
-      if (currentUser.groupId && !currentGroups.includes(currentUser.groupId)) currentGroups.push(currentUser.groupId)
+      if (currentUser.activeGroupId && !currentGroups.includes(currentUser.activeGroupId)) currentGroups.push(currentUser.activeGroupId)
       const sharesGroup = ownerGroups.some((g: string) => currentGroups.includes(g))
       if (!sharesGroup) {
         return NextResponse.json(

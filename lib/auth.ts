@@ -14,7 +14,7 @@ export interface SessionPayload {
   email: string
   displayName?: string
   role?: string
-  groupId?: string
+  activeGroupId?: string
 }
 
 export async function createSession(payload: SessionPayload) {

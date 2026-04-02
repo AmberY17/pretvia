@@ -18,7 +18,7 @@ export async function ensureIndexes(): Promise<void> {
 
       // users
       db.collection("users").createIndex({ email: 1 }, { unique: true, sparse: true }),
-      db.collection("users").createIndex({ groupId: 1 }),
+      db.collection("users").createIndex({ activeGroupId: 1 }),
       db.collection("users").createIndex({ groupIds: 1 }),
 
       // announcements

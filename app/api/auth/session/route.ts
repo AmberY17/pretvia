@@ -22,8 +22,8 @@ export async function GET() {
 
     // Ensure groupIds is in sync
     let groupIds: string[] = Array.isArray(user.groupIds) ? user.groupIds : []
-    if (user.groupId && !groupIds.includes(user.groupId)) {
-      groupIds = [...groupIds, user.groupId]
+    if (user.activeGroupId && !groupIds.includes(user.activeGroupId)) {
+      groupIds = [...groupIds, user.activeGroupId]
       await db.collection("users").updateOne(
         { _id: new ObjectId(session.userId) },
         { $set: { groupIds } }
@@ -32,9 +32,9 @@ export async function GET() {
 
     // If user is in a group, fetch active group info
     let group = null
-    if (user.groupId) {
+    if (user.activeGroupId) {
       const groupDoc = await db.collection("groups").findOne({
-        _id: new ObjectId(user.groupId),
+        _id: new ObjectId(user.activeGroupId),
       })
       if (groupDoc) {
         group = {
@@ -77,7 +77,7 @@ export async function GET() {
         email: user.email,
         displayName: user.displayName,
         role: user.role || "athlete",
-        groupId: user.groupId || null,
+        activeGroupId: user.activeGroupId || null,
         group,
         groups,
         groupIds,

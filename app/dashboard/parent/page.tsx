@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingScreen } from "@/components/loading-screen";
 
 /** Redirect to main dashboard – guardian view is now shown there */
 export default function ParentDashboardPage() {

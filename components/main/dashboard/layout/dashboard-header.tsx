@@ -25,7 +25,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
     router.push("/");
   };
 
-  const isCoachWithGroup = user.role === "coach" && user.groupId;
+  const isCoachWithGroup = user.role === "coach" && user.activeGroupId;
   const isGuardian = user.role === "guardian";
 
   return (

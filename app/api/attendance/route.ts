@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { safeObjectId } from "@/lib/objectid"
 
 // GET: fetch attendance for a check-in
 export async function GET(req: Request) {
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const userGroupId = currentUser.groupId
+    const userGroupId = currentUser.activeGroupId ?? (Array.isArray(currentUser.groupIds) ? currentUser.groupIds[0] : null) ?? null
     if (!userGroupId) {
       return NextResponse.json({ attendance: null, athletes: [] })
     }
@@ -32,8 +33,13 @@ export async function GET(req: Request) {
       return NextResponse.json({ attendance: null, athletes: [] })
     }
 
+    const checkinOid = safeObjectId(checkinId)
+    if (!checkinOid) {
+      return NextResponse.json({ error: "Invalid checkin ID" }, { status: 400 })
+    }
+
     const checkin = await db.collection("checkins").findOne({
-      _id: new ObjectId(checkinId),
+      _id: checkinOid,
       groupId: userGroupId,
     })
 
@@ -111,7 +117,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const userGroupId = currentUser.groupId
+    const userGroupId = currentUser.activeGroupId ?? (Array.isArray(currentUser.groupIds) ? currentUser.groupIds[0] : null) ?? null
     if (!userGroupId) {
       return NextResponse.json(
         { error: "You must be in a group to record attendance" },
@@ -128,8 +134,13 @@ export async function POST(req: Request) {
       )
     }
 
+    const checkinOid = safeObjectId(checkinId)
+    if (!checkinOid) {
+      return NextResponse.json({ error: "Invalid checkin ID" }, { status: 400 })
+    }
+
     const checkin = await db.collection("checkins").findOne({
-      _id: new ObjectId(checkinId),
+      _id: checkinOid,
       groupId: userGroupId,
     })
 

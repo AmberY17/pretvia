@@ -17,13 +17,14 @@ export async function GET() {
       _id: new ObjectId(session.userId),
     })
 
-    if (!user?.groupId) {
+    const activeGroupId = user?.activeGroupId ?? (Array.isArray(user?.groupIds) ? user.groupIds[0] : null) ?? null
+    if (!activeGroupId) {
       return NextResponse.json({ announcements: [] })
     }
 
     const docs = await db
       .collection("announcements")
-      .find({ groupId: user.groupId })
+      .find({ groupId: activeGroupId })
       .sort({ createdAt: -1 })
       .limit(100)
       .toArray()
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
       )
     }
 
-    if (!user.groupId) {
+    if (!user.activeGroupId) {
       return NextResponse.json(
         { error: "You must be in a group to post announcements" },
         { status: 400 }
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
     }
 
     const result = await db.collection("announcements").insertOne({
-      groupId: user.groupId,
+      groupId: user.activeGroupId,
       coachId: session.userId,
       text: text.trim(),
       active: true,
@@ -145,7 +146,7 @@ export async function DELETE(req: Request) {
       )
     }
 
-    if (!user.groupId) {
+    if (!user.activeGroupId) {
       return NextResponse.json(
         { error: "You must be in a group" },
         { status: 400 }
@@ -161,16 +162,14 @@ export async function DELETE(req: Request) {
       )
     }
 
-    let oid: ObjectId
-    try {
-      oid = new ObjectId(id)
-    } catch {
+    const oid = safeObjectId(id)
+    if (!oid) {
       return NextResponse.json({ error: "Invalid announcement id" }, { status: 400 })
     }
 
     const announcement = await db.collection("announcements").findOne({
       _id: oid,
-      groupId: user.groupId,
+      groupId: user.activeGroupId,
       coachId: session.userId,
     })
     if (!announcement) {
@@ -211,7 +210,7 @@ export async function PATCH(req: Request) {
       )
     }
 
-    if (!user.groupId) {
+    if (!user.activeGroupId) {
       return NextResponse.json(
         { error: "You must be in a group" },
         { status: 400 }
@@ -227,10 +226,8 @@ export async function PATCH(req: Request) {
       )
     }
 
-    let oid: ObjectId
-    try {
-      oid = new ObjectId(id)
-    } catch {
+    const oid = safeObjectId(id)
+    if (!oid) {
       return NextResponse.json({ error: "Invalid announcement id" }, { status: 400 })
     }
 
@@ -250,7 +247,7 @@ export async function PATCH(req: Request) {
 
     const announcement = await db.collection("announcements").findOne({
       _id: oid,
-      groupId: user.groupId,
+      groupId: user.activeGroupId,
       coachId: session.userId,
     })
     if (!announcement) {

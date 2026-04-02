@@ -29,8 +29,8 @@
 | Directory | Contents |
 |-----------|---------|
 | `components/ui/` | shadcn/ui primitives (Button, Dialog, etc.) — don't modify directly |
-| `components/dashboard/` | Feature components by area (logs, sidebar, group, guardian) |
-| `components/dashboard/shared/` | Reused across features: DeleteConfirmDialog, VisibilityBadge, TagPill |
+| `components/main/` | Feature components organized by role (coach, guardian, dashboard, account) |
+| `components/main/shared/` | Shared across roles: DeleteConfirmDialog, EmptyStateCard, EmojiPicker, etc. |
 
 ## Shared Types
 

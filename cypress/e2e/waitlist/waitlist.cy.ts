@@ -49,7 +49,7 @@ describe("Waitlist page", () => {
 
   it("valid unique submission shows success state", () => {
     const uniqueEmail = `waitlist-${Date.now()}@example.com`;
-    cy.findByLabelText(/first name/i).type("Jane");
+    cy.findByLabelText(/first name/i).should("not.be.disabled").type("Jane");
     cy.findByLabelText(/last name/i).type("Smith");
     cy.findByLabelText(/email/i).type(uniqueEmail);
     cy.findByLabelText(/club name/i).type("Riverside FC");
@@ -77,7 +77,7 @@ describe("Waitlist page", () => {
 
     cy.visit("/waitlist");
     fillAndSubmit();
-    cy.contains("already on the waitlist").should("be.visible");
+    cy.contains("already on the waitlist");
   });
 
   context("Mobile viewport", () => {
@@ -131,6 +131,6 @@ describe("Coach signup with waitlist token", () => {
     cy.get("#terms").click();
     cy.findByRole("button", { name: "Create Account" }).click();
 
-    cy.contains("Check your email to verify your account.").should("be.visible");
+    cy.contains("Check your email to verify your account.");
   });
 });

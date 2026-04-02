@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { PageHeader } from "@/components/main/shared/page-header";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingScreen } from "@/components/loading-screen";
 import { AccountProfileEmojiSection } from "@/components/main/account/account-profile-emoji-section";
 import { AccountTrainingSlotsSection } from "@/components/main/account/account-training-slots-section";
 import { AccountCelebrationSection } from "@/components/main/account/account-celebration-section";
@@ -176,7 +176,7 @@ export default function AccountPage() {
   }
 
   const isGroupSlot = (slot: TrainingSlotItem): boolean =>
-    !!(user?.groupId && slot.sourceGroupId === user.groupId);
+    !!(user?.activeGroupId && slot.sourceGroupId === user.activeGroupId);
 
   const handleConfirmRemoveGroupSlot = async () => {
     if (deleteGroupSlotConfirmIndex === null) return;
@@ -188,7 +188,7 @@ export default function AccountPage() {
   };
 
   const handleSyncGroupSchedule = async () => {
-    if (!user?.groupId) return;
+    if (!user?.activeGroupId) return;
     setSyncingSchedule(true);
     try {
       const res = await fetch("/api/athlete/sync-group-schedule", {
@@ -257,7 +257,7 @@ export default function AccountPage() {
           {user.role === "athlete" && (
             <AccountTrainingSlotsSection
               trainingSlots={trainingSlots}
-              hasGroupId={!!user.groupId}
+              hasGroupId={!!user.activeGroupId}
               syncingSchedule={syncingSchedule}
               deleteGroupSlotConfirmIndex={deleteGroupSlotConfirmIndex}
               setDeleteGroupSlotConfirmIndex={setDeleteGroupSlotConfirmIndex}

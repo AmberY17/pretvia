@@ -1,9 +1,13 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  CoachOnboardingChecklist,
+  isCoachOnboardingDone,
+} from "@/components/main/dashboard/layout/onboarding/coach-onboarding-checklist"
 import { LogCard, type LogEntry } from "@/components/main/dashboard/logs/log-card"
 import { LogCardSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons"
 import { MobileFilters } from "@/components/main/dashboard/layout/dashboard-feed/mobile-filters"
@@ -79,6 +83,16 @@ export function DashboardFeed({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingTriggeredRef = useRef(false)
 
+  // For coaches: start with checklist visible, hide once onboarding confirmed done
+  const [coachOnboardingDone, setCoachOnboardingDone] = useState(
+    user.role !== "coach",
+  )
+
+  useEffect(() => {
+    if (user.role !== "coach") return
+    setCoachOnboardingDone(isCoachOnboardingDone())
+  }, [user.role])
+
   useEffect(() => {
     if (!isLoadingMore) loadingTriggeredRef.current = false
   }, [isLoadingMore])
@@ -104,10 +118,10 @@ export function DashboardFeed({
   const isFiltered =
     filters.activeTags.length > 0 ||
     filters.dateFilter !== "all" ||
-    filters.filterSessionId ||
-    filters.filterRoleId ||
-    filters.filterReviewStatus ||
-    filters.filterAthleteId ||
+    filters.filterSessionIds.length > 0 ||
+    filters.filterRoleIds.length > 0 ||
+    filters.filterReviewStatuses.length > 0 ||
+    filters.filterAthleteIds.length > 0 ||
     filters.filterVisibility
 
   return (
@@ -132,7 +146,7 @@ export function DashboardFeed({
         />
 
         <FeedAnnouncementSection
-          show={!!user.groupId}
+          show={!!user.activeGroupId}
           loading={announcementLoading}
           announcements={announcements}
           isCoach={user.role === "coach"}
@@ -140,7 +154,7 @@ export function DashboardFeed({
         />
 
         <FeedCheckinSection
-          show={!!user.groupId}
+          show={!!user.activeGroupId}
           loading={checkinsLoading}
           checkins={checkins}
           isCoach={user.role === "coach"}
@@ -152,7 +166,9 @@ export function DashboardFeed({
 
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-foreground">Training Feed</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              {!coachOnboardingDone ? "Onboarding" : "Training Feed"}
+            </h1>
           </div>
           {user.role !== "coach" && (
             <Button
@@ -168,7 +184,13 @@ export function DashboardFeed({
         </div>
 
         <div className="flex flex-col gap-3">
-          <AnimatePresence mode="wait">
+          {!coachOnboardingDone ? (
+            <CoachOnboardingChecklist
+              hasGroup={!!user.activeGroupId}
+              onComplete={() => setCoachOnboardingDone(true)}
+            />
+          ) : (
+          <AnimatePresence mode="popLayout">
             {isLoading ? (
               <motion.div
                 key="loading"
@@ -189,14 +211,16 @@ export function DashboardFeed({
                 className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16"
               >
                 <span className="text-4xl">{"\u{1F3CB}\u{FE0F}"}</span>
-                <p className="text-sm text-muted-foreground">No logs yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  {isFiltered ? "No logs match your filters." : "No logs yet."}
+                </p>
               </motion.div>
             ) : (
               <motion.div
                 key="logs"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                exit={{ opacity: 0, pointerEvents: "none" }}
                 transition={{ duration: 0.15 }}
                 className="flex flex-col gap-3"
               >
@@ -210,13 +234,14 @@ export function DashboardFeed({
                     index={i}
                     currentUserId={user.id}
                     isCoach={user.role === "coach"}
-                    groupId={user.groupId}
+                    groupId={user.activeGroupId}
                     onMutateLogs={onMutateLogs}
                   />
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
+          )}
           {hasMoreLogs && (
             <div
               ref={sentinelRef}

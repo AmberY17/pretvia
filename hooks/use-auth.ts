@@ -9,7 +9,7 @@ export interface User {
   email: string
   displayName: string | null
   role: string
-  groupId: string | null
+  activeGroupId: string | null
   group: {
     id: string
     name: string

@@ -56,7 +56,11 @@ export async function applyGroupTrainingScheduleToAllMembers(
       : []
     const existingByKey = new Map(currentSlots.map((s) => [`${s.dayOfWeek}:${s.time}`, s]))
 
-    const updatedSlots = template.map((t) => {
+    const customSlots = currentSlots.filter(
+      (s) => !s.sourceGroupId || s.sourceGroupId !== groupId
+    )
+
+    const groupSlots = template.map((t) => {
       const existing = existingByKey.get(`${t.dayOfWeek}:${t.time}`)
       return {
         dayOfWeek: t.dayOfWeek,
@@ -65,6 +69,8 @@ export async function applyGroupTrainingScheduleToAllMembers(
         addedAt: existing?.addedAt ?? now,
       }
     })
+
+    const updatedSlots = [...customSlots, ...groupSlots]
 
     const nowDeleted = currentSlots
       .filter((s) => s.sourceGroupId === groupId && !templateKeys.has(`${s.dayOfWeek}:${s.time}`))
@@ -105,7 +111,11 @@ export async function applyGroupTrainingScheduleToUser(
   const now = new Date()
   const templateKeys = new Set(template.map((t) => `${t.dayOfWeek}:${t.time}`))
 
-  const updatedSlots = template.map((t) => {
+  const customSlots = currentSlots.filter(
+    (s) => !s.sourceGroupId || s.sourceGroupId !== groupId
+  )
+
+  const groupSlots = template.map((t) => {
     const existing = existingByKey.get(`${t.dayOfWeek}:${t.time}`)
     return {
       dayOfWeek: t.dayOfWeek,
@@ -114,6 +124,8 @@ export async function applyGroupTrainingScheduleToUser(
       addedAt: existing?.addedAt ?? now,
     }
   })
+
+  const updatedSlots = [...customSlots, ...groupSlots]
 
   const nowDeleted = currentSlots
     .filter((s) => s.sourceGroupId === groupId && !templateKeys.has(`${s.dayOfWeek}:${s.time}`))

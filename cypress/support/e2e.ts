@@ -5,6 +5,14 @@ before(() => {
   cy.task("cleanupTestData");
 });
 
+// Skip onboarding UI in all tests by pre-setting localStorage flags.
+beforeEach(() => {
+  cy.on("window:before:load", (win) => {
+    win.localStorage.setItem("pretvia-onboarded", "1");
+    win.localStorage.setItem("pretvia-coach-onboarding-done", "1");
+  });
+});
+
 // Suppress React hydration mismatch errors that Next.js throws in dev mode.
 // These are cosmetic in development — React recovers automatically — but
 // Cypress treats them as uncaught exceptions and fails the test.

@@ -51,8 +51,12 @@ Some documents have both singular and array versions of relationship fields:
 | `app/auth/` | Login/signup pages |
 | `app/dashboard/` | Main dashboard (layout + sub-routes) |
 | `components/ui/` | shadcn/ui primitives |
-| `components/dashboard/` | Feature components |
-| `components/dashboard/shared/` | Reusable components (DeleteConfirmDialog, VisibilityBadge, TagPill) |
+| `components/main/` | Feature components organized by role (coach, guardian, dashboard, account) |
+| `components/main/dashboard/` | Core dashboard components (logs, sidebar, filters, announcements, checkins) |
+| `components/main/shared/` | Shared across roles (DeleteConfirmDialog, EmptyStateCard, EmojiPicker, etc.) |
+| `components/main/coach/` | Coach-specific features (groups, attendance) |
+| `components/main/guardian/` | Guardian-specific features |
+| `components/main/account/` | Settings/profile area |
 | `hooks/` | Custom React hooks (`use-` prefix, one per file) |
 | `lib/` | Server/client utilities (auth, db, streak calc, date/time) |
 | `types/dashboard.ts` | All shared TypeScript types — never duplicate |
@@ -76,8 +80,8 @@ Large route handlers are split into colocated helper files:
 - `app/api/invites/[token]/redeem/type-handlers.ts` — `handleUnder13ParentInvite`, `handleAthleteInvite`, `handleParentInvite`
 
 Component sub-components:
-- `components/dashboard/group/athlete-row.tsx` — per-athlete row (role dropdown, transfer, remove)
-- `components/dashboard/group/guardians-popover.tsx` — guardian list + invite popover
-- `components/dashboard/logs/comment-item.tsx` — individual comment bubble (exports `Comment` type)
-- `components/dashboard/sidebar/group-switcher.tsx` — group switcher dropdown
-- `components/dashboard/sidebar/group-action-form.tsx` — join/create group form (`forceOpen` prop for "Join Another" flow)
+- `components/main/coach/groups/athlete-row.tsx` — per-athlete row (role dropdown, transfer, remove)
+- `components/main/coach/groups/guardians-popover.tsx` — guardian list + invite popover
+- `components/main/dashboard/logs/comment-item.tsx` — individual comment bubble (exports `Comment` type)
+- `components/main/dashboard/sidebar/group-switcher.tsx` — group switcher dropdown
+- `components/main/dashboard/sidebar/group-action-form.tsx` — join/create group form (`forceOpen` prop for "Join Another" flow)
