@@ -576,7 +576,7 @@ function InviteAthleteForm({
 }
 
 function InviteCoachForm({
-  token,
+  token: _token,
   invite,
   redeem,
   redeeming,

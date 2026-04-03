@@ -396,7 +396,6 @@ export async function handleCoachInvite(
       )
     }
 
-    const existingGroupIds: string[] = Array.isArray(existing.groupIds) ? existing.groupIds : []
     const update: Record<string, unknown> = {
       $addToSet: { groupIds: groupId, coachIds: groupId },
     }

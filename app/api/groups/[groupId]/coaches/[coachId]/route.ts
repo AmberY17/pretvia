@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 
 export async function DELETE(

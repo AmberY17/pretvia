@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
 import { getUserSubscription } from "@/lib/subscription"
-import { safeObjectId } from "@/lib/objectid"
 
 export async function GET() {
   try {
@@ -70,10 +68,6 @@ export async function GET() {
     const startOfLastWeek = new Date(startOfThisWeek)
     startOfLastWeek.setDate(startOfThisWeek.getDate() - 7)
 
-    const groupObjectIds = groupIds
-      .map((id) => safeObjectId(id))
-      .filter((id): id is ObjectId => id !== null)
-
     // Find athlete IDs in these groups
     const athletesInClub = await db
       .collection("users")
@@ -98,7 +92,6 @@ export async function GET() {
 
     const clubGroups = groups.map((g) => {
       const gid = g._id.toString()
-      const groupCoachIds: string[] = Array.isArray(g.coachIds) ? g.coachIds : []
 
       const coaches = coachUsers
         .filter((u) => {

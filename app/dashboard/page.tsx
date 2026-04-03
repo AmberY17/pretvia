@@ -129,6 +129,7 @@ export default function DashboardPage() {
       id: string
       text: string
       coachName: string
+      coachId: string
       createdAt: string
     }[]
   }>({

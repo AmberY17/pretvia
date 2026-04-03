@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { safeObjectId } from "@/lib/objectid"
-import { ObjectId } from "mongodb"
 
 export async function POST(
   req: Request,
