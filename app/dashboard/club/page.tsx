@@ -63,10 +63,12 @@ export default function ClubPage() {
     );
   }
 
-  const totalCoaches = overview.groups.reduce(
-    (sum, g) => sum + g.coaches.filter((c) => !c.isHead).length,
-    0
+  const uniqueCoachIds = new Set(
+    overview.groups.flatMap((g) =>
+      g.coaches.filter((c) => !c.isHead).map((c) => c.id)
+    )
   );
+  const totalCoaches = uniqueCoachIds.size;
 
   return shell(
     <Tabs defaultValue="coaches">

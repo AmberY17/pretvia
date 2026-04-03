@@ -79,13 +79,13 @@ export async function GET() {
     const [weeklyLogCount, prevWeeklyLogCount] = await Promise.all([
       db.collection("logs").countDocuments({
         userId: { $in: athleteIds },
-        timestamp: { $gte: startOfThisWeek.toISOString() },
+        timestamp: { $gte: startOfThisWeek },
       }),
       db.collection("logs").countDocuments({
         userId: { $in: athleteIds },
         timestamp: {
-          $gte: startOfLastWeek.toISOString(),
-          $lt: startOfThisWeek.toISOString(),
+          $gte: startOfLastWeek,
+          $lt: startOfThisWeek,
         },
       }),
     ])

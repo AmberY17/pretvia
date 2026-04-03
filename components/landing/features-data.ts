@@ -12,6 +12,10 @@ import {
   Shield,
   Flame,
   PartyPopper,
+  LayoutDashboard,
+  Building2,
+  TrendingUp,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -326,6 +330,87 @@ export const roleSections: RoleSection[] = [
           "No private notes access",
           "Respects athlete privacy",
           "Coach-controlled linking",
+        ],
+      },
+    ],
+  },
+  {
+    id: "club",
+    title: "For Clubs",
+    subtitle: "Run your entire organization from one place",
+    description:
+      "Oversee all your groups, coaches, and athletes from a single club dashboard. Get insights, send org-wide announcements, and manage billing with ease.",
+    features: [
+      {
+        icon: LayoutDashboard,
+        title: "Club Dashboard",
+        description:
+          "A central hub to see all your groups, coaches, and athlete activity at a glance.",
+        details: [
+          "Overview of all training groups",
+          "Coach and athlete counts per group",
+          "Quick access to every group's settings",
+          "Dedicated Club plan subscription",
+        ],
+      },
+      {
+        icon: Users,
+        title: "Coach Management",
+        description:
+          "Add, invite, and organize coaches across all your groups from one place.",
+        details: [
+          "Invite new coaches to specific groups",
+          "Move coaches between groups",
+          "Track pending coach invites",
+          "Manage head coach assignments",
+        ],
+      },
+      {
+        icon: Building2,
+        title: "Multi-Group Management",
+        description:
+          "Create and manage all training groups in your club without switching context.",
+        details: [
+          "Create new groups instantly",
+          "View group join codes at a glance",
+          "Rename groups inline",
+          "Scale with add-on group slots",
+        ],
+      },
+      {
+        icon: Megaphone,
+        title: "Club-Wide Announcements",
+        description:
+          "Broadcast important updates to every group in your club simultaneously.",
+        details: [
+          "Send announcements to all groups at once",
+          "Appears in every group's feed",
+          "Up to 1,000 characters",
+          "Instant delivery to all members",
+        ],
+      },
+      {
+        icon: TrendingUp,
+        title: "Activity Insights",
+        description:
+          "See how active your athletes are across the whole club with weekly metrics.",
+        details: [
+          "Weekly log count across all groups",
+          "Week-over-week trend percentage",
+          "Total athlete count across groups",
+          "At-a-glance health of your club",
+        ],
+      },
+      {
+        icon: CreditCard,
+        title: "Billing & Seats",
+        description:
+          "Manage your Club plan subscription, coach seats, and group capacity in one place.",
+        details: [
+          "Track group and coach seat usage",
+          "Add group slots or coach seats as you grow",
+          "Clear plan tier visibility",
+          "Simple contact-based add-on purchasing",
         ],
       },
     ],

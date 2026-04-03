@@ -16,6 +16,10 @@ import {
   Flame,
   PartyPopper,
   Shield,
+  LayoutDashboard,
+  Building2,
+  TrendingUp,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -74,6 +78,20 @@ const roles: RoleData[] = [
       { icon: Calendar, title: "Emoji Calendar", description: "" },
       { icon: Heart, title: "Conversation Starters", description: "" },
       { icon: Shield, title: "Respectful Access", description: "" },
+    ],
+  },
+  {
+    id: "club",
+    title: "Club",
+    subtitle: "Run your entire organization from one place",
+    color: "primary",
+    features: [
+      { icon: LayoutDashboard, title: "Club Dashboard", description: "" },
+      { icon: Users, title: "Coach Management", description: "" },
+      { icon: Building2, title: "Multi-Group Management", description: "" },
+      { icon: Megaphone, title: "Club-Wide Announcements", description: "" },
+      { icon: TrendingUp, title: "Activity Insights", description: "" },
+      { icon: CreditCard, title: "Billing & Seats", description: "" },
     ],
   },
 ];

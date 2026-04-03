@@ -205,7 +205,7 @@ export function CommentSection({
         }}
         initial={false}
         transition={{ duration: 0.2, ease: "easeInOut" }}
-        style={{ overflow: "hidden" }}
+        style={{ overflow: isExpanded ? "visible" : "hidden" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div ref={contentRef}>

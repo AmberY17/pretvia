@@ -5,6 +5,10 @@ function createRateLimiter(
   requests: number,
   window: `${number} s` | `${number} m` | `${number} h`
 ): Ratelimit | null {
+  // Disable rate limiting outside production to avoid dev/local blocking.
+  if (process.env.NODE_ENV !== "production") {
+    return null
+  }
   if (
     !process.env.UPSTASH_REDIS_REST_URL ||
     !process.env.UPSTASH_REDIS_REST_TOKEN

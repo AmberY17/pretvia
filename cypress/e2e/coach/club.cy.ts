@@ -1,5 +1,5 @@
 describe("Club Dashboard", () => {
-  before(() => {
+  beforeEach(() => {
     cy.loginAsCoach();
   });
 

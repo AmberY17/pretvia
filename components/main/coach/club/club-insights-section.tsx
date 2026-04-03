@@ -93,10 +93,12 @@ export function ClubInsightsSection({
           </div>
           <div>
             <p className="text-xs font-medium text-muted-foreground mb-1">Total athletes</p>
-            <span className="text-3xl font-bold text-foreground">{totalAthletes}</span>
-            <p className="text-xs text-muted-foreground mt-1">
-              across {groups.length} group{groups.length !== 1 ? "s" : ""}
-            </p>
+            <div className="flex items-end gap-2">
+              <span className="text-3xl font-bold text-foreground">{totalAthletes}</span>
+              <span className="text-xs text-muted-foreground mb-1">
+                across {groups.length} group{groups.length !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
         </div>
       </section>
