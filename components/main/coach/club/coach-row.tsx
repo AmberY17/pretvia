@@ -85,7 +85,7 @@ export function CoachRow({ coach, groupId, otherGroups = [] }: CoachRowProps) {
     <div className="flex items-center gap-3 py-1.5">
       <div className="min-w-0 flex-1">
         <span className="text-sm font-medium text-foreground">{coach.displayName}</span>
-        <span className="ml-2 text-xs text-muted-foreground truncate">{coach.email}</span>
+        <span className="ml-2 hidden sm:inline text-xs text-muted-foreground truncate">{coach.email}</span>
       </div>
       {!coach.isHead && (
         <div className="flex shrink-0 items-center gap-1">
@@ -99,7 +99,7 @@ export function CoachRow({ coach, groupId, otherGroups = [] }: CoachRowProps) {
                   disabled={moving || removing}
                 >
                   <ArrowRightLeft className="h-3 w-3" />
-                  Move to
+                  <span className="hidden sm:inline">Move to</span>
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </PopoverTrigger>

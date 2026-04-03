@@ -30,10 +30,7 @@ export default async function PricingPage() {
 
   return (
     <main className="min-h-screen">
-      <LandingNav
-        primaryLink={{ href: "/features", label: "Features" }}
-        secondaryLink={{ href: "/pricing", label: "Pricing" }}
-      />
+      <LandingNav />
 
       <section className="flex flex-col items-center px-6 pb-24 pt-32">
         <div className="mb-10 text-center">
@@ -48,8 +45,10 @@ export default async function PricingPage() {
       </section>
 
       <LandingFooter
-        footerLink={{ href: "/features", label: "Features" }}
-        secondaryLink={{ href: "/pricing", label: "Pricing" }}
+        links={[
+          { href: "/features", label: "Features" },
+          { href: "/pricing", label: "Pricing" },
+        ]}
       />
     </main>
   )

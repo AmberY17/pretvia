@@ -72,12 +72,23 @@ export default function ClubPage() {
 
   return shell(
     <Tabs defaultValue="coaches">
-      <TabsList className="mb-6">
-        <TabsTrigger value="coaches">Coach Management</TabsTrigger>
-        <TabsTrigger value="groups">Group Management</TabsTrigger>
-        <TabsTrigger value="insights">Insights</TabsTrigger>
-        <TabsTrigger value="billing">Billing & Seats</TabsTrigger>
-      </TabsList>
+      <div className="w-full overflow-x-auto scrollbar-hidden">
+        <TabsList className="mb-6 w-max">
+          <TabsTrigger value="coaches">
+            <span className="sm:hidden">Coaches</span>
+            <span className="hidden sm:inline">Coach Management</span>
+          </TabsTrigger>
+          <TabsTrigger value="groups">
+            <span className="sm:hidden">Groups</span>
+            <span className="hidden sm:inline">Group Management</span>
+          </TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
+          <TabsTrigger value="billing">
+            <span className="sm:hidden">Billing</span>
+            <span className="hidden sm:inline">Billing & Seats</span>
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="coaches">
         <ClubCoachSection groups={overview.groups} />

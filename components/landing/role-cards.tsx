@@ -108,7 +108,7 @@ export function RoleCards() {
           <button
             key={role.id}
             onClick={() => setActiveRole(role.id)}
-            className={`relative px-6 py-3 text-sm font-medium rounded-full transition-colors ${
+            className={`relative px-3 py-2 sm:px-6 sm:py-3 text-sm font-medium rounded-full transition-colors ${
               activeRole === role.id
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"

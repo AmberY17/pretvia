@@ -28,16 +28,14 @@ export default async function LandingPage() {
   const siteSettings = await db.collection("siteSettings").findOne({ key: "site" })
   const pricingPageVisible = siteSettings?.pricingPageVisible ?? false
 
-  const pricingLink = pricingPageVisible
-    ? { href: "/pricing", label: "Pricing" }
-    : undefined
+  const navLinks = [
+    { href: "/features", label: "Features" },
+    ...(pricingPageVisible ? [{ href: "/pricing", label: "Pricing" }] : []),
+  ]
 
   return (
     <main className="min-h-screen">
-      <LandingNav
-        primaryLink={{ href: "/features", label: "Features" }}
-        secondaryLink={pricingLink}
-      />
+      <LandingNav links={navLinks} />
 
       <HeroSection />
       <ProductSection />
@@ -46,10 +44,7 @@ export default async function LandingPage() {
       <FinalHookSection />
       <CtaSection />
 
-      <LandingFooter
-        footerLink={{ href: "/features", label: "Features" }}
-        secondaryLink={pricingLink}
-      />
+      <LandingFooter links={navLinks} />
     </main>
   )
 }

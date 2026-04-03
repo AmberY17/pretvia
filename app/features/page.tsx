@@ -23,7 +23,7 @@ export default function FeaturesPage() {
 
   return (
     <main className="min-h-screen">
-      <LandingNav primaryLink={{ href: "/", label: "Home" }} />
+      <LandingNav />
 
       <FeaturesHeroSection />
       <FeaturesRoleTabs activeTab={activeTab} onTabChange={setActiveTab} />
@@ -51,7 +51,7 @@ export default function FeaturesPage() {
 
       <FeaturesCtaSection />
 
-      <LandingFooter footerLink={{ href: "/", label: "Home" }} />
+      <LandingFooter links={[{ href: "/", label: "Home" }]} />
     </main>
   );
 }
