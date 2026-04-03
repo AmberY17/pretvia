@@ -1,20 +1,19 @@
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import { getDb } from "@/lib/mongodb"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingFooter } from "@/components/landing/landing-footer"
-import { Button } from "@/components/ui/button"
+import { PricingSection } from "@/components/landing/pricing-section"
 
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Pricing",
+  title: "Pricing — Pretvia",
   description:
-    "Pretvia is free during beta. Get full access to all features — no credit card required.",
+    "Squad is free forever. Upgrade to Varsity for unlimited groups, or Club for your whole organization.",
   openGraph: {
     title: "Pricing — Pretvia",
     description:
-      "Pretvia is free during beta. Get full access to all features — no credit card required.",
+      "Squad is free forever. Upgrade to Varsity for unlimited groups, or Club for your whole organization.",
     url: "https://pretvia.com/pricing",
   },
 }
@@ -27,34 +26,31 @@ export default async function PricingPage() {
     notFound()
   }
 
+  const addOnsVisible = siteSettings?.addOnsVisible ?? true
+
   return (
     <main className="min-h-screen">
-      <LandingNav primaryLink={{ href: "/features", label: "Features" }} />
+      <LandingNav
+        primaryLink={{ href: "/features", label: "Features" }}
+        secondaryLink={{ href: "/pricing", label: "Pricing" }}
+      />
 
-      <section className="flex min-h-screen flex-col items-center justify-center px-6 pt-16">
-        <div className="mx-auto max-w-2xl text-center">
-          <div className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-            Early Access
-          </div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Free during beta
+      <section className="flex flex-col items-center px-6 pb-24 pt-32">
+        <div className="mb-10 text-center">
+          <h1 className="mb-3 text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            Simple, honest pricing
           </h1>
-          <p className="mb-8 text-lg text-muted-foreground">
-            Pretvia is free while we&apos;re in early access. Get full access to
-            all features — no credit card required.
-          </p>
-          <Link href="/auth">
-            <Button size="lg" className="px-8">
-              Get started free
-            </Button>
-          </Link>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Pricing will be announced before the end of beta.
+          <p className="text-lg text-muted-foreground">
+            Start free. Scale when you&apos;re ready.
           </p>
         </div>
+        <PricingSection addOnsVisible={addOnsVisible} />
       </section>
 
-      <LandingFooter footerLink={{ href: "/features", label: "Features" }} />
+      <LandingFooter
+        footerLink={{ href: "/features", label: "Features" }}
+        secondaryLink={{ href: "/pricing", label: "Pricing" }}
+      />
     </main>
   )
 }
