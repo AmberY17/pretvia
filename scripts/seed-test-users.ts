@@ -83,7 +83,7 @@ async function seed() {
 
   // Create or update coach
   const coachExists = await users.findOne({ email: COACH_EMAIL });
-  let coachId: string;
+  let headCoachId: string;
   if (!coachExists) {
     const coachResult = await users.insertOne({
       _id: new ObjectId(),
@@ -96,12 +96,13 @@ async function seed() {
       profileComplete: true,
       authProvider: "email",
       emailVerified: true,
+      subscription: { plan: "squad", isAssistant: false, addOnGroups: 0, addOnSeats: 0 },
       createdAt: new Date(),
     });
-    coachId = coachResult.insertedId.toString();
+    headCoachId = coachResult.insertedId.toString();
     console.log("Created coach:", COACH_EMAIL);
   } else {
-    coachId = coachExists._id.toString();
+    headCoachId = coachExists._id.toString();
     await users.updateOne(
       { email: COACH_EMAIL },
       {
@@ -111,22 +112,24 @@ async function seed() {
           activeGroupId: coachGroupId,
           groupIds: [coachGroupId],
           emailVerified: true,
+          "subscription.plan": "squad",
+          "subscription.isAssistant": false,
         },
       },
     );
     console.log("Updated coach:", COACH_EMAIL);
   }
 
-  // Update group with coachId if missing
+  // Update group with headCoachId if missing
   await groups.updateOne(
     { _id: new ObjectId(coachGroupId) },
-    { $set: { coachId, coachIds: [coachId] } },
+    { $set: { headCoachId, coachIds: [headCoachId] } },
   );
 
   // Ensure coach has groupMembership
   await groupMemberships.updateOne(
-    { userId: coachId, groupId: coachGroupId },
-    { $setOnInsert: { userId: coachId, groupId: coachGroupId, roleIds: [] } },
+    { userId: headCoachId, groupId: coachGroupId },
+    { $setOnInsert: { userId: headCoachId, groupId: coachGroupId, roleIds: [] } },
     { upsert: true },
   );
 
@@ -258,7 +261,7 @@ async function seed() {
         groupId: coachGroupId,
         type: "athlete",
         email: "e2e-invited@test.pretvia.com",
-        createdBy: coachId,
+        createdBy: headCoachId,
         expiresAt: inviteExpiry,
         createdAt: new Date(),
       },
@@ -276,7 +279,7 @@ async function seed() {
         type: "parent",
         email: "e2e-parent@test.pretvia.com",
         athleteEmail: ATHLETE_EMAIL,
-        createdBy: coachId,
+        createdBy: headCoachId,
         expiresAt: inviteExpiry,
         createdAt: new Date(),
       },
@@ -294,7 +297,7 @@ async function seed() {
         type: "under13_parent",
         email: "e2e-under13parent@test.pretvia.com",
         athleteNamePlaceholder: "E2E Child",
-        createdBy: coachId,
+        createdBy: headCoachId,
         expiresAt: inviteExpiry,
         createdAt: new Date(),
       },

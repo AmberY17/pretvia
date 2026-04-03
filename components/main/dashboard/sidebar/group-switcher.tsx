@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ArrowRightLeft, Users, Check, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 
-type UserGroup = { id: string; name: string; code: string; coachId: string }
+type UserGroup = { id: string; name: string; code: string; headCoachId: string }
 
 interface GroupSwitcherProps {
   userGroups: UserGroup[]

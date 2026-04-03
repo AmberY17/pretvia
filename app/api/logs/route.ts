@@ -240,18 +240,24 @@ export async function POST(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    // Enforce daily log limit for standalone logs (not checkin logs)
+    // Enforce daily log limit for standalone logs (not checkin logs).
+    // The limit is per group — athletes in multiple groups each get one shared
+    // and one private log per day per group.
     if (!checkinId) {
       const now = new Date()
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const todayLogFilter: Record<string, unknown> = {
+        userId: session.userId,
+        createdAt: { $gte: startOfToday, $lt: endOfToday },
+        checkinId: { $exists: false },
+      }
+      if (user?.activeGroupId) {
+        todayLogFilter.groupId = user.activeGroupId
+      }
       const todayLogs = await db
         .collection("logs")
-        .find({
-          userId: session.userId,
-          createdAt: { $gte: startOfToday, $lt: endOfToday },
-          checkinId: { $exists: false },
-        })
+        .find(todayLogFilter)
         .project({ visibility: 1, isGroup: 1 })
         .toArray()
 
@@ -275,6 +281,7 @@ export async function POST(req: Request) {
 
     const logEntry: Record<string, unknown> = {
       userId: session.userId,
+      groupId: user?.activeGroupId ?? null,
       emoji,
       timestamp: timestamp ? new Date(timestamp) : new Date(),
       visibility: resolvedVisibility,
@@ -381,6 +388,8 @@ export async function PUT(req: Request) {
         userId: session.userId,
         createdAt: { $gte: startOfToday, $lt: endOfToday },
         checkinId: { $exists: false },
+        // Scope the conflict check to the same group as the log being edited
+        ...(existing.groupId ? { groupId: existing.groupId } : {}),
         $or:
           resolvedNewVisibility === "coach"
             ? [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }]

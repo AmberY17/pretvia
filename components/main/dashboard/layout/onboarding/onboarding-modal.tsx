@@ -9,7 +9,7 @@ const ONBOARDING_KEY = "pretvia-onboarded"
 const ONBOARDING_STEP_KEY = "pretvia-onboarding-step"
 
 interface OnboardingModalProps {
-  user: { displayName?: string | null; role?: string | null }
+  user: { displayName?: string | null; role?: string | null; subscription?: { isAssistant?: boolean } | null }
 }
 
 interface Step {
@@ -226,6 +226,8 @@ export function OnboardingModal({ user }: OnboardingModalProps) {
   const steps = useSteps(role, name, dismiss, navigateAndPause, router)
   const current = steps[step]
   const isLast = step === steps.length - 1
+
+  if (user.subscription?.isAssistant) return null
 
   const handleNext = () => {
     if (isLast) {

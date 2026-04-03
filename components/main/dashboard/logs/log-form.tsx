@@ -25,6 +25,7 @@ interface LogFormProps {
   existingTags?: string[];
   prefillTimestamp?: string | null;
   checkinId?: string | null;
+  activeGroupId?: string | null;
 }
 
 function getLocalTimestamp() {
@@ -50,6 +51,7 @@ export function LogForm({
   existingTags = [],
   prefillTimestamp,
   checkinId,
+  activeGroupId,
 }: LogFormProps) {
   const isEditing = Boolean(editLog);
 
@@ -102,7 +104,10 @@ export function LogForm({
     }
     setTodayLoading(true);
     let cancelled = false;
-    fetch("/api/logs/today")
+    const todayUrl = activeGroupId
+      ? `/api/logs/today?groupId=${activeGroupId}`
+      : "/api/logs/today";
+    fetch(todayUrl)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
@@ -112,7 +117,7 @@ export function LogForm({
       .catch(() => {})
       .finally(() => { if (!cancelled) setTodayLoading(false); });
     return () => { cancelled = true; };
-  }, [isEditing, checkinId]);
+  }, [isEditing, checkinId, activeGroupId]);
 
   const resetForm = useCallback(() => {
     setEmoji("");

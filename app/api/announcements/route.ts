@@ -29,7 +29,7 @@ export async function GET() {
       .limit(100)
       .toArray()
 
-    const coachIdStrs = [...new Set(docs.map((d) => d.coachId).filter(Boolean))] as string[]
+    const coachIdStrs = [...new Set(docs.map((d) => d.headCoachId).filter(Boolean))] as string[]
     const coachOids = coachIdStrs.map((id) => safeObjectId(id)).filter((id): id is ObjectId => id !== null)
     const coaches = await db
       .collection("users")
@@ -43,7 +43,8 @@ export async function GET() {
     const announcements = docs.map((d) => ({
       id: d._id.toString(),
       text: d.text,
-      coachName: coachMap.get(d.coachId) ?? "Coach",
+      coachName: coachMap.get(d.headCoachId) ?? "Coach",
+      coachId: d.headCoachId,
       createdAt: d.createdAt,
     }))
 
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
 
     const result = await db.collection("announcements").insertOne({
       groupId: user.activeGroupId,
-      coachId: session.userId,
+      headCoachId: session.userId,
       text: text.trim(),
       active: true,
       createdAt: new Date(),
@@ -114,6 +115,7 @@ export async function POST(req: Request) {
         id: result.insertedId.toString(),
         text: text.trim(),
         coachName: user.displayName || "Coach",
+        coachId: session.userId,
         createdAt: new Date(),
       },
     })
@@ -170,7 +172,7 @@ export async function DELETE(req: Request) {
     const announcement = await db.collection("announcements").findOne({
       _id: oid,
       groupId: user.activeGroupId,
-      coachId: session.userId,
+      headCoachId: session.userId,
     })
     if (!announcement) {
       return NextResponse.json(
@@ -248,7 +250,7 @@ export async function PATCH(req: Request) {
     const announcement = await db.collection("announcements").findOne({
       _id: oid,
       groupId: user.activeGroupId,
-      coachId: session.userId,
+      headCoachId: session.userId,
     })
     if (!announcement) {
       return NextResponse.json(

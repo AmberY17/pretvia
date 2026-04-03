@@ -61,8 +61,11 @@ export default function DashboardPage() {
   const { data: tagsData, isLoading: tagsLoading } = useQuery<{
     tags: { id: string; name: string }[]
   }>({
-    queryKey: [...queryKeys.tags.all, user?.id],
-    queryFn: () => apiFetcher("/api/tags"),
+    queryKey: [...queryKeys.tags.all, user?.id, user?.activeGroupId],
+    queryFn: () =>
+      apiFetcher(
+        user?.activeGroupId ? `/api/tags?groupId=${user.activeGroupId}` : "/api/tags",
+      ),
     enabled: !!user,
   })
 
@@ -108,8 +111,12 @@ export default function DashboardPage() {
     canSkipToday: boolean
     skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null
   }>({
-    queryKey: [...queryKeys.stats.all, user?.id, localDate],
-    queryFn: () => apiFetcher(`/api/stats?localDate=${localDate}`),
+    queryKey: [...queryKeys.stats.all, user?.id, localDate, user?.activeGroupId],
+    queryFn: () => {
+      const params = new URLSearchParams({ localDate })
+      if (user?.activeGroupId) params.set("groupId", user.activeGroupId)
+      return apiFetcher(`/api/stats?${params.toString()}`)
+    },
     enabled: user?.role === "athlete",
   })
 
@@ -195,7 +202,7 @@ export default function DashboardPage() {
       id: string
       name: string
       code: string
-      coachId: string
+      headCoachId: string
       trainingScheduleUpdatedAt?: string | null
     }[]
   }>({

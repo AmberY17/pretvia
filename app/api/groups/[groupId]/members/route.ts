@@ -88,7 +88,7 @@ export async function PATCH(
       if (!targetGroup) {
         return NextResponse.json({ error: "Target group not found" }, { status: 404 })
       }
-      const coachIds = targetGroup.coachIds ?? (targetGroup.coachId ? [targetGroup.coachId] : [])
+      const coachIds = targetGroup.coachIds ?? (targetGroup.headCoachId ? [targetGroup.headCoachId] : [])
       if (!coachIds.includes(session.userId)) {
         return NextResponse.json(
           { error: "You can only transfer to groups you manage" },

@@ -5,6 +5,7 @@ import {
   handleUnder13ParentInvite,
   handleAthleteInvite,
   handleParentInvite,
+  handleCoachInvite,
 } from "./type-handlers"
 
 export async function POST(
@@ -48,6 +49,9 @@ export async function POST(
     }
     if (type === "parent") {
       return handleParentInvite(db, invite, group, body, token)
+    }
+    if (type === "coach") {
+      return handleCoachInvite(db, invite, group, body, token)
     }
 
     return NextResponse.json({ error: "Unknown invite type" }, { status: 400 })

@@ -18,4 +18,9 @@ describe("Protected Routes", () => {
     cy.visit("/dashboard/attendance");
     cy.url().should("include", "/auth");
   });
+
+  it("redirects to /auth when visiting /dashboard/club unauthenticated", () => {
+    cy.visit("/dashboard/club");
+    cy.url().should("include", "/auth");
+  });
 });

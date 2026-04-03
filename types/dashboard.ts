@@ -24,7 +24,7 @@ export type PendingAthlete = {
 };
 
 /** Invite type */
-export type InviteType = "under13_parent" | "athlete" | "parent";
+export type InviteType = "under13_parent" | "athlete" | "parent" | "coach";
 
 /** Linked guardian for an athlete */
 export type Guardian = {
@@ -86,7 +86,7 @@ export type AttendanceStatus = "present" | "absent" | "excused" | null;
 export type CheckinItem = {
   id: string;
   groupId: string;
-  coachId: string;
+  headCoachId: string;
   title: string | null;
   sessionDate: string;
   createdAt: string;
@@ -102,7 +102,9 @@ export type Announcement = {
   id: string;
   text: string;
   coachName: string;
+  coachId: string;
   createdAt: string;
+  scope?: "group" | "club";
 };
 
 /** Training log entry (from logs API) */
@@ -119,4 +121,47 @@ export type LogEntry = {
   checkinId?: string | null;
   createdAt: string;
   reviewStatus?: ReviewStatus;
+};
+
+/** Coach subscription plan and limits */
+export type CoachSubscription = {
+  plan: "squad" | "varsity" | "club";
+  isAssistant?: boolean;
+  addOnGroups: number;
+  addOnSeats: number;
+};
+
+/** Coach member in a club group */
+export type CoachMember = {
+  id: string;
+  displayName: string;
+  email: string;
+  isHead: boolean;
+};
+
+/** Pending coach invite (unredeemed) */
+export type PendingCoachInvite = {
+  id: string;
+  email: string;
+  token: string;
+  expiresAt: string;
+};
+
+/** Group as seen from the club dashboard */
+export type ClubGroup = {
+  id: string;
+  name: string;
+  code: string;
+  athleteCount: number;
+  coaches: CoachMember[];
+  pendingCoachInvites: PendingCoachInvite[];
+};
+
+/** Full club overview returned by /api/club/overview */
+export type ClubOverview = {
+  groups: ClubGroup[];
+  weeklyLogCount: number;
+  prevWeeklyLogCount: number;
+  subscription: CoachSubscription;
+  addOnsVisible: boolean;
 };

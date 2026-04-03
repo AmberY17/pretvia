@@ -41,13 +41,13 @@ export async function GET() {
           id: groupDoc._id.toString(),
           name: groupDoc.name,
           code: groupDoc.code,
-          coachId: groupDoc.coachId,
+          headCoachId: groupDoc.headCoachId,
         }
       }
     }
 
     // Fetch all groups the user is a member of
-    let groups: { id: string; name: string; code: string; coachId: string }[] = []
+    let groups: { id: string; name: string; code: string; headCoachId: string }[] = []
     if (groupIds.length > 0) {
       const groupDocs = await db
         .collection("groups")
@@ -57,7 +57,7 @@ export async function GET() {
         id: g._id.toString(),
         name: g.name,
         code: g.code,
-        coachId: g.coachId,
+        headCoachId: g.headCoachId,
       }))
     }
 
@@ -85,6 +85,14 @@ export async function GET() {
         profileComplete: user.profileComplete,
         profileEmoji: user.profileEmoji || null,
         trainingSlots: user.trainingSlots ?? [],
+        subscription: user.subscription
+          ? {
+              plan: user.subscription.plan ?? "squad",
+              isAssistant: user.subscription.isAssistant ?? false,
+              addOnGroups: user.subscription.addOnGroups ?? 0,
+              addOnSeats: user.subscription.addOnSeats ?? 0,
+            }
+          : { plan: "squad", isAssistant: false, addOnGroups: 0, addOnSeats: 0 },
       },
     })
   } catch {

@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       const groups = await db
         .collection("groups")
         .find({
-          $or: [{ coachId: session.userId }, { coachIds: session.userId }],
+          $or: [{ headCoachId: session.userId }, { coachIds: session.userId }],
         })
         .sort({ createdAt: -1 })
         .toArray()
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
           id: g._id.toString(),
           name: g.name,
           code: g.code,
-          coachId: g.coachId,
+          headCoachId: g.headCoachId,
           trainingScheduleUpdatedAt: g.trainingScheduleUpdatedAt ?? null,
         })),
       })
@@ -125,7 +125,7 @@ export async function GET(req: Request) {
       group &&
       ((Array.isArray(group.coachIds) &&
         group.coachIds.includes(session.userId)) ||
-        group.coachId === session.userId ||
+        group.headCoachId === session.userId ||
         (Array.isArray(user?.groupIds) && user.groupIds.includes(groupId)))
 
     const members = await db

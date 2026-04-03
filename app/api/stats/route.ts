@@ -15,14 +15,33 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     // "YYYY-MM-DD" string in the user's local timezone, sent by the client.
     const localDate = searchParams.get("localDate") ?? undefined
+    // Active group ID sent by the client — used to scope stats per group.
+    const groupId = searchParams.get("groupId") ?? null
 
     const db = await getDb()
     const user = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
 
-    const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
-    const deletedSlots = (user?.deletedSlots ?? []) as TrainingSlot[]
+    type StoredSlot = TrainingSlot & { sourceGroupId?: string; addedAt?: Date; removedAt?: Date }
+
+    // Filter training slots and deleted slots to the active group + personal (no sourceGroupId).
+    // This ensures streak and skip calculations are scoped to the group the athlete is viewing.
+    const allTrainingSlots = (user?.trainingSlots ?? []) as StoredSlot[]
+    const allDeletedSlots = (user?.deletedSlots ?? []) as StoredSlot[]
+    const trainingSlots: TrainingSlot[] = groupId
+      ? allTrainingSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+      : allTrainingSlots
+    const deletedSlots: TrainingSlot[] = groupId
+      ? allDeletedSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+      : allDeletedSlots
+
+    // Build a group-scoped log filter. Include logs with no groupId for backward
+    // compatibility so pre-migration history still counts toward the athlete's stats.
+    const baseLogFilter: Record<string, unknown> = { userId: session.userId }
+    if (groupId) {
+      baseLogFilter.$or = [{ groupId }, { groupId: { $exists: false } }, { groupId: null }]
+    }
 
     // Pre-fetch the logs window once and share it between computeStreak and
     // computeTodaySkipStatus to avoid two full log-collection scans per request.
@@ -30,10 +49,10 @@ export async function GET(req: Request) {
     const lookbackDate = new Date(now)
     lookbackDate.setDate(lookbackDate.getDate() - 100)
     const [totalLogs, prefetchedLogs, prefetchedSkips] = await Promise.all([
-      db.collection("logs").countDocuments({ userId: session.userId }),
+      db.collection("logs").countDocuments(baseLogFilter),
       db
         .collection("logs")
-        .find({ userId: session.userId, timestamp: { $gte: lookbackDate } })
+        .find({ ...baseLogFilter, timestamp: { $gte: lookbackDate } })
         .project({ timestamp: 1 })
         .sort({ timestamp: 1 })
         .toArray(),

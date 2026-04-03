@@ -46,9 +46,12 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
         if (res.ok) {
           setLocalReviewStatus("reviewed")
           onMutateLogs?.()
+        } else {
+          const data = await res.json().catch(() => ({}))
+          console.error("Auto-review failed:", res.status, data)
         }
-      } catch {
-        // Ignore
+      } catch (err) {
+        console.error("Auto-review network error:", err)
       }
     }
     run()

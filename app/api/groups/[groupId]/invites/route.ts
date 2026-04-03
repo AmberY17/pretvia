@@ -33,8 +33,19 @@ export async function DELETE(
       return NextResponse.json({ error: "Invite not found" }, { status: 404 })
     }
 
-    if (invite.type !== "athlete" && invite.type !== "under13_parent") {
+    if (
+      invite.type !== "athlete" &&
+      invite.type !== "under13_parent" &&
+      invite.type !== "coach"
+    ) {
       return NextResponse.json({ error: "Cannot cancel this invite type" }, { status: 400 })
+    }
+
+    if (invite.type === "coach") {
+      const group = await db.collection("groups").findOne({ _id: new ObjectId(groupId) })
+      if (group?.headCoachId?.toString() !== session.userId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
     }
 
     await db.collection("invites").deleteOne({ token, groupId })
@@ -46,9 +57,11 @@ export async function DELETE(
 }
 import {
   sendAthleteInviteEmail,
+  sendCoachInviteEmail,
   sendUnder13ParentInviteEmail,
   sendParentInviteEmail,
 } from "@/lib/resend"
+import { getUserSubscription, getEffectiveLimits } from "@/lib/subscription"
 const INVITE_EXPIRY_DAYS = 7
 
 async function ensureInviteIndexes(db: Awaited<ReturnType<typeof getDb>>) {
@@ -75,7 +88,7 @@ export async function POST(
     }
 
     const body = await req.json()
-    const { isUnder13, athleteEmail, parentEmail, athleteNamePlaceholder, parentOnly } = body
+    const { type: inviteType, coachEmail, isUnder13, athleteEmail, parentEmail, athleteNamePlaceholder, parentOnly } = body
     const placeholder = typeof athleteNamePlaceholder === "string" ? athleteNamePlaceholder.trim().slice(0, 100) || undefined : undefined
 
     const group = await db.collection("groups").findOne({
@@ -89,6 +102,82 @@ export async function POST(
     await ensureInviteIndexes(db)
 
     const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+
+    if (inviteType === "coach") {
+      if (group.headCoachId?.toString() !== session.userId) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+
+      const sub = await getUserSubscription(db, session.userId)
+      if (sub.plan !== "club") {
+        return NextResponse.json(
+          { error: "Coach invites require the Club plan" },
+          { status: 403 }
+        )
+      }
+
+      const email = (coachEmail ?? "").trim().toLowerCase()
+      if (!email) {
+        return NextResponse.json({ error: "Coach email is required" }, { status: 400 })
+      }
+
+      const coachIds: string[] = Array.isArray(group.coachIds) ? group.coachIds : []
+      const limits = getEffectiveLimits(sub)
+      if (coachIds.length >= limits.coachSeats) {
+        return NextResponse.json(
+          { error: "Coach seat limit reached", plan: sub.plan, limit: limits.coachSeats },
+          { status: 403 }
+        )
+      }
+
+      const existingCoach = await db.collection("users").findOne({ email, role: "coach" })
+      if (existingCoach) {
+        const isAlreadyCoach = coachIds.includes(existingCoach._id.toString())
+        if (isAlreadyCoach) {
+          return NextResponse.json(
+            { error: "This email is already a coach in this group" },
+            { status: 409 }
+          )
+        }
+      }
+
+      const existingInvite = await db.collection("invites").findOne({
+        groupId,
+        email,
+        type: "coach",
+        expiresAt: { $gt: new Date() },
+      })
+      if (existingInvite) {
+        return NextResponse.json(
+          { error: "An active invite already exists for this email" },
+          { status: 409 }
+        )
+      }
+
+      const token = randomUUID()
+      const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+      await db.collection("invites").insertOne({
+        groupId,
+        token,
+        type: "coach",
+        email,
+        createdBy: session.userId,
+        expiresAt,
+        createdAt: new Date(),
+      })
+
+      const inviteUrl = `${APP_URL}/invite/${token}`
+      const sendResult = await sendCoachInviteEmail(email, inviteUrl, groupName)
+      if (!sendResult.ok) {
+        await db.collection("invites").deleteOne({ token })
+        return NextResponse.json(
+          { error: sendResult.error ?? "Failed to send invite email" },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({ success: true, message: `Coach invite sent to ${email}` })
+    }
 
     if (parentOnly) {
       const parent = (parentEmail ?? "").trim().toLowerCase()

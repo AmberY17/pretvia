@@ -48,4 +48,7 @@ export const queryKeys = {
     byAthlete: (groupId: string, athleteId: string) =>
       ["guardians", groupId, athleteId] as const,
   },
+  club: {
+    overview: ["club", "overview"] as const,
+  },
 } as const;

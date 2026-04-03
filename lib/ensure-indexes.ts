@@ -42,7 +42,11 @@ export async function ensureIndexes(): Promise<void> {
       // attendance
       db.collection("attendance").createIndex({ checkinId: 1, groupId: 1 }),
 
-      // log_reviews
+      // log_reviews — drop legacy headCoachId index, replace with coachId
+      db
+        .collection("log_reviews")
+        .dropIndex("logId_1_headCoachId_1")
+        .catch(() => {}),
       db.collection("log_reviews").createIndex({ logId: 1, coachId: 1 }, { unique: true }),
 
       // groupMemberships
@@ -53,7 +57,7 @@ export async function ensureIndexes(): Promise<void> {
       db.collection("guardianLinks").createIndex({ guardianId: 1 }),
 
       // groups
-      db.collection("groups").createIndex({ coachId: 1 }),
+      db.collection("groups").createIndex({ headCoachId: 1 }),
       db.collection("groups").createIndex({ coachIds: 1 }),
 
       // waitlist

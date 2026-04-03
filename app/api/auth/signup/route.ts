@@ -14,18 +14,25 @@ export async function POST(req: Request) {
       if (!success) {
         return NextResponse.json(
           { error: "Too many signup attempts. Please try again later." },
-          { status: 429 }
+          { status: 429 },
         )
       }
     }
 
-    const { email, password, displayName, firstName, lastName, dateOfBirth, role, waitlistToken } = await req.json()
+    const {
+      email,
+      password,
+      displayName,
+      firstName,
+      lastName,
+      dateOfBirth,
+      role,
+      waitlistToken,
+      coachInviteToken,
+    } = await req.json()
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
     const fn = (firstName ?? "").trim()
@@ -34,64 +41,66 @@ export async function POST(req: Request) {
     if (!name || name.length < 2) {
       return NextResponse.json(
         { error: "First and last name (or display name) are required" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
     }
 
     const db = await getDb()
     const normalizedEmail = email.toLowerCase()
-    const existingUser = await db
-      .collection("users")
-      .findOne({ email: normalizedEmail })
+    const existingUser = await db.collection("users").findOne({ email: normalizedEmail })
 
     if (existingUser) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
-        { status: 409 }
+        { status: 409 },
       )
     }
 
     const userRole = role === "coach" ? "coach" : "athlete"
 
-    // Waitlist gate: coach sign-ups require an approved invite token
+    // Waitlist gate: coach sign-ups require either an approved waitlist token or a coach invite token
     let waitlistEntryId: import("mongodb").ObjectId | null = null
     if (userRole === "coach" && !isTestAccount(normalizedEmail)) {
-      if (!waitlistToken) {
-        return NextResponse.json(
-          { error: "Coach sign-ups require a waitlist invite token." },
-          { status: 403 }
-        )
+      // Coach invite path: bypass waitlist if a valid coach invite exists for this email
+      if (coachInviteToken) {
+        const coachInvite = await db.collection("invites").findOne({
+          token: coachInviteToken,
+          type: "coach",
+          expiresAt: { $gt: new Date() },
+        })
+        if (!coachInvite || coachInvite.email?.toLowerCase() !== normalizedEmail) {
+          return NextResponse.json(
+            { error: "Invalid or expired coach invite token." },
+            { status: 403 },
+          )
+        }
+        // Valid coach invite — allow signup to proceed; group linkage happens at redeem time
+      } else {
+        if (!waitlistToken) {
+          return NextResponse.json(
+            { error: "Coach sign-ups require a waitlist invite token." },
+            { status: 403 },
+          )
+        }
+        const entry = await db.collection("waitlist").findOne({
+          inviteToken: waitlistToken,
+          status: "approved",
+        })
+        if (!entry) {
+          return NextResponse.json({ error: "Invalid or expired invite token." }, { status: 403 })
+        }
+        if (entry.usedAt) {
+          return NextResponse.json({ error: "This invite has already been used." }, { status: 403 })
+        }
+        if (new Date() > entry.inviteExpiresAt) {
+          return NextResponse.json({ error: "Your invite link has expired." }, { status: 403 })
+        }
+        waitlistEntryId = entry._id
       }
-      const entry = await db.collection("waitlist").findOne({
-        inviteToken: waitlistToken,
-        status: "approved",
-      })
-      if (!entry) {
-        return NextResponse.json(
-          { error: "Invalid or expired invite token." },
-          { status: 403 }
-        )
-      }
-      if (entry.usedAt) {
-        return NextResponse.json(
-          { error: "This invite has already been used." },
-          { status: 403 }
-        )
-      }
-      if (new Date() > entry.inviteExpiresAt) {
-        return NextResponse.json(
-          { error: "Your invite link has expired." },
-          { status: 403 }
-        )
-      }
-      waitlistEntryId = entry._id
     }
 
     // Test accounts: create user immediately, skip verification
@@ -110,6 +119,7 @@ export async function POST(req: Request) {
         authProvider: "email",
         emailVerified: true,
         createdAt: new Date(),
+        subscription: { plan: "club", isAssistant: false, addOnGroups: 0, addOnSeats: 0 },
       })
 
       await createSession({
@@ -151,21 +161,24 @@ export async function POST(req: Request) {
       role: userRole,
       token,
       expiresAt,
+      // Beta: coaches who sign up via waitlist get Club plan
+      ...(waitlistEntryId
+        ? { subscription: { plan: "club", isAssistant: false, addOnGroups: 0, addOnSeats: 0 } }
+        : {}),
     })
 
     // Mark waitlist token as used (single-use)
     if (waitlistEntryId) {
-      await db.collection("waitlist").updateOne(
-        { _id: waitlistEntryId },
-        { $set: { usedAt: new Date() } }
-      )
+      await db
+        .collection("waitlist")
+        .updateOne({ _id: waitlistEntryId }, { $set: { usedAt: new Date() } })
     }
 
     const sendResult = await sendVerificationEmail(normalizedEmail, token)
     if (!sendResult.ok) {
       return NextResponse.json(
         { error: sendResult.error ?? "Failed to send verification email" },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
@@ -176,9 +189,6 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error("Signup error:", error)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }

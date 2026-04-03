@@ -192,6 +192,7 @@ export function DashboardSidebar({
             hasTrainingSlots={stats.hasTrainingSlots}
             canSkipToday={stats.canSkipToday}
             skipDisabledReason={stats.skipDisabledReason}
+            activeGroupId={user.activeGroupId}
             onMutateStats={onMutateStats}
           />
         ) : null)}

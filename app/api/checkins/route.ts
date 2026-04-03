@@ -93,7 +93,7 @@ export async function GET(req: Request) {
       checkins: checkins.map((c) => ({
         id: c._id.toString(),
         groupId: c.groupId,
-        coachId: c.coachId,
+        headCoachId: c.headCoachId,
         title: c.title || null,
         sessionDate: c.sessionDate,
         createdAt: c.createdAt,
@@ -163,7 +163,7 @@ export async function POST(req: Request) {
 
     const result = await db.collection("checkins").insertOne({
       groupId: userGroupId,
-      coachId: session.userId,
+      headCoachId: session.userId,
       title: title?.trim() || null,
       sessionDate: sessionDateObj,
       createdAt: new Date(),
@@ -175,7 +175,7 @@ export async function POST(req: Request) {
       checkin: {
         id: result.insertedId.toString(),
         groupId: userGroupId,
-        coachId: session.userId,
+        headCoachId: session.userId,
         title: title?.trim() || null,
         sessionDate: sessionDateObj,
         createdAt: new Date(),
@@ -225,7 +225,7 @@ export async function DELETE(req: Request) {
     // Only the coach who created it can delete
     const result = await db.collection("checkins").deleteOne({
       _id: checkinOid,
-      coachId: session.userId,
+      headCoachId: session.userId,
     })
 
     if (result.deletedCount === 0) {

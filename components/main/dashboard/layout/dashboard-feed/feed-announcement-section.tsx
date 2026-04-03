@@ -10,6 +10,7 @@ interface FeedAnnouncementSectionProps {
   loading: boolean;
   announcements: Announcement[];
   isCoach: boolean;
+  currentUserId?: string;
   onMutate: () => void;
 }
 
@@ -18,6 +19,7 @@ export function FeedAnnouncementSection({
   loading,
   announcements,
   isCoach,
+  currentUserId,
   onMutate,
 }: FeedAnnouncementSectionProps) {
   if (!show) return null;
@@ -45,6 +47,7 @@ export function FeedAnnouncementSection({
             <AnnouncementBanner
               announcements={announcements}
               isCoach={isCoach}
+              currentUserId={currentUserId}
               onMutate={onMutate}
             />
           </motion.div>

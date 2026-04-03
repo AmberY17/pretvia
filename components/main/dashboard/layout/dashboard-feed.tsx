@@ -84,14 +84,16 @@ export function DashboardFeed({
   const loadingTriggeredRef = useRef(false)
 
   // For coaches: start with checklist visible, hide once onboarding confirmed done
+  // Assistant coaches skip onboarding entirely — their group assignment is managed by the head coach
+  const isAssistant = user.role === "coach" && !!user.subscription?.isAssistant
   const [coachOnboardingDone, setCoachOnboardingDone] = useState(
-    user.role !== "coach",
+    user.role !== "coach" || isAssistant,
   )
 
   useEffect(() => {
-    if (user.role !== "coach") return
+    if (user.role !== "coach" || isAssistant) return
     setCoachOnboardingDone(isCoachOnboardingDone())
-  }, [user.role])
+  }, [user.role, isAssistant])
 
   useEffect(() => {
     if (!isLoadingMore) loadingTriggeredRef.current = false
@@ -150,6 +152,7 @@ export function DashboardFeed({
           loading={announcementLoading}
           announcements={announcements}
           isCoach={user.role === "coach"}
+          currentUserId={user.id}
           onMutate={onMutateAnnouncement}
         />
 

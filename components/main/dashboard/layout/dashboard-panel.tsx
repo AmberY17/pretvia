@@ -60,6 +60,7 @@ export function DashboardPanel({
     existingTags: tagNames,
     prefillTimestamp: checkinPrefill?.timestamp ?? null,
     checkinId: checkinPrefill?.checkinId ?? null,
+    activeGroupId: user.activeGroupId,
   };
 
   const desktopPanelContent = (

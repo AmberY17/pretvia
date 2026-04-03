@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { date, reason } = await req.json()
+    const { date, reason, groupId } = await req.json()
 
     if (!date || typeof reason !== "string" || !reason.trim()) {
       return NextResponse.json(
@@ -24,10 +24,18 @@ export async function POST(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    const trainingSlots = (user?.trainingSlots ?? []) as {
+    const allTrainingSlots = (user?.trainingSlots ?? []) as {
       dayOfWeek: number
       time: string
+      sourceGroupId?: string
     }[]
+
+    // Scope the skip to the active group's slots + personal (no sourceGroupId) slots.
+    // This prevents a skip in one group from accidentally satisfying another group's
+    // streak when both groups train on the same day.
+    const trainingSlots = groupId
+      ? allTrainingSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+      : allTrainingSlots
 
     // Parse as local midnight (not UTC midnight) so getDay() returns the correct
     // local day of week matching the client-supplied date string.

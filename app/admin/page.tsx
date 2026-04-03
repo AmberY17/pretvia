@@ -30,6 +30,7 @@ export default async function AdminPage() {
   }))
 
   const pricingPageVisible = siteSettings?.pricingPageVisible ?? false
+  const addOnsVisible = siteSettings?.addOnsVisible ?? true
 
   return (
     <main className="min-h-screen bg-background px-6 py-12">
@@ -39,7 +40,10 @@ export default async function AdminPage() {
             <h2 className="text-xl font-bold text-foreground">Site Settings</h2>
           </div>
           <div className="max-w-md">
-            <SiteSettingsToggle initialPricingPageVisible={pricingPageVisible} />
+            <SiteSettingsToggle
+              initialPricingPageVisible={pricingPageVisible}
+              initialAddOnsVisible={addOnsVisible}
+            />
           </div>
         </section>
 

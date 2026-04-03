@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetcher } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
@@ -40,6 +40,19 @@ export function CommentSection({
   const [editText, setEditText] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContentHeight(entry.contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const canParticipate = isLogOwner || isCoach;
 
@@ -185,87 +198,87 @@ export function CommentSection({
       </button>
 
       {/* Expanded comment thread */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            style={{ overflow: isExpanded ? "visible" : "hidden" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex flex-col gap-3 pt-3">
-              {/* Comments list */}
-              {comments.length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  {comments.map((comment) => (
-                    <CommentItem
-                      key={comment.id}
-                      comment={comment}
-                      currentUserId={currentUserId}
-                      editingId={editingId}
-                      setEditingId={setEditingId}
-                      editText={editText}
-                      setEditText={setEditText}
-                      actionLoading={actionLoading}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1 py-3">
-                  <MessageCircle className="h-4 w-4 text-muted-foreground/40" />
-                  <p className="text-xs text-muted-foreground/60">
-                    No feedback yet. Start the conversation.
-                  </p>
-                </div>
-              )}
-
-              {/* Input */}
-              <form
-                onSubmit={handleSubmit}
-                className="flex items-end gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex-1">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit(e);
-                      }
-                    }}
-                    placeholder={
-                      isCoach ? "Leave feedback..." : "Reply to coach..."
-                    }
-                    rows={1}
-                    maxLength={1000}
-                    className="w-full resize-none rounded-xl border border-primary/20 bg-secondary/50 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0"
+      <motion.div
+        animate={{
+          height: isExpanded ? contentHeight : 0,
+          opacity: isExpanded ? 1 : 0,
+        }}
+        initial={false}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
+        style={{ overflow: "hidden" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div ref={contentRef}>
+          <div className="flex flex-col gap-3 pt-3">
+            {/* Comments list */}
+            {comments.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {comments.map((comment) => (
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    currentUserId={currentUserId}
+                    editingId={editingId}
+                    setEditingId={setEditingId}
+                    editText={editText}
+                    setEditText={setEditText}
+                    actionLoading={actionLoading}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
                   />
-                </div>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={sending || !newComment.trim()}
-                  className="h-[38px] w-[38px] shrink-0 rounded-xl bg-primary p-0 text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-40 place-self-center"
-                  aria-label="Send comment"
-                >
-                  {sending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </form>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1 py-3">
+                <MessageCircle className="h-4 w-4 text-muted-foreground/40" />
+                <p className="text-xs text-muted-foreground/60">
+                  No feedback yet. Start the conversation.
+                </p>
+              </div>
+            )}
+
+            {/* Input */}
+            <form
+              onSubmit={handleSubmit}
+              className="flex items-end gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex-1">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                  placeholder={
+                    isCoach ? "Leave feedback..." : "Reply to coach..."
+                  }
+                  rows={1}
+                  maxLength={1000}
+                  className="w-full resize-none rounded-xl border border-primary/20 bg-secondary/50 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-0"
+                />
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={sending || !newComment.trim()}
+                className="h-[38px] w-[38px] shrink-0 rounded-xl bg-primary p-0 text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-40 place-self-center"
+                aria-label="Send comment"
+              >
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

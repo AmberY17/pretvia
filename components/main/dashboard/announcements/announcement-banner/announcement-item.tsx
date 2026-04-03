@@ -13,12 +13,14 @@ import type { Announcement } from "@/types/dashboard";
 interface AnnouncementItemProps {
   announcement: Announcement;
   isCoach: boolean;
+  currentUserId?: string;
   onMutate: () => void;
 }
 
 export function AnnouncementItem({
   announcement,
   isCoach,
+  currentUserId,
   onMutate,
 }: AnnouncementItemProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -97,7 +99,7 @@ export function AnnouncementItem({
                 </span>
               </div>
             </div>
-            {isCoach && !isEditing && (
+            {isCoach && announcement.coachId === currentUserId && !isEditing && (
               <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/announcement:opacity-100">
                 <button
                   type="button"

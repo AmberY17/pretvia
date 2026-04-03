@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Loader2,
   Shield,
@@ -51,10 +50,7 @@ export function CommentItem({
   const isEditing = editingId === comment.id;
 
   return (
-    <motion.div
-      key={comment.id}
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       data-testid="comment-item"
       className={`group/comment flex gap-2.5 ${isOwn ? "flex-row-reverse" : ""}`}
     >
@@ -175,6 +171,6 @@ export function CommentItem({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
