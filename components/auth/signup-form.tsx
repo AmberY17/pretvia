@@ -16,7 +16,7 @@ import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type Role = "athlete" | "coach";
+type SignupRole = "athlete" | "coach";
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void;
@@ -32,7 +32,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [dateOfBirth] = useState("");
-  const [role, setRole] = useState<Role>(
+  const [role, setRole] = useState<SignupRole>(
     searchParams.get("signup") === "coach" ? "coach" : "athlete"
   );
   const [loading, setLoading] = useState(false);

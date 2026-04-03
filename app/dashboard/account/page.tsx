@@ -3,14 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { PageHeader } from "@/components/main/shared/page-header";
+import { PageHeader } from "@/components/main/shared";
 import { LoadingScreen } from "@/components/loading-screen";
-import { AccountProfileEmojiSection } from "@/components/main/account/account-profile-emoji-section";
-import { AccountTrainingSlotsSection } from "@/components/main/account/account-training-slots-section";
-import { AccountCelebrationSection } from "@/components/main/account/account-celebration-section";
-import { AccountFilterOrderSection } from "@/components/main/account/account-filter-order-section";
-import { AccountDeleteSection } from "@/components/main/account/account-delete-section";
-import { AccountInstallSection } from "@/components/main/account/account-install-section";
+import {
+  AccountProfileEmojiSection,
+  AccountTrainingSlotsSection,
+  AccountCelebrationSection,
+  AccountFilterOrderSection,
+  AccountDeleteSection,
+  AccountInstallSection,
+} from "@/components/main/account";
 import { toast } from "sonner";
 import {
   CELEBRATION_KEY,
@@ -224,7 +226,7 @@ export default function AccountPage() {
       if (Array.isArray(data.trainingSlots)) {
         const activeGroupId = user?.activeGroupId ?? null;
         const allRaw = data.trainingSlots.map(
-          (s: { dayOfWeek: number; time: string; sourceGroupId?: string }) => ({
+          (s: TrainingSlotItem) => ({
             dayOfWeek: s.dayOfWeek,
             time: s.time || "09:00",
             sourceGroupId: s.sourceGroupId,

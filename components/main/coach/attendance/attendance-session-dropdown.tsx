@@ -4,12 +4,7 @@ import { useRef } from "react";
 import { ClipboardCheck, ChevronDown, Check } from "lucide-react";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { format } from "date-fns";
-
-export interface CheckinItem {
-  id: string;
-  title: string | null;
-  sessionDate: string;
-}
+import type { CheckinItem } from "@/types/dashboard";
 
 interface AttendanceSessionDropdownProps {
   checkins: CheckinItem[];

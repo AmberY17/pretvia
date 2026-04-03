@@ -11,10 +11,10 @@ const EmojiPicker = dynamic(
   () => import("@/components/main/shared/emoji-picker").then((m) => m.EmojiPicker),
   { ssr: false }
 );
-import { TagInput } from "@/components/main/dashboard/logs/tag-input";
-import { DateTimeWheelPicker } from "@/components/main/dashboard/shared/datetime-wheel-picker";
+import { TagInput } from "./tag-input";
+import { DateTimeWheelPicker } from "@/components/main/dashboard/shared";
 import { toast } from "sonner";
-import type { LogEntry } from "./log-card";
+import type { LogEntry } from "@/types/dashboard";
 
 interface LogFormProps {
   onLogCreated: (totalCount?: number) => void;

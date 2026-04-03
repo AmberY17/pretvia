@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { UserMinus, ArrowRightLeft, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
 import type { CoachMember } from "@/types/dashboard";

@@ -8,7 +8,8 @@ import {
   CoachOnboardingChecklist,
   isCoachOnboardingDone,
 } from "@/components/main/dashboard/layout/onboarding/coach-onboarding-checklist"
-import { LogCard, type LogEntry } from "@/components/main/dashboard/logs/log-card"
+import { LogCard } from "@/components/main/dashboard/logs"
+import type { LogEntry } from "@/types/dashboard"
 import { LogCardSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons"
 import { MobileFilters } from "@/components/main/dashboard/layout/dashboard-feed/mobile-filters"
 import { FeedAnnouncementSection } from "@/components/main/dashboard/layout/dashboard-feed/feed-announcement-section"
@@ -18,7 +19,7 @@ import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
 } from "@/components/main/dashboard/filters/hooks/use-dashboard-filters"
-import type { Athlete, Role, Announcement, CheckinItem } from "@/types/dashboard"
+import type { Athlete, Role, Announcement, CheckinItem, TrainingSlot } from "@/types/dashboard"
 
 interface DashboardFeedProps {
   user: User
@@ -40,7 +41,7 @@ interface DashboardFeedProps {
   checkins: CheckinItem[]
   announcementLoading?: boolean
   checkinsLoading?: boolean
-  trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+  trainingScheduleTemplate?: TrainingSlot[]
   onMutateAnnouncement: () => void
   onMutateCheckins: () => void
   onMutateLogs?: () => void

@@ -92,7 +92,7 @@ export function CoachOnboardingChecklist({
         localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next))
         if (Object.values(next).every(Boolean)) {
           localStorage.setItem(COACH_ONBOARDING_DONE_KEY, "1")
-          onComplete()
+          setTimeout(onComplete, 0)
         }
       } catch {
         // ignore

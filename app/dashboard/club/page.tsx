@@ -5,14 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetcher } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { PageHeader } from "@/components/main/shared/page-header";
+import { PageHeader, EmptyStateCard } from "@/components/main/shared";
 import { LoadingScreen } from "@/components/loading-screen";
-import { EmptyStateCard } from "@/components/main/shared/empty-state-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClubCoachSection } from "@/components/main/coach/club/club-coach-section";
-import { ClubGroupSection } from "@/components/main/coach/club/club-group-section";
-import { ClubInsightsSection } from "@/components/main/coach/club/club-insights-section";
-import { ClubBillingSection } from "@/components/main/coach/club/club-billing-section";
+import {
+  ClubCoachSection,
+  ClubGroupSection,
+  ClubInsightsSection,
+  ClubBillingSection,
+} from "@/components/main/coach/club";
 import { Building2 } from "lucide-react";
 import type { ClubOverview } from "@/types/dashboard";
 

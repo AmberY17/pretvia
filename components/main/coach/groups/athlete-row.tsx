@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared";
 import { formatAgeAndBirthday } from "@/lib/date-utils";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import { GuardiansPopover } from "./guardians-popover";

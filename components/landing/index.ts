@@ -1,4 +1,2 @@
-export { DeviceFrame, PhoneFrame } from "./device-frame";
-export { VideoPlayer, DemoLoop } from "./video-player";
-export { RoleCards, RolePreviewCards } from "./role-cards";
-export { ScreenshotGallery } from "./screenshot-gallery";
+export { DeviceFrame } from "./device-frame";
+export { RoleCards } from "./role-cards";

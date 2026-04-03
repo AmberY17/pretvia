@@ -2,7 +2,7 @@ import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
 import type { TrainingSlot, TrainingSlotItem } from "@/types/dashboard"
 
-export type GroupTrainingSlot = TrainingSlot
+type GroupTrainingSlot = TrainingSlot
 
 function normalizeSlot(slot: { dayOfWeek: number; time: string }): GroupTrainingSlot {
   const t = String(slot.time).trim()

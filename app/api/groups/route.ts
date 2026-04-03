@@ -9,6 +9,7 @@ import {
   handleSwitch,
   handleLeave,
 } from "./post-handlers"
+import type { TrainingSlot } from "@/types/dashboard"
 
 // POST: create a group (coach only), join a group, switch group, or leave a group
 export async function POST(req: Request) {
@@ -202,7 +203,7 @@ export async function GET(req: Request) {
         email: string
         status: "pending"
       }[]
-      trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+      trainingScheduleTemplate?: TrainingSlot[]
     } = {
       members: members.map((m) => ({
         id: m._id.toString(),

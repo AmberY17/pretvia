@@ -1,16 +1,16 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckinCard } from "@/components/main/dashboard/checkins/checkin-card";
-import { CheckinSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
-import type { CheckinItem } from "@/types/dashboard";
+import { CheckinCard } from "@/components/main/dashboard/checkins";
+import { CheckinSkeleton } from "../dashboard-skeletons";
+import type { CheckinItem, TrainingSlot } from "@/types/dashboard";
 
 interface FeedCheckinSectionProps {
   show: boolean;
   loading: boolean;
   checkins: CheckinItem[];
   isCoach: boolean;
-  trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
+  trainingScheduleTemplate?: TrainingSlot[];
   onCheckinLog: (sessionDate: string, checkinId: string) => void;
   onEditCheckinLog?: (logId: string) => void;
   onMutate: () => void;

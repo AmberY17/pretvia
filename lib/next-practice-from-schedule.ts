@@ -4,6 +4,7 @@
  */
 
 import { parseTime } from "@/lib/time-utils"
+import type { TrainingSlot } from "@/types/dashboard"
 
 /**
  * Get the next occurrence of a (dayOfWeek, time) slot at or after fromDate.
@@ -35,7 +36,7 @@ function getNextOccurrence(
  * If it's 10am and today's practice is at 6pm, returns 6pm today.
  */
 export function getNextPracticeFromSchedule(
-  slots: { dayOfWeek: number; time: string }[],
+  slots: TrainingSlot[],
   fromDate: Date = new Date()
 ): Date | null {
   if (!slots?.length) return null

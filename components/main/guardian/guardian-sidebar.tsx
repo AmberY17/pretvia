@@ -4,15 +4,9 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CollapsibleFilterSection } from "@/components/main/dashboard/filters/collapsible-filter-section";
+import { CollapsibleFilterSection } from "@/components/main/dashboard/filters";
 import type { User } from "@/hooks/use-auth";
-
-export type GuardianPair = {
-  athleteId: string;
-  athleteName: string;
-  groupId: string;
-  groupName: string;
-};
+import type { GuardianPair } from "@/types/dashboard";
 
 interface GuardianSidebarProps {
   user: User;

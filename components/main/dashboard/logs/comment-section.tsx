@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CommentItem } from "./comment-item";
-import type { Comment } from "./comment-item";
+import type { Comment } from "@/types/dashboard";
 
 interface CommentSectionProps {
   logId: string;

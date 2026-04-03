@@ -12,7 +12,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import type { CheckinItem } from "@/types/dashboard";

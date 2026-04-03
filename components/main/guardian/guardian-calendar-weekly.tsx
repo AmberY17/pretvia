@@ -5,16 +5,15 @@ import { format, startOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { AttendanceStatus } from "@/types/dashboard";
 
 const WEEKDAYS_FULL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAYS_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 
-type AttendanceStatus = "present" | "absent" | "excused";
-
 interface GuardianCalendarWeeklyProps {
   weekStart: string;
   dates: Record<string, string[]>;
-  attendanceByDate?: Record<string, AttendanceStatus>;
+  attendanceByDate?: Record<string, NonNullable<AttendanceStatus>>;
   trainingDayDates?: Record<string, boolean>;
   onPrevWeek: () => void;
   onNextWeek: () => void;

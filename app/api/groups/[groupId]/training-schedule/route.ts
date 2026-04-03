@@ -7,6 +7,7 @@ import {
   normalizeGroupTrainingSchedule,
 } from "@/lib/group-training-schedule"
 import { canManageGroup } from "@/lib/api-auth"
+import type { TrainingSlot } from "@/types/dashboard"
 
 // GET: fetch group training schedule template (coach only)
 export async function GET(
@@ -31,7 +32,7 @@ export async function GET(
     })
 
     const trainingScheduleTemplate =
-      (group?.trainingScheduleTemplate as { dayOfWeek: number; time: string }[]) ?? []
+      (group?.trainingScheduleTemplate as TrainingSlot[]) ?? []
 
     return NextResponse.json({
       trainingScheduleTemplate,
@@ -66,7 +67,7 @@ export async function PUT(
 
     const body = await req.json()
     const { trainingSchedule } = body as {
-      trainingSchedule: { dayOfWeek: number; time: string }[] | unknown
+      trainingSchedule: TrainingSlot[] | unknown
     }
 
     const normalized = normalizeGroupTrainingSchedule(trainingSchedule)

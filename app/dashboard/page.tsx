@@ -9,7 +9,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth"
 import { useDashboardFilters } from "@/components/main/dashboard/filters/hooks/use-dashboard-filters"
 import { useDashboardPanel } from "@/components/main/dashboard/logs/hooks/use-dashboard-panel"
 import dynamic from "next/dynamic"
-import { DashboardHeader } from "@/components/main/dashboard/layout/dashboard-header"
+import { DashboardHeader } from "@/components/main/dashboard/layout"
 import { OnboardingModal } from "@/components/main/dashboard/layout/onboarding/onboarding-modal"
 import { LoadingScreen } from "@/components/loading-screen"
 
@@ -25,8 +25,7 @@ const DashboardPanel = dynamic(() =>
 const GuardianDashboard = dynamic(() =>
   import("@/components/main/guardian/guardian-dashboard").then((m) => m.GuardianDashboard),
 )
-import type { LogEntry } from "@/types/dashboard"
-import type { CheckinItem } from "@/components/main/dashboard/checkins/checkin-card"
+import type { LogEntry, CheckinItem, TrainingSlot } from "@/types/dashboard"
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth()
@@ -72,7 +71,7 @@ export default function DashboardPage() {
   const { data: membersData } = useQuery<{
     members: { id: string; displayName: string; email: string; role: string }[]
     roles: { id: string; name: string }[]
-    trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+    trainingScheduleTemplate?: TrainingSlot[]
   }>({
     queryKey: [...queryKeys.members.all, user?.id, user?.activeGroupId],
     queryFn: () => apiFetcher(`/api/groups?groupId=${user!.activeGroupId}`),

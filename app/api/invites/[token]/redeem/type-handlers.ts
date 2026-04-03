@@ -6,6 +6,7 @@ import { ObjectId } from "mongodb"
 import type { Db, Document } from "mongodb"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
 import { sendUnder13ChildVerificationEmail } from "@/lib/resend"
+import type { TrainingSlot } from "@/types/dashboard"
 
 function getDisplayName(firstName: string, lastName: string): string {
   return [firstName?.trim(), lastName?.trim()].filter(Boolean).join(" ") || "User"
@@ -157,7 +158,7 @@ export async function handleUnder13ParentInvite(
       db,
       athleteId,
       groupId,
-      group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[],
+      group.trainingScheduleTemplate as TrainingSlot[],
     )
   }
 
@@ -280,7 +281,7 @@ export async function handleAthleteInvite(
           db,
           userId,
           groupId,
-          group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[],
+          group.trainingScheduleTemplate as TrainingSlot[],
         )
       }
     }
@@ -321,7 +322,7 @@ export async function handleAthleteInvite(
         db,
         userId,
         groupId,
-        group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[],
+        group.trainingScheduleTemplate as TrainingSlot[],
       )
     }
   } else {

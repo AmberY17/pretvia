@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession, createSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
-import type { TrainingSlotItem } from "@/types/dashboard"
+import type { TrainingSlot, TrainingSlotItem } from "@/types/dashboard"
 
 // Allow single emoji (complex emojis like 👨‍👩‍👧‍👦 can be many code units)
 function isValidEmoji(val: unknown): boolean {
@@ -59,7 +59,7 @@ export async function PUT(req: Request) {
         )
       )
       const submittedKeys = new Set(
-        trainingSlots.map((s: { dayOfWeek: number; time: string }) => `${s.dayOfWeek}:${s.time}`)
+        trainingSlots.map((s: TrainingSlot) => `${s.dayOfWeek}:${s.time}`)
       )
 
       updates.trainingSlots = trainingSlots.map(

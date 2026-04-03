@@ -7,28 +7,19 @@ import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCheck } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { EmptyStateCard } from "@/components/main/shared/empty-state-card";
-import { PageHeader } from "@/components/main/shared/page-header";
+import { EmptyStateCard, PageHeader } from "@/components/main/shared";
 import { LoadingScreen } from "@/components/loading-screen";
-import { AttendancePageSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
+import { AttendancePageSkeleton } from "@/components/main/dashboard/layout";
 import {
   AttendanceSessionDropdown,
-  type CheckinItem,
-} from "@/components/main/coach/attendance/attendance-session-dropdown";
-import { AttendanceSessionCard } from "@/components/main/coach/attendance/attendance-session-card";
+  AttendanceSessionCard,
+} from "@/components/main/coach/attendance";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import type { AttendanceStatus } from "@/types/dashboard";
-
-interface Athlete {
-  id: string;
-  displayName?: string;
-  email?: string;
-  status?: string | null;
-}
+import type { AttendanceStatus, CheckinItem, AttendanceAthlete } from "@/types/dashboard";
 
 interface AttendanceData {
-  athletes: Athlete[];
+  athletes: AttendanceAthlete[];
 }
 
 export default function AttendancePage() {

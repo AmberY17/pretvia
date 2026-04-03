@@ -20,16 +20,10 @@ import {
   Building2,
   TrendingUp,
   CreditCard,
-  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-interface Feature {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}
+import type { Feature } from "./features-data";
 
 interface RoleData {
   id: string;
@@ -173,24 +167,3 @@ export function RoleCards() {
   );
 }
 
-// Compact role preview for hero section
-export function RolePreviewCards() {
-  return (
-    <div className="flex flex-wrap justify-center gap-3">
-      {roles.map((role, i) => (
-        <motion.div
-          key={role.id}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 + i * 0.1 }}
-          className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm"
-        >
-          <span className="font-medium text-foreground">{role.title}</span>
-          <span className="text-muted-foreground">
-            {role.features.length} features
-          </span>
-        </motion.div>
-      ))}
-    </div>
-  );
-}

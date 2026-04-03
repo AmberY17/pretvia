@@ -8,8 +8,6 @@ import type { Db } from "mongodb"
 import { parseTime } from "@/lib/time-utils"
 import type { TrainingSlotItem } from "@/types/dashboard"
 
-type TrainingSlot = TrainingSlotItem
-
 const DAY_MS = 24 * 60 * 60 * 1000
 const WINDOW_MS = DAY_MS // 24-hour window to log after slot
 
@@ -43,7 +41,7 @@ function getLastOccurrenceOfDay(refDate: Date, dayOfWeek: number): Date {
 /**
  * Create a slot instance (exact datetime) for a given date and slot config.
  */
-function slotInstanceForDate(date: Date, slot: TrainingSlot): Date {
+function slotInstanceForDate(date: Date, slot: TrainingSlotItem): Date {
   const { hours, minutes } = parseTime(slot.time)
   const d = new Date(date)
   d.setUTCHours(hours, minutes, 0, 0)
@@ -55,7 +53,7 @@ function slotInstanceForDate(date: Date, slot: TrainingSlot): Date {
  * Returns array of { slotTime: Date, dayOfWeek, time } in reverse chronological order.
  */
 function getSlotInstances(
-  slots: TrainingSlot[],
+  slots: TrainingSlotItem[],
   refDate: Date,
   maxWeeks = 52
 ): { slotTime: Date; dayOfWeek: number; time: string }[] {
@@ -109,7 +107,7 @@ function skipMatchesSlot(
   )
 }
 
-export interface StreakResult {
+interface StreakResult {
   streak: number
   totalLogs: number
 }
@@ -117,11 +115,11 @@ export interface StreakResult {
 export async function computeStreak(
   db: Db,
   userId: string,
-  trainingSlots: TrainingSlot[],
+  trainingSlots: TrainingSlotItem[],
   localDate?: string,
   prefetchedLogs?: { timestamp: Date | string }[],
   prefetchedSkips?: { date: Date | string; dayOfWeek: number; scheduledTime: string }[],
-  deletedSlots?: TrainingSlot[]
+  deletedSlots?: TrainingSlotItem[]
 ): Promise<StreakResult> {
   const totalLogs = await db
     .collection("logs")
@@ -229,7 +227,7 @@ export async function computeStreak(
   return { streak, totalLogs }
 }
 
-export interface TodaySkipStatus {
+interface TodaySkipStatus {
   canSkipToday: boolean
   skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null
 }
@@ -237,7 +235,7 @@ export interface TodaySkipStatus {
 export async function computeTodaySkipStatus(
   db: Db,
   userId: string,
-  trainingSlots: TrainingSlot[],
+  trainingSlots: TrainingSlotItem[],
   localDate?: string,
   prefetchedLogs?: { timestamp: Date | string }[],
   prefetchedSkips?: { date: Date | string; dayOfWeek: number; scheduledTime: string }[]
@@ -315,7 +313,7 @@ export async function removeRedundantSkipsForLog(
   db: Db,
   userId: string,
   logTimestamp: Date,
-  trainingSlots: TrainingSlot[]
+  trainingSlots: TrainingSlotItem[]
 ): Promise<void> {
   if (!trainingSlots?.length) return
 

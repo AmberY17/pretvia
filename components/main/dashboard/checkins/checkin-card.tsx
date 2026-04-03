@@ -3,9 +3,7 @@
 import { AnimatePresence } from "framer-motion";
 import { CheckinCardItem } from "@/components/main/dashboard/checkins/checkin-card/checkin-card-item";
 import { CheckinComposer } from "@/components/main/dashboard/checkins/checkin-card/checkin-composer";
-import type { CheckinItem } from "@/types/dashboard";
-
-export type { CheckinItem };
+import type { CheckinItem, TrainingSlot } from "@/types/dashboard";
 
 interface CheckinCardProps {
   checkins: CheckinItem[];
@@ -13,7 +11,7 @@ interface CheckinCardProps {
   onCheckinLog: (sessionDate: string, checkinId: string) => void;
   onEditCheckinLog?: (logId: string) => void;
   onMutate: () => void;
-  trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
+  trainingScheduleTemplate?: TrainingSlot[];
 }
 
 export function CheckinCard({

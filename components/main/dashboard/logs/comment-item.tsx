@@ -10,17 +10,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
-
-export interface Comment {
-  id: string;
-  logId: string;
-  authorId: string;
-  authorName: string;
-  authorRole: string;
-  authorEmoji?: string | null;
-  text: string;
-  createdAt: string;
-}
+import type { Comment } from "@/types/dashboard";
 
 interface CommentItemProps {
   comment: Comment;

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import type { LogEntry } from "@/components/main/dashboard/logs/log-card";
+import type { LogEntry } from "@/types/dashboard";
 
 export type PanelMode = "new" | "view" | "edit" | null;
 

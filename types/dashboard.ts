@@ -46,6 +46,14 @@ export type Athlete = {
   email: string;
 };
 
+/** Athlete row in an attendance session (status may be absent/present/excused/null) */
+export type AttendanceAthlete = {
+  id: string;
+  displayName?: string;
+  email?: string;
+  status?: string | null;
+};
+
 /** Training session used in session filters and sidebar */
 export type SessionItem = {
   id: string;
@@ -164,4 +172,32 @@ export type ClubOverview = {
   prevWeeklyLogCount: number;
   subscription: CoachSubscription;
   addOnsVisible: boolean;
+};
+
+/** Comment on a training log */
+export type Comment = {
+  id: string;
+  logId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  authorEmoji?: string | null;
+  text: string;
+  createdAt: string;
+};
+
+/** Guardian–athlete–group pairing for the guardian dashboard */
+export type GuardianPair = {
+  athleteId: string;
+  athleteName: string;
+  groupId: string;
+  groupName: string;
+};
+
+/** Group summary as seen on the user session (group switcher, sidebar) */
+export type UserGroup = {
+  id: string;
+  name: string;
+  code: string;
+  headCoachId: string;
 };
