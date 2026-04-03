@@ -8,7 +8,7 @@ import type { Db } from "mongodb"
 import { parseTime } from "@/lib/time-utils"
 import type { TrainingSlotItem } from "@/types/dashboard"
 
-export type TrainingSlot = TrainingSlotItem
+type TrainingSlot = TrainingSlotItem
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const WINDOW_MS = DAY_MS // 24-hour window to log after slot

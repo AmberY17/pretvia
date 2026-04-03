@@ -32,7 +32,6 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
     <header className="relative sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="hidden w-[4.5rem] shrink-0 lg:block" aria-hidden="true" />
           <Image
             src="/logo.png"
             alt="Pretvia"
@@ -47,7 +46,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
             height={24}
             className="hidden h-6 w-6 shrink-0 object-contain dark:block"
           />
-          <span className="font-brand text-sm font-semibold uppercase tracking-[0.15em] text-foreground">Pretvia</span>
+          <span className="text-base font-semibold text-foreground">Pretvia</span>
         </div>
 
         <div className="flex items-center gap-2">

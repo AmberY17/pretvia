@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession, createSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
 // Allow single emoji (complex emojis like 👨‍👩‍👧‍👦 can be many code units)
 function isValidEmoji(val: unknown): boolean {
@@ -51,10 +52,9 @@ export async function PUT(req: Request) {
         { projection: { trainingSlots: 1, deletedSlots: 1 } }
       )
 
-      type StoredSlot = { dayOfWeek: number; time: string; sourceGroupId?: string; addedAt?: Date; removedAt?: Date }
       const now = new Date()
-      const existingByKey = new Map<string, StoredSlot>(
-        ((currentUser?.trainingSlots ?? []) as StoredSlot[]).map(
+      const existingByKey = new Map<string, TrainingSlotItem>(
+        ((currentUser?.trainingSlots ?? []) as TrainingSlotItem[]).map(
           (s) => [`${s.dayOfWeek}:${s.time}`, s]
         )
       )
@@ -63,7 +63,7 @@ export async function PUT(req: Request) {
       )
 
       updates.trainingSlots = trainingSlots.map(
-        (s: { dayOfWeek: number; time: string; sourceGroupId?: string }) => {
+        (s: TrainingSlotItem) => {
           const t = String(s.time).trim()
           const match = t.match(/^(\d{1,2}):(\d{2})$/)
           const time = match
@@ -72,7 +72,7 @@ export async function PUT(req: Request) {
           const dayOfWeek = Math.max(0, Math.min(6, Number(s.dayOfWeek) || 0))
           const existing = existingByKey.get(`${dayOfWeek}:${time}`)
           const addedAt = existing?.addedAt ?? now
-          const base = { dayOfWeek, time, addedAt }
+          const base: TrainingSlotItem = { dayOfWeek, time, addedAt }
           return s.sourceGroupId
             ? { ...base, sourceGroupId: String(s.sourceGroupId) }
             : base
@@ -82,7 +82,7 @@ export async function PUT(req: Request) {
       const nowDeleted = [...existingByKey.entries()]
         .filter(([key]) => !submittedKeys.has(key))
         .map(([, slot]) => ({ ...slot, removedAt: now }))
-      updates.deletedSlots = [...((currentUser?.deletedSlots ?? []) as StoredSlot[]), ...nowDeleted]
+      updates.deletedSlots = [...((currentUser?.deletedSlots ?? []) as TrainingSlotItem[]), ...nowDeleted]
     }
 
     if (displayName !== undefined) {

@@ -89,9 +89,15 @@ export function AnnouncementItem({
                 <span className="text-xs font-semibold text-primary">
                   Announcement
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  from {announcement.coachName}
-                </span>
+                {announcement.scope === "club" ? (
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    Club
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    from {announcement.coachName}
+                  </span>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(announcement.createdAt), {
                     addSuffix: true,

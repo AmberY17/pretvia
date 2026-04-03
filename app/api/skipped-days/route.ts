@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
 export async function POST(req: Request) {
   try {
@@ -24,17 +25,10 @@ export async function POST(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    const allTrainingSlots = (user?.trainingSlots ?? []) as {
-      dayOfWeek: number
-      time: string
-      sourceGroupId?: string
-    }[]
-
-    // Scope the skip to the active group's slots + personal (no sourceGroupId) slots.
-    // This prevents a skip in one group from accidentally satisfying another group's
-    // streak when both groups train on the same day.
+    // Every slot is group-scoped via sourceGroupId; filter strictly to the requested group.
+    const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
     const trainingSlots = groupId
-      ? allTrainingSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+      ? allTrainingSlots.filter((s) => s.sourceGroupId === groupId)
       : allTrainingSlots
 
     // Parse as local midnight (not UTC midnight) so getDay() returns the correct

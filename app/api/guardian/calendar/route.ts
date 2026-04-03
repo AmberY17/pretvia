@@ -2,15 +2,14 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
 function toDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-type TrainingSlot = { dayOfWeek: number; time: string; sourceGroupId?: string }
-
 function computeTrainingDayDates(
-  slots: TrainingSlot[] | undefined,
+  slots: TrainingSlotItem[] | undefined,
   start: Date,
   end: Date
 ): Record<string, true> {
@@ -79,7 +78,7 @@ export async function GET(req: Request) {
             ...(Array.isArray(a.groupIds) ? a.groupIds : []),
           ].filter((id, i, arr) => arr.indexOf(id) === i),
           trainingSlots: Array.isArray(a.trainingSlots)
-            ? (a.trainingSlots as TrainingSlot[])
+            ? (a.trainingSlots as TrainingSlotItem[])
             : [],
         },
       ])
@@ -172,9 +171,10 @@ export async function GET(req: Request) {
           .collection("logs")
           .find({
             userId: { $in: uniqueAthleteIds },
+            groupId: { $in: uniqueGroupIds },
             timestamp: { $gte: start, $lte: end },
           })
-          .project({ userId: 1, emoji: 1, timestamp: 1 })
+          .project({ userId: 1, groupId: 1, emoji: 1, timestamp: 1 })
           .toArray(),
         checkinIds.length > 0
           ? db.collection("attendance").find({ checkinId: { $in: checkinIds } }).toArray()
@@ -188,11 +188,14 @@ export async function GET(req: Request) {
         checkinsByGroup.get(gid)!.push({ _id: c._id, sessionDate: c.sessionDate as Date })
       }
 
-      const logsByAthlete = new Map<string, { emoji: string; timestamp: Date }[]>()
+      const logsByPair = new Map<string, { emoji: string; timestamp: Date }[]>()
       for (const log of logs) {
         const uid = typeof log.userId === "string" ? log.userId : (log.userId as ObjectId).toString()
-        if (!logsByAthlete.has(uid)) logsByAthlete.set(uid, [])
-        logsByAthlete.get(uid)!.push({
+        const gid = typeof log.groupId === "string" ? log.groupId : log.groupId ? (log.groupId as ObjectId).toString() : null
+        if (!gid) continue
+        const pairKey = `${uid}:${gid}`
+        if (!logsByPair.has(pairKey)) logsByPair.set(pairKey, [])
+        logsByPair.get(pairKey)!.push({
           emoji: (log.emoji as string) ?? "📝",
           timestamp: log.timestamp as Date,
         })
@@ -214,7 +217,7 @@ export async function GET(req: Request) {
         groupId: string
         athleteName: string
         groupName: string
-        dates: Record<string, string>
+        dates: Record<string, string[]>
         attendanceByDate: Record<string, "present" | "absent" | "excused">
         trainingDayDates: Record<string, true>
       }[] = []
@@ -224,14 +227,18 @@ export async function GET(req: Request) {
         if (!pair) continue
 
         const pairCheckins = checkinsByGroup.get(groupId) ?? []
-        const pairLogs = logsByAthlete.get(athleteId) ?? []
+        const pairLogs = logsByPair.get(`${athleteId}:${groupId}`) ?? []
         const athlete = athleteMap.get(athleteId)
-        const trainingDayDates = computeTrainingDayDates(athlete?.trainingSlots ?? [], start, end)
+        const slotsForGroup = (athlete?.trainingSlots ?? []).filter(
+          (s) => s.sourceGroupId === groupId
+        )
+        const trainingDayDates = computeTrainingDayDates(slotsForGroup, start, end)
 
-        const dates: Record<string, string> = {}
+        const dates: Record<string, string[]> = {}
         for (const log of pairLogs) {
           const key = toDateKey(log.timestamp)
-          if (!dates[key]) dates[key] = log.emoji
+          if (!dates[key]) dates[key] = []
+          dates[key].push(log.emoji)
         }
 
         const attendanceByDate: Record<string, "present" | "absent" | "excused"> = {}

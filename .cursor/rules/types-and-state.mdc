@@ -8,13 +8,37 @@ alwaysApply: false
 
 ## Shared Types
 
-All shared domain types live in `types/dashboard.ts` — never duplicate them:
+All shared domain types live in `types/dashboard.ts` — **never define them locally**.
 
 `Athlete`, `Member`, `Role`, `SessionItem`, `TrainingSlot`, `TrainingSlotItem`,
 `ReviewStatus`, `ReviewStatusFilterValue`, `AttendanceStatus`, `LogEntry`,
 `PendingAthlete`, `InviteType`, `Guardian`
 
 When adding a new shared type, add it to `types/dashboard.ts`.
+
+### No local type duplication
+
+**Never** define a local `type` or `interface` in a route, component, hook, or lib file if it describes a shared domain concept (training slots, logs, users, groups, etc.).
+
+```ts
+// Wrong — duplicates TrainingSlotItem from types/dashboard.ts
+type StoredSlot = { dayOfWeek: number; time: string; sourceGroupId?: string }
+
+// Correct
+import type { TrainingSlotItem } from "@/types/dashboard"
+```
+
+Inline types for purely local one-off shapes (e.g. parsing a request body used only once inside a single function) are acceptable, but must not duplicate or shadow an existing exported type.
+
+### Training slot group scoping
+
+Every `TrainingSlotItem` in `users.trainingSlots` is tagged with `sourceGroupId`. When filtering slots for a specific group, always use the **strict** filter:
+
+```ts
+slots.filter((s) => s.sourceGroupId === groupId)
+```
+
+Never use `!s.sourceGroupId || s.sourceGroupId === groupId` — all slots are group-scoped.
 
 ## Custom Hooks
 

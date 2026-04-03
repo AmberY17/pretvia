@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { computeStreak, computeTodaySkipStatus } from "@/lib/streak"
-import type { TrainingSlot } from "@/lib/streak"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
 export async function GET(req: Request) {
   try {
@@ -23,17 +23,14 @@ export async function GET(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    type StoredSlot = TrainingSlot & { sourceGroupId?: string; addedAt?: Date; removedAt?: Date }
-
-    // Filter training slots and deleted slots to the active group + personal (no sourceGroupId).
-    // This ensures streak and skip calculations are scoped to the group the athlete is viewing.
-    const allTrainingSlots = (user?.trainingSlots ?? []) as StoredSlot[]
-    const allDeletedSlots = (user?.deletedSlots ?? []) as StoredSlot[]
-    const trainingSlots: TrainingSlot[] = groupId
-      ? allTrainingSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+    // Filter training slots to the requested group only — every slot is group-scoped via sourceGroupId.
+    const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
+    const allDeletedSlots = (user?.deletedSlots ?? []) as TrainingSlotItem[]
+    const trainingSlots: TrainingSlotItem[] = groupId
+      ? allTrainingSlots.filter((s) => s.sourceGroupId === groupId)
       : allTrainingSlots
-    const deletedSlots: TrainingSlot[] = groupId
-      ? allDeletedSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+    const deletedSlots: TrainingSlotItem[] = groupId
+      ? allDeletedSlots.filter((s) => s.sourceGroupId === groupId)
       : allDeletedSlots
 
     // Build a group-scoped log filter. Include logs with no groupId for backward

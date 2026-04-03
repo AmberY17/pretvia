@@ -4,7 +4,7 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { removeRedundantSkipsForLog } from "@/lib/streak"
-import type { TrainingSlot } from "@/lib/streak"
+import type { TrainingSlotItem } from "@/types/dashboard"
 import {
   buildVisibilityFilter,
   applyDateFilter,
@@ -300,7 +300,11 @@ export async function POST(req: Request) {
     const totalCount = await db.collection("logs").countDocuments({ userId: session.userId })
 
     const logTimestamp = logEntry.timestamp as Date
-    const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
+    const logGroupId = logEntry.groupId as string | null
+    const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
+    const trainingSlots = logGroupId
+      ? allTrainingSlots.filter((s) => s.sourceGroupId === logGroupId)
+      : allTrainingSlots
     await removeRedundantSkipsForLog(db, session.userId, logTimestamp, trainingSlots)
 
     const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []

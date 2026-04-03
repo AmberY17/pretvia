@@ -40,7 +40,7 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
       groupId: string;
       athleteName: string;
       groupName: string;
-      dates: Record<string, string>;
+      dates: Record<string, string[]>;
       attendanceByDate: Record<string, "present" | "absent" | "excused">;
     }[];
   }>({

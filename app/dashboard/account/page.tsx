@@ -44,9 +44,7 @@ export default function AccountPage() {
   } = useTrainingSlots();
   // Slots from other groups that are hidden on this page but must be preserved
   // when saving so that other groups' schedules are not accidentally deleted.
-  const [hiddenGroupSlots, setHiddenGroupSlots] = useState<
-    { dayOfWeek: number; time: string; sourceGroupId?: string }[]
-  >([]);
+  const [hiddenGroupSlots, setHiddenGroupSlots] = useState<TrainingSlotItem[]>([]);
   const [, setSavingSlots] = useState(false);
   const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] =
     useState<number | null>(null);
@@ -167,13 +165,19 @@ export default function AccountPage() {
   };
 
   async function saveTrainingSlotsToServer(
-    slots: { dayOfWeek: number; time: string; sourceGroupId?: string }[],
+    slots: TrainingSlotItem[],
     _options?: { silent?: boolean },
   ) {
     setSavingSlots(true);
+    const activeGroupId = user?.activeGroupId ?? null;
     try {
+      // Stamp any slot that lacks a sourceGroupId with the current activeGroupId so that
+      // every slot is group-scoped before it reaches the database.
+      const stamped = slots.map((s) =>
+        s.sourceGroupId ? s : activeGroupId ? { ...s, sourceGroupId: activeGroupId } : s,
+      );
       // Re-merge hidden slots from other groups so they are not lost on save.
-      const merged = [...slots, ...hiddenGroupSlots];
+      const merged = [...stamped, ...hiddenGroupSlots];
       const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -288,7 +292,7 @@ export default function AccountPage() {
               syncingSchedule={syncingSchedule}
               deleteGroupSlotConfirmIndex={deleteGroupSlotConfirmIndex}
               setDeleteGroupSlotConfirmIndex={setDeleteGroupSlotConfirmIndex}
-              onAddSlot={addTrainingSlot}
+              onAddSlot={() => addTrainingSlot(user.activeGroupId ?? undefined)}
               onRemoveSlot={removeTrainingSlot}
               onUpdateSlot={updateTrainingSlot}
               onSyncGroupSchedule={handleSyncGroupSchedule}
