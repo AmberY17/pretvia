@@ -3,11 +3,19 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
+import { apiRateLimiter, getIp } from "@/lib/rate-limit"
 
 // GET: fetch comments for a specific log
 // Only the log owner and coaches in the same group can view comments
 export async function GET(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -142,6 +150,13 @@ export async function GET(req: Request) {
 // Only coaches and the log owner can comment (1-on-1 conversation)
 export async function POST(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -261,6 +276,13 @@ export async function POST(req: Request) {
 // PUT: edit a comment (only the comment author can edit)
 export async function PUT(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -311,6 +333,13 @@ export async function PUT(req: Request) {
 // DELETE: delete a comment (only the comment author can delete)
 export async function DELETE(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

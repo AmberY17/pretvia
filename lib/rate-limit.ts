@@ -31,6 +31,9 @@ export const signupRateLimiter = createRateLimiter(3, "1 m")
 // 2 password reset requests per minute per IP
 export const passwordResetRateLimiter = createRateLimiter(2, "1 m")
 
+// 60 requests per minute per IP for hot read/write paths
+export const apiRateLimiter = createRateLimiter(60, "1 m")
+
 export function getIp(req: Request): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous"

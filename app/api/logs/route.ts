@@ -12,9 +12,17 @@ import {
   buildReviewStatusMap,
   fetchUserDisplayNames,
 } from "@/lib/log-filters"
+import { apiRateLimiter, getIp } from "@/lib/rate-limit"
 
 export async function GET(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -209,6 +217,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -308,6 +323,13 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -400,6 +422,13 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

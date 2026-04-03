@@ -3,10 +3,18 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
+import { apiRateLimiter, getIp } from "@/lib/rate-limit"
 
 // GET: fetch check-ins for the user's group
 export async function GET(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -108,6 +116,13 @@ export async function GET(req: Request) {
 // POST: create a check-in (coach only)
 export async function POST(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -179,6 +194,13 @@ export async function POST(req: Request) {
 // DELETE: remove a check-in (coach only)
 export async function DELETE(req: Request) {
   try {
+    if (apiRateLimiter) {
+      const { success } = await apiRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+      }
+    }
+
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

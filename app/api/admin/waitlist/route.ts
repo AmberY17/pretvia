@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
+import { timingSafeEqual } from "crypto"
 import { getDb } from "@/lib/mongodb"
 
 async function verifyAdminSession(): Promise<boolean> {
   const adminSecret = process.env.ADMIN_SECRET
   if (!adminSecret) return false
   const cookieStore = await cookies()
-  return cookieStore.get("admin_session")?.value === adminSecret
+  const provided = cookieStore.get("admin_session")?.value
+  if (!provided) return false
+  try {
+    return timingSafeEqual(Buffer.from(provided), Buffer.from(adminSecret))
+  } catch {
+    return false
+  }
 }
 
 export async function GET() {

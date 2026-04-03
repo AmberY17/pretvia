@@ -11,6 +11,9 @@ const options: Record<string, unknown> = {
   autoSelectFamily: false,
   serverSelectionTimeoutMS: 15000,
   connectTimeoutMS: 15000,
+  maxPoolSize: 150,
+  minPoolSize: 50,
+  waitQueueTimeoutMS: 5000,
 };
 
 let client: MongoClient;
