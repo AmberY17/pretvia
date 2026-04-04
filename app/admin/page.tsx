@@ -1,6 +1,5 @@
 import { getDb } from "@/lib/mongodb"
 import { WaitlistTable, type WaitlistEntry } from "@/components/admin/waitlist-table"
-import { SiteSettingsToggle } from "@/components/admin/site-settings-toggle"
 
 export const dynamic = "force-dynamic"
 
@@ -10,10 +9,7 @@ export const metadata = {
 
 export default async function AdminPage() {
   const db = await getDb()
-  const [rawEntries, siteSettings] = await Promise.all([
-    db.collection("waitlist").find({}).sort({ createdAt: -1 }).toArray(),
-    db.collection("siteSettings").findOne({ key: "site" }),
-  ])
+  const rawEntries = await db.collection("waitlist").find({}).sort({ createdAt: -1 }).toArray()
 
   const entries: WaitlistEntry[] = rawEntries.map((e) => ({
     _id: e._id.toString(),
@@ -29,24 +25,9 @@ export default async function AdminPage() {
     usedAt: e.usedAt?.toISOString(),
   }))
 
-  const pricingPageVisible = siteSettings?.pricingPageVisible ?? false
-  const addOnsVisible = siteSettings?.addOnsVisible ?? true
-
   return (
     <main className="min-h-screen bg-background px-6 py-12">
       <div className="mx-auto max-w-7xl space-y-12">
-        <section>
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-foreground">Site Settings</h2>
-          </div>
-          <div className="max-w-md">
-            <SiteSettingsToggle
-              initialPricingPageVisible={pricingPageVisible}
-              initialAddOnsVisible={addOnsVisible}
-            />
-          </div>
-        </section>
-
         <section>
           <div className="mb-8 flex items-center justify-between">
             <div>

@@ -27,10 +27,14 @@ export default defineConfig({
     defaultCommandTimeout: 10000,
     video: false,
     retries: { runMode: 2, openMode: 0 },
-    setupNodeEvents(on, _config) {
+    async setupNodeEvents(on, config) {
       on("before:run", () => {
         fs.rmSync("cypress/screenshots", { recursive: true, force: true });
       });
+
+      // Encrypt the beta flag override cookie so all tests run with beta=true
+      const { encryptOverrides } = await import("flags");
+      config.env.betaFlagCookie = await encryptOverrides({ beta: true });
 
       on("task", {
         async cleanupTestData() {
@@ -88,6 +92,8 @@ export default defineConfig({
           return null;
         },
       });
+
+      return config;
     },
     supportFile: "cypress/support/e2e.ts",
     specPattern: "cypress/e2e/**/*.cy.ts",

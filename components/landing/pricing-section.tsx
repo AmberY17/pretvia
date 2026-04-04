@@ -3,9 +3,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-interface PricingSectionProps {
-  addOnsVisible: boolean
-}
 
 function FeatureRow({ included, label }: { included: boolean; label: string }) {
   return (
@@ -30,7 +27,7 @@ function AthleteTag({ label }: { label: string }) {
   )
 }
 
-export function PricingSection({ addOnsVisible }: PricingSectionProps) {
+export function PricingSection() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-12">
       {/* Plan cards */}
@@ -128,29 +125,27 @@ export function PricingSection({ addOnsVisible }: PricingSectionProps) {
       </div>
 
       {/* Team add-ons */}
-      {addOnsVisible && (
-        <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Club Add-ons
-          </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-5">
-              <p className="text-sm font-semibold text-foreground">+5 groups</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Add groups beyond the included 10, in bundles of 5.
-              </p>
-              <p className="mt-3 text-sm font-bold text-foreground">$10 / month</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-5">
-              <p className="text-sm font-semibold text-foreground">+3 coach seats</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Expand your coaching staff beyond the included 3.
-              </p>
-              <p className="mt-3 text-sm font-bold text-foreground">$15 / month</p>
-            </div>
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Club Add-ons
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <p className="text-sm font-semibold text-foreground">+5 groups</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Add groups beyond the included 10, in bundles of 5.
+            </p>
+            <p className="mt-3 text-sm font-bold text-foreground">$10 / month</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <p className="text-sm font-semibold text-foreground">+3 coach seats</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Expand your coaching staff beyond the included 3.
+            </p>
+            <p className="mt-3 text-sm font-bold text-foreground">$15 / month</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Billing policies */}
       <div>

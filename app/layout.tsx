@@ -6,7 +6,8 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
-import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { FeedbackButton } from "@/components/feedback/feedback-button"
+import { VercelToolbar } from "@vercel/toolbar/next";
 
 import "./globals.css";
 
@@ -120,6 +121,7 @@ export default function RootLayout({
           />
           <Analytics />
           <SpeedInsights />
+          {process.env.NODE_ENV === "development" && <VercelToolbar />}
         </ThemeProvider>
         </QueryProvider>
       </body>

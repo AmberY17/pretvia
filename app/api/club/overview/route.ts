@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { getUserSubscription } from "@/lib/subscription"
+import { betaFlag } from "@/flags"
 
 export async function GET() {
   try {
@@ -17,13 +18,13 @@ export async function GET() {
       return NextResponse.json({ error: "Club plan required" }, { status: 403 })
     }
 
-    const [groups, siteSettingsDoc] = await Promise.all([
+    const [groups, beta] = await Promise.all([
       db
         .collection("groups")
         .find({ headCoachId: session.userId })
         .sort({ createdAt: -1 })
         .toArray(),
-      db.collection("siteSettings").findOne({ key: "site" }),
+      betaFlag(),
     ])
 
     const groupIds = groups.map((g) => g._id.toString())
@@ -134,7 +135,7 @@ export async function GET() {
         addOnGroups: sub.addOnGroups,
         addOnSeats: sub.addOnSeats,
       },
-      addOnsVisible: siteSettingsDoc?.addOnsVisible ?? true,
+      addOnsVisible: !beta,
     })
   } catch (err) {
     console.error("GET /api/club/overview:", err)

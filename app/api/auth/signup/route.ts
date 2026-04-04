@@ -6,6 +6,7 @@ import { createSession } from "@/lib/auth"
 import { isTestAccount } from "@/lib/auth-config"
 import { sendVerificationEmail } from "@/lib/resend"
 import { signupRateLimiter, getIp } from "@/lib/rate-limit"
+import { betaFlag } from "@/flags"
 
 export async function POST(req: Request) {
   try {
@@ -61,10 +62,11 @@ export async function POST(req: Request) {
     }
 
     const userRole = role === "coach" ? "coach" : "athlete"
+    const beta = await betaFlag()
 
-    // Waitlist gate: coach sign-ups require either an approved waitlist token or a coach invite token
+    // Waitlist gate: in beta mode, coach sign-ups require either an approved waitlist token or a coach invite token
     let waitlistEntryId: import("mongodb").ObjectId | null = null
-    if (userRole === "coach" && !isTestAccount(normalizedEmail)) {
+    if (beta && userRole === "coach" && !isTestAccount(normalizedEmail)) {
       // Coach invite path: bypass waitlist if a valid coach invite exists for this email
       if (coachInviteToken) {
         const coachInvite = await db.collection("invites").findOne({
@@ -161,9 +163,14 @@ export async function POST(req: Request) {
       role: userRole,
       token,
       expiresAt,
-      // Beta: coaches who sign up via waitlist get Club plan
-      ...(waitlistEntryId
-        ? { subscription: { plan: "club", isAssistant: false, addOnGroups: 0, addOnSeats: 0 } }
+      // Beta: coaches who sign up via waitlist get Club plan; non-beta coaches get Squad (Stripe placeholder)
+      ...(userRole === "coach" && !isTestAccount(normalizedEmail)
+        ? {
+            subscription:
+              beta && waitlistEntryId
+                ? { plan: "club", isAssistant: false, addOnGroups: 0, addOnSeats: 0 }
+                : { plan: "squad", isAssistant: false, addOnGroups: 0, addOnSeats: 0 },
+          }
         : {}),
     })
 

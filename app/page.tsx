@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { getDb } from "@/lib/mongodb"
+import { pricingFlag } from "@/flags"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingFooter } from "@/components/landing/landing-footer"
 import { HeroSection } from "@/components/landing/hero-section"
@@ -24,9 +24,7 @@ export const metadata: Metadata = {
 }
 
 export default async function LandingPage() {
-  const db = await getDb()
-  const siteSettings = await db.collection("siteSettings").findOne({ key: "site" })
-  const pricingPageVisible = siteSettings?.pricingPageVisible ?? false
+  const pricingPageVisible = await pricingFlag()
 
   const navLinks = [
     { href: "/features", label: "Features" },

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getDb } from "@/lib/mongodb"
+import { pricingFlag } from "@/flags"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingFooter } from "@/components/landing/landing-footer"
 import { PricingSection } from "@/components/landing/pricing-section"
@@ -19,14 +19,11 @@ export const metadata = {
 }
 
 export default async function PricingPage() {
-  const db = await getDb()
-  const siteSettings = await db.collection("siteSettings").findOne({ key: "site" })
+  const visible = await pricingFlag()
 
-  if (!siteSettings?.pricingPageVisible) {
+  if (!visible) {
     notFound()
   }
-
-  const addOnsVisible = siteSettings?.addOnsVisible ?? true
 
   return (
     <main className="min-h-screen">
@@ -41,7 +38,7 @@ export default async function PricingPage() {
             Start free. Scale when you&apos;re ready.
           </p>
         </div>
-        <PricingSection addOnsVisible={addOnsVisible} />
+        <PricingSection />
       </section>
 
       <LandingFooter
