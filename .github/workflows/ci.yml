@@ -29,6 +29,7 @@ jobs:
       AUTH_SECRET: ci-test-secret
       MONGODB_URI: mongodb://localhost:27017/pretvia-ci
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      FLAGS: ${{ secrets.FLAGS }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

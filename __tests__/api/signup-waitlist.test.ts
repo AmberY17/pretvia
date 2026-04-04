@@ -5,6 +5,8 @@ vi.mock("@/lib/auth-config", () => ({ isTestAccount: vi.fn() }))
 vi.mock("@/lib/auth", () => ({ createSession: vi.fn() }))
 vi.mock("bcryptjs", () => ({ default: { hash: vi.fn().mockResolvedValue("hashed") } }))
 vi.mock("@/lib/resend", () => ({ sendVerificationEmail: vi.fn().mockResolvedValue({ ok: true }) }))
+vi.mock("@/flags", () => ({ betaFlag: vi.fn().mockResolvedValue(true) }))
+vi.mock("@/flags", () => ({ betaFlag: vi.fn().mockResolvedValue(true) }))
 
 import { getDb } from "@/lib/mongodb"
 import { isTestAccount } from "@/lib/auth-config"
