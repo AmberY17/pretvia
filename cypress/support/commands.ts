@@ -23,7 +23,12 @@ Cypress.Commands.add("login", (email: string, password: string) => {
     },
     {
       validate() {
-        cy.request("/api/auth/session").its("body.user").should("exist");
+        cy.request("/api/auth/session")
+          .its("body.user")
+          .should("exist")
+          .then((user) => {
+            if (user?.id) Cypress.env("CURRENT_USER_ID", user.id);
+          });
       },
     }
   );

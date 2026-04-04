@@ -84,17 +84,16 @@ export function DashboardFeed({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingTriggeredRef = useRef(false)
 
-  // For coaches: start with checklist visible, hide once onboarding confirmed done
-  // Assistant coaches skip onboarding entirely — their group assignment is managed by the head coach
-  const isAssistant = user.role === "coach" && !!user.subscription?.isAssistant
-  const [coachOnboardingDone, setCoachOnboardingDone] = useState(
-    user.role !== "coach" || isAssistant,
-  )
+  // Show onboarding only when the coach heads their active group, or has no group yet.
+  // Co-coaches (regardless of isAssistant flag) don't need to set up someone else's group.
+  const isHeadOfActiveGroup =
+    user.role === "coach" && (!user.activeGroupId || user.id === user.group?.headCoachId)
+  const [coachOnboardingDone, setCoachOnboardingDone] = useState(!isHeadOfActiveGroup)
 
   useEffect(() => {
-    if (user.role !== "coach" || isAssistant) return
-    setCoachOnboardingDone(isCoachOnboardingDone())
-  }, [user.role, isAssistant])
+    if (!isHeadOfActiveGroup) return
+    setCoachOnboardingDone(isCoachOnboardingDone(user.id))
+  }, [isHeadOfActiveGroup, user.id])
 
   useEffect(() => {
     if (!isLoadingMore) loadingTriggeredRef.current = false
@@ -190,6 +189,7 @@ export function DashboardFeed({
         <div className="flex flex-col gap-3">
           {!coachOnboardingDone ? (
             <CoachOnboardingChecklist
+              userId={user.id}
               hasGroup={!!user.activeGroupId}
               onComplete={() => setCoachOnboardingDone(true)}
             />

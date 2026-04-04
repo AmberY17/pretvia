@@ -402,7 +402,7 @@ export default function GroupManagementPage() {
               />
               <GroupTrainingScheduleSection
                 trainingSchedule={trainingSchedule}
-                onAddSlot={addTrainingSlot}
+                onAddSlot={() => addTrainingSlot()}
                 onRemoveSlot={removeTrainingSlot}
                 onUpdateSlot={updateTrainingSlot}
               />

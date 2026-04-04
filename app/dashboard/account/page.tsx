@@ -171,15 +171,9 @@ export default function AccountPage() {
     _options?: { silent?: boolean },
   ) {
     setSavingSlots(true);
-    const activeGroupId = user?.activeGroupId ?? null;
     try {
-      // Stamp any slot that lacks a sourceGroupId with the current activeGroupId so that
-      // every slot is group-scoped before it reaches the database.
-      const stamped = slots.map((s) =>
-        s.sourceGroupId ? s : activeGroupId ? { ...s, sourceGroupId: activeGroupId } : s,
-      );
       // Re-merge hidden slots from other groups so they are not lost on save.
-      const merged = [...stamped, ...hiddenGroupSlots];
+      const merged = [...slots, ...hiddenGroupSlots];
       const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -294,7 +288,7 @@ export default function AccountPage() {
               syncingSchedule={syncingSchedule}
               deleteGroupSlotConfirmIndex={deleteGroupSlotConfirmIndex}
               setDeleteGroupSlotConfirmIndex={setDeleteGroupSlotConfirmIndex}
-              onAddSlot={() => addTrainingSlot(user.activeGroupId ?? undefined)}
+              onAddSlot={() => addTrainingSlot()}
               onRemoveSlot={removeTrainingSlot}
               onUpdateSlot={updateTrainingSlot}
               onSyncGroupSchedule={handleSyncGroupSchedule}

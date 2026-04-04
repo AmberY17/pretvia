@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
 
-const INSTALL_DISMISSED_KEY = "pretvia-install-dismissed";
+const installDismissedKey = (userId: string) => `pretvia-install-dismissed-${userId}`;
 
 const googleAppNoteIOS = (
   <p className="mt-3 text-xs text-muted-foreground">
@@ -40,21 +41,24 @@ function B({ children }: { children: React.ReactNode }) {
 }
 
 export function AccountInstallSection() {
+  const { user } = useAuth();
   const [dismissed, setDismissed] = useState(true); // default true prevents flash
 
   useEffect(() => {
+    if (!user) return;
     try {
-      setDismissed(!!localStorage.getItem(INSTALL_DISMISSED_KEY));
+      setDismissed(!!localStorage.getItem(installDismissedKey(user.id)));
     } catch {
       setDismissed(false);
     }
-  }, []);
+  }, [user]);
 
   if (dismissed) return null;
 
   const handleDismiss = () => {
+    if (!user) return;
     try {
-      localStorage.setItem(INSTALL_DISMISSED_KEY, "1");
+      localStorage.setItem(installDismissedKey(user.id), "1");
     } catch {
       // ignore
     }

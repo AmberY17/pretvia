@@ -1,15 +1,18 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
-const ONBOARDING_KEY = "pretvia-onboarded"
-const ONBOARDING_STEP_KEY = "pretvia-onboarding-step"
+const onboardingKey = (userId: string) => `pretvia-onboarded-${userId}`
+const onboardingStepKey = (userId: string) => `pretvia-onboarding-step-${userId}`
 
 interface OnboardingModalProps {
-  user: { displayName?: string | null; role?: string | null; subscription?: { isAssistant?: boolean } | null }
+  user: {
+    id: string
+    displayName?: string | null
+    role?: string | null
+  }
 }
 
 interface Step {
@@ -18,139 +21,16 @@ interface Step {
   actions: React.ReactNode
 }
 
-function useSteps(
-  role: string,
-  name: string,
-  onDone: () => void,
-  onNavigate: (nextStep: number, path: string) => void,
-  router: ReturnType<typeof useRouter>,
-) {
-  const goToDashboard = () => onDone()
-  const goToParent = () => {
-    onDone()
-    router.push("/dashboard/parent")
-  }
-  const goToInstall = (stepIndex: number) => () => {
-    onNavigate(stepIndex + 1, "/dashboard/account#install")
-  }
-
-  if (role === "coach") {
-    const steps: Step[] = [
-      {
-        title: `Welcome, ${name}!`,
-        body: (
-          <p className="text-sm text-muted-foreground">
-            You&apos;re all set as a coach on Pretvia — the emoji-first training log for your
-            athletes.
-          </p>
-        ),
-        actions: null,
-      },
-      {
-        title: "Complete your setup",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Your dashboard has an onboarding checklist to walk you through creating your group,
-            inviting athletes, and more. Check off each step as you go.
-          </p>
-        ),
-        actions: null,
-      },
-      {
-        title: "You're an early user",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the
-            occasional bug or rough edge. If something looks off, use the{" "}
-            <strong className="text-foreground">feedback bubble</strong> at the bottom right corner
-            to let us know.
-          </p>
-        ),
-        actions: null,
-      },
-    ]
-    return steps
-  }
-
-  if (role === "guardian") {
-    const steps: Step[] = [
-      {
-        title: `Welcome, ${name}!`,
-        body: (
-          <p className="text-sm text-muted-foreground">
-            You&apos;re all set as a guardian on Pretvia. You can see your athlete&apos;s training
-            activity from your dashboard.
-          </p>
-        ),
-        actions: null,
-      },
-      {
-        title: "Install the app",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Add Pretvia to your home screen for the best experience — no app store needed.
-          </p>
-        ),
-        actions: (
-          <Button variant="outline" size="sm" onClick={goToInstall(1)}>
-            How to install →
-          </Button>
-        ),
-      },
-      {
-        title: "You're an early user",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Thank you for trying Pretvia! We&apos;re still in beta, so you may run into the
-            occasional bug or rough edge. If something looks off, use the{" "}
-            <strong className="text-foreground">feedback bubble</strong> at the bottom right corner
-            to let us know.
-          </p>
-        ),
-        actions: null,
-      },
-      {
-        title: "You're all set!",
-        body: (
-          <p className="text-sm text-muted-foreground">
-            Your dashboard is ready. You&apos;ll see your athlete&apos;s logs as they start
-            training.
-          </p>
-        ),
-        actions: (
-          <Button size="sm" onClick={goToParent}>
-            Go to Dashboard
-          </Button>
-        ),
-      },
-    ]
-    return steps
-  }
-
-  // athlete (default)
-  const steps: Step[] = [
+function useSteps(role: string, name: string): Step[] {
+  return [
     {
       title: `Welcome, ${name}!`,
       body: (
         <p className="text-sm text-muted-foreground">
-          You&apos;re all set as an athlete on Pretvia — log every training session your way, in
-          seconds.
+          You&apos;re all set as a {role} on Pretvia.
         </p>
       ),
       actions: null,
-    },
-    {
-      title: "Install the app",
-      body: (
-        <p className="text-sm text-muted-foreground">
-          Add Pretvia to your home screen for the best experience — no app store needed.
-        </p>
-      ),
-      actions: (
-        <Button variant="outline" size="sm" onClick={goToInstall(1)}>
-          How to install →
-        </Button>
-      ),
     },
     {
       title: "You're an early user",
@@ -164,32 +44,17 @@ function useSteps(
       ),
       actions: null,
     },
-    {
-      title: "You're all set!",
-      body: (
-        <p className="text-sm text-muted-foreground">
-          Your dashboard is ready. Tap the emoji button to log your first training session.
-        </p>
-      ),
-      actions: (
-        <Button size="sm" onClick={goToDashboard}>
-          Go to Dashboard
-        </Button>
-      ),
-    },
   ]
-  return steps
 }
 
 export function OnboardingModal({ user }: OnboardingModalProps) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
-  const router = useRouter()
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(ONBOARDING_KEY)) {
-        const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY)
+      if (!localStorage.getItem(onboardingKey(user.id))) {
+        const savedStep = localStorage.getItem(onboardingStepKey(user.id))
         if (savedStep !== null) {
           const parsed = parseInt(savedStep, 10)
           if (!isNaN(parsed) && parsed > 0) setStep(parsed)
@@ -199,35 +64,23 @@ export function OnboardingModal({ user }: OnboardingModalProps) {
     } catch {
       // ignore storage errors
     }
-  }, [])
+  }, [user.id])
 
   const dismiss = () => {
     try {
-      localStorage.setItem(ONBOARDING_KEY, "1")
-      localStorage.removeItem(ONBOARDING_STEP_KEY)
+      localStorage.setItem(onboardingKey(user.id), "1")
+      localStorage.removeItem(onboardingStepKey(user.id))
     } catch {
       // ignore
     }
     setOpen(false)
-  }
-
-  const navigateAndPause = (nextStep: number, path: string) => {
-    try {
-      localStorage.setItem(ONBOARDING_STEP_KEY, String(nextStep))
-    } catch {
-      // ignore
-    }
-    setOpen(false)
-    router.push(path)
   }
 
   const role = user.role ?? "athlete"
   const name = user.displayName ?? "there"
-  const steps = useSteps(role, name, dismiss, navigateAndPause, router)
+  const steps = useSteps(role, name)
   const current = steps[step]
   const isLast = step === steps.length - 1
-
-  if (user.subscription?.isAssistant) return null
 
   const handleNext = () => {
     if (isLast) {

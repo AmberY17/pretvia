@@ -114,7 +114,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
                       Attendance
                     </button>
                   </Link>
-                  {user.subscription?.plan === "club" && (
+                  {user.subscription?.plan === "club" && (!user.activeGroupId || user.id === user.group?.headCoachId) && (
                     <Link
                       href="/dashboard/club"
                       onClick={() => setMobileMenuOpen(false)}
@@ -159,7 +159,7 @@ export function DashboardHeader({ user, onNewLog, onLogout }: DashboardHeaderPro
                   <ClipboardCheck className="h-4 w-4" />
                 </Button>
               </Link>
-              {user.subscription?.plan === "club" && (
+              {user.subscription?.plan === "club" && (!user.activeGroupId || user.id === user.group?.headCoachId) && (
                 <Link href="/dashboard/club" className="hidden sm:block">
                   <Button variant="ghost-secondary" size="sm" aria-label="Club">
                     <Building2 className="h-4 w-4" />
