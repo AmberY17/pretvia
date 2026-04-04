@@ -7,7 +7,12 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { FeedbackButton } from "@/components/feedback/feedback-button"
-import { VercelToolbar } from "@vercel/toolbar/next";
+import dynamic from "next/dynamic";
+
+const VercelToolbar = dynamic(
+  () => import("@vercel/toolbar/next").then((mod) => ({ default: mod.VercelToolbar })),
+  { ssr: false },
+);
 
 import "./globals.css";
 

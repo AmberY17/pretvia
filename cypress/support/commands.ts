@@ -8,8 +8,8 @@ const COACH_EMAIL =
   Cypress.env("COACH_EMAIL") ?? "coach@test.pretvia.com";
 const COACH_PASSWORD =
   Cypress.env("COACH_PASSWORD") ?? "TestPass123!";
-const GUARDIAN_EMAIL = Cypress.env("GUARDIAN_EMAIL") ?? "";
-const GUARDIAN_PASSWORD = Cypress.env("GUARDIAN_PASSWORD") ?? "";
+const GUARDIAN_EMAIL = Cypress.env("GUARDIAN_EMAIL") ?? "guardian@test.pretvia.com";
+const GUARDIAN_PASSWORD = Cypress.env("GUARDIAN_PASSWORD") ?? "TestPass123!";
 
 Cypress.Commands.add("login", (email: string, password: string) => {
   cy.session(

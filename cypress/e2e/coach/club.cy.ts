@@ -21,10 +21,19 @@ describe("Club Dashboard", () => {
     cy.contains("a", "Club").should("not.exist");
   });
 
-  it("shows Join Another and Leave buttons for non-assistant coach", () => {
-    cy.visit("/dashboard");
-    cy.contains("button", "Join Another");
-    cy.contains("button", "Leave");
+  describe("group-dependent", () => {
+    before(() => {
+      // cleanupTestData (global before) deletes "E2E Test Group" — re-seed to restore it
+      cy.exec("pnpm seed:test", { timeout: 30000 });
+      cy.then(() => Cypress.session.clearAllSavedSessions());
+    });
+
+    it("shows Join Another and Leave buttons for non-assistant coach", () => {
+      cy.loginAsCoach();
+      cy.visit("/dashboard");
+      cy.contains("button", "Join Another");
+      cy.contains("button", "Leave");
+    });
   });
 
   // Club plan coach tests require a seeded club-plan account.

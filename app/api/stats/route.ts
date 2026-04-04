@@ -26,11 +26,13 @@ export async function GET(req: Request) {
     // Filter training slots to the requested group only — every slot is group-scoped via sourceGroupId.
     const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
     const allDeletedSlots = (user?.deletedSlots ?? []) as TrainingSlotItem[]
+    // Include slots with no sourceGroupId for backward compatibility — personal slots
+    // created before group-scoping was introduced should still count toward the streak.
     const trainingSlots: TrainingSlotItem[] = groupId
-      ? allTrainingSlots.filter((s) => s.sourceGroupId === groupId)
+      ? allTrainingSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
       : allTrainingSlots
     const deletedSlots: TrainingSlotItem[] = groupId
-      ? allDeletedSlots.filter((s) => s.sourceGroupId === groupId)
+      ? allDeletedSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
       : allDeletedSlots
 
     // Build a group-scoped log filter. Include logs with no groupId for backward
