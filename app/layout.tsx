@@ -7,12 +7,7 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { FeedbackButton } from "@/components/feedback/feedback-button"
-import dynamic from "next/dynamic";
-
-const VercelToolbar = dynamic(
-  () => import("@vercel/toolbar/next").then((mod) => ({ default: mod.VercelToolbar })),
-  { ssr: false },
-);
+import { DevToolbar } from "@/components/dev-toolbar"
 
 import "./globals.css";
 
@@ -126,7 +121,7 @@ export default function RootLayout({
           />
           <Analytics />
           <SpeedInsights />
-          {process.env.NODE_ENV === "development" && <VercelToolbar />}
+          {process.env.NODE_ENV === "development" && <DevToolbar />}
         </ThemeProvider>
         </QueryProvider>
       </body>
