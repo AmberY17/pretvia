@@ -19,14 +19,14 @@ export async function POST(
     }
 
     const db = await getDb()
-    const invite = await db.collection("invites").findOne({ token })
+    // Atomically claim the invite — prevents two simultaneous redemptions
+    const invite = await db.collection("invites").findOneAndDelete({ token })
 
     if (!invite) {
       return NextResponse.json({ error: "Invite not found" }, { status: 404 })
     }
 
     if (new Date() > (invite.expiresAt as Date)) {
-      await db.collection("invites").deleteOne({ token })
       return NextResponse.json({ error: "Invite expired" }, { status: 410 })
     }
 

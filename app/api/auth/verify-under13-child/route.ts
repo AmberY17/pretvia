@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { createSession } from "@/lib/auth"
+import { safeObjectId } from "@/lib/objectid"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
 import type { TrainingSlot } from "@/types/dashboard"
 
@@ -21,7 +22,8 @@ export async function GET(req: Request) {
     }
 
     const db = await getDb()
-    const pending = await db.collection("pending_under13_child").findOne({ token }) as {
+    // Atomically claim the pending record — prevents replay if link is clicked twice
+    const pending = await db.collection("pending_under13_child").findOneAndDelete({ token }) as {
       token: string
       childEmail: string
       childPassword: string
@@ -42,22 +44,21 @@ export async function GET(req: Request) {
     }
 
     if (new Date() > pending.expiresAt) {
-      await db.collection("pending_under13_child").deleteOne({ token })
       return NextResponse.redirect(`${APP_URL}/auth?error=verification_expired`)
     }
 
     const groupId = pending.groupId
-    const group = await db.collection("groups").findOne({
-      _id: new ObjectId(groupId),
-    })
+    const groupOid = safeObjectId(groupId)
+    if (!groupOid) {
+      return NextResponse.redirect(`${APP_URL}/auth?error=verification_failed`)
+    }
+    const group = await db.collection("groups").findOne({ _id: groupOid })
     if (!group) {
-      await db.collection("pending_under13_child").deleteOne({ token })
       return NextResponse.redirect(`${APP_URL}/auth?error=group_not_found`)
     }
 
     const existingChild = await db.collection("users").findOne({ email: pending.childEmail })
     if (existingChild) {
-      await db.collection("pending_under13_child").deleteOne({ token })
       return NextResponse.redirect(`${APP_URL}/auth?error=already_exists`)
     }
 
@@ -127,7 +128,6 @@ export async function GET(req: Request) {
       await db.collection("guardianLinks").insertOne({ guardianId, athleteId })
     }
 
-    await db.collection("pending_under13_child").deleteOne({ token })
     if (pending.inviteToken) {
       await db.collection("invites").deleteOne({ token: pending.inviteToken })
     }

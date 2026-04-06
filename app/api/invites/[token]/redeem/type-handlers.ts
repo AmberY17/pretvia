@@ -71,152 +71,57 @@ export async function handleUnder13ParentInvite(
     )
   }
 
-  const childEmailDiffers = childEmailNorm !== parentEmailNorm
+  const verifyToken = randomUUID()
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+  const verifyUrl = `${APP_URL}/api/auth/verify-under13-child?token=${encodeURIComponent(verifyToken)}`
+  const groupName = (group.name as string) ?? "the group"
 
-  if (childEmailDiffers) {
-    const verifyToken = randomUUID()
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-    const verifyUrl = `${APP_URL}/api/auth/verify-under13-child?token=${encodeURIComponent(verifyToken)}`
-    const groupName = (group.name as string) ?? "the group"
-
-    const childHash = await bcrypt.hash(childPassword, 12)
-    if (!parentPassword || parentPassword.length < 6) {
-      return NextResponse.json(
-        { error: "Parent password is required (min 6 characters)" },
-        { status: 400 },
-      )
-    }
-    const parentHashReal = await bcrypt.hash(parentPassword, 12)
-
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-    await db.collection("pending_under13_child").insertOne({
-      token: verifyToken,
-      childEmail: childEmailNorm,
-      childPassword: childHash,
-      childFirstName: childFirstName.trim(),
-      childLastName: childLastName.trim(),
-      childDateOfBirth: childDateOfBirth ?? null,
-      parentEmail: parentEmailNorm,
-      parentFirstName: (parentFirstName ?? "").trim() || "Parent",
-      parentLastName: (parentLastName ?? "").trim() || "Guardian",
-      parentPassword: parentHashReal,
-      groupId,
-      inviteToken: token,
-      expiresAt,
-      createdAt: new Date(),
-    })
-
-    const sendResult = await sendUnder13ChildVerificationEmail(
-      childEmailNorm,
-      verifyUrl,
-      groupName,
-    )
-    if (!sendResult.ok) {
-      await db.collection("pending_under13_child").deleteOne({ token: verifyToken })
-      return NextResponse.json(
-        { error: sendResult.error ?? "Failed to send verification email" },
-        { status: 500 },
-      )
-    }
-
-    await db.collection("invites").deleteOne({ token })
-
-    return NextResponse.json({
-      success: true,
-      requiresChildVerification: true,
-      message: "Check your child's email to verify their account.",
-    })
-  }
-
-  const childDisplayName = getDisplayName(childFirstName, childLastName)
   const childHash = await bcrypt.hash(childPassword, 12)
-  const childResult = await db.collection("users").insertOne({
-    email: childEmailNorm,
-    password: childHash,
-    displayName: childDisplayName,
-    firstName: childFirstName.trim(),
-    lastName: childLastName.trim(),
-    dateOfBirth: childDateOfBirth ?? null,
-    role: "athlete",
-    activeGroupId: groupId,
-    groupIds: [groupId],
-    profileComplete: true,
-    authProvider: "email",
-    emailVerified: true,
+  if (!parentPassword || parentPassword.length < 6) {
+    return NextResponse.json(
+      { error: "Parent password is required (min 6 characters)" },
+      { status: 400 },
+    )
+  }
+  const parentHashReal = await bcrypt.hash(parentPassword, 12)
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  await db.collection("pending_under13_child").insertOne({
+    token: verifyToken,
+    childEmail: childEmailNorm,
+    childPassword: childHash,
+    childFirstName: childFirstName.trim(),
+    childLastName: childLastName.trim(),
+    childDateOfBirth: childDateOfBirth ?? null,
+    parentEmail: parentEmailNorm,
+    parentFirstName: (parentFirstName ?? "").trim() || "Parent",
+    parentLastName: (parentLastName ?? "").trim() || "Guardian",
+    parentPassword: parentHashReal,
+    groupId,
+    inviteToken: token,
+    expiresAt,
     createdAt: new Date(),
   })
-  const athleteId = childResult.insertedId.toString()
 
-  await db.collection("groupMemberships").updateOne(
-    { userId: athleteId, groupId },
-    { $setOnInsert: { userId: athleteId, groupId, roleIds: [] } },
-    { upsert: true },
+  const sendResult = await sendUnder13ChildVerificationEmail(
+    childEmailNorm,
+    verifyUrl,
+    groupName,
   )
-
-  if (Array.isArray(group.trainingScheduleTemplate) && group.trainingScheduleTemplate.length > 0) {
-    await applyGroupTrainingScheduleToUser(
-      db,
-      athleteId,
-      groupId,
-      group.trainingScheduleTemplate as TrainingSlot[],
+  if (!sendResult.ok) {
+    await db.collection("pending_under13_child").deleteOne({ token: verifyToken })
+    return NextResponse.json(
+      { error: sendResult.error ?? "Failed to send verification email" },
+      { status: 500 },
     )
-  }
-
-  const existingParent = await db
-    .collection("users")
-    .findOne({ email: parentEmailNorm, role: "guardian" })
-
-  let guardianId: string
-  if (existingParent) {
-    guardianId = existingParent._id.toString()
-    await db.collection("guardianLinks").updateOne(
-      { guardianId, athleteId },
-      { $setOnInsert: { guardianId, athleteId } },
-      { upsert: true },
-    )
-  } else {
-    const pFirst = (parentFirstName ?? "").trim() || "Parent"
-    const pLast = (parentLastName ?? "").trim() || "Guardian"
-    const parentDisplayName = getDisplayName(pFirst, pLast)
-    if (!parentPassword || parentPassword.length < 6) {
-      return NextResponse.json(
-        { error: "Parent password is required (min 6 characters)" },
-        { status: 400 },
-      )
-    }
-    const parentHashReal = await bcrypt.hash(parentPassword, 12)
-    const parentResult = await db.collection("users").insertOne({
-      email: parentEmailNorm,
-      password: parentHashReal,
-      displayName: parentDisplayName,
-      firstName: pFirst,
-      lastName: pLast,
-      role: "guardian",
-      activeGroupId: null,
-      groupIds: [],
-      profileComplete: true,
-      authProvider: "email",
-      emailVerified: true,
-      createdAt: new Date(),
-    })
-    guardianId = parentResult.insertedId.toString()
-    await db.collection("guardianLinks").insertOne({ guardianId, athleteId })
   }
 
   await db.collection("invites").deleteOne({ token })
 
-  await createSession({
-    userId: guardianId,
-    email: parentEmailNorm,
-    displayName: (await db.collection("users").findOne({ _id: new ObjectId(guardianId) }))?.displayName,
-    role: "guardian",
-    activeGroupId: undefined,
-  })
-
   return NextResponse.json({
     success: true,
-    redirect: "/dashboard/parent",
-    user: { role: "guardian" },
+    requiresChildVerification: true,
+    message: "Check your child's email to verify their account.",
   })
 }
 
@@ -422,6 +327,11 @@ export async function handleCoachInvite(
         { _id: new ObjectId(groupId) },
         { $addToSet: { coachIds: existing._id.toString() } as never }
       )
+    await db.collection("groupMemberships").updateOne(
+      { userId: existing._id.toString(), groupId },
+      { $setOnInsert: { userId: existing._id.toString(), groupId, roleIds: [] } },
+      { upsert: true },
+    )
     await db.collection("invites").deleteOne({ token })
 
     await createSession({
@@ -480,6 +390,11 @@ export async function handleCoachInvite(
       { _id: new ObjectId(groupId) },
       { $addToSet: { coachIds: userId } as never }
     )
+  await db.collection("groupMemberships").updateOne(
+    { userId, groupId },
+    { $setOnInsert: { userId, groupId, roleIds: [] } },
+    { upsert: true },
+  )
 
   await db.collection("invites").deleteOne({ token })
 
@@ -524,7 +439,14 @@ export async function handleParentInvite(
   }
 
   let guardianId: string
-  const existing = await db.collection("users").findOne({ email: emailNorm, role: "guardian" })
+  const existingAny = await db.collection("users").findOne({ email: emailNorm })
+  if (existingAny && existingAny.role !== "guardian") {
+    return NextResponse.json(
+      { error: "An account with this email already exists. Please sign in with that account." },
+      { status: 409 },
+    )
+  }
+  const existing = existingAny as typeof existingAny & { role: "guardian" } | null
 
   if (existing) {
     const currentSession = await getSession()

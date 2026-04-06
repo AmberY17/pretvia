@@ -576,7 +576,7 @@ function InviteAthleteForm({
 }
 
 function InviteCoachForm({
-  token: _token,
+  token,
   invite,
   redeem,
   redeeming,
@@ -707,6 +707,14 @@ function InviteCoachForm({
               >
                 {isLogin ? "Create new account instead" : "Already have an account? Sign in"}
               </button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => { window.location.href = `/api/auth/google?invite=${token}`; }}
+              >
+                Continue with Google
+              </Button>
             </form>
           </CardContent>
         </Card>

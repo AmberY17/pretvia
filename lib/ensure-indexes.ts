@@ -53,6 +53,9 @@ export async function ensureIndexes(): Promise<void> {
       db.collection("groupMemberships").createIndex({ userId: 1, groupId: 1 }, { unique: true }),
       db.collection("groupMemberships").createIndex({ groupId: 1, roleIds: 1 }),
 
+      // pending_under13_child — TTL so orphaned records auto-expire
+      db.collection("pending_under13_child").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+
       // guardianLinks
       db.collection("guardianLinks").createIndex({ guardianId: 1 }),
 
