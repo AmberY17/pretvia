@@ -17,6 +17,7 @@ export interface WaitlistEntry {
   status: WaitlistStatus
   createdAt: string
   approvedAt?: string
+  inviteSentAt?: string
   usedAt?: string
 }
 
@@ -53,7 +54,11 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
       setEntries((prev) =>
         prev.map((e) => (e._id === id ? { ...e, status: "approved" as WaitlistStatus } : e))
       )
-      toast.success("Approved — invite email sent")
+      if (data.emailOk === false) {
+        toast.warning("Approved — but email failed to send. Use Resend to retry.")
+      } else {
+        toast.success("Approved — invite email sent")
+      }
     } catch {
       toast.error("Network error")
     } finally {
@@ -88,7 +93,11 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
         toast.error(data.error || "Failed to resend")
         return
       }
-      toast.success("Invite email resent")
+      if (data.emailOk === false) {
+        toast.error("Email failed to send — try again")
+      } else {
+        toast.success("Invite email resent")
+      }
     } catch {
       toast.error("Network error")
     } finally {
@@ -106,7 +115,18 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
       )
     }
     if (entry.status === "approved") {
-      return <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Invite sent</span>
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+            {entry.inviteSentAt ? "Invite sent" : "Approved — email pending"}
+          </span>
+          {entry.inviteSentAt && (
+            <span className="text-xs text-muted-foreground">
+              {new Date(entry.inviteSentAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </span>
+          )}
+        </div>
+      )
     }
     if (entry.status === "rejected") {
       return <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">Rejected</span>

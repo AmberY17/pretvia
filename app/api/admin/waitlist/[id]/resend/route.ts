@@ -53,11 +53,13 @@ export async function POST(
 
     const signupUrl = `${APP_URL}/auth?signup=coach&token=${inviteToken}`
     const emailResult = await sendWaitlistApprovalEmail(entry.email, entry.name, signupUrl)
-    if (!emailResult.ok) {
+    if (emailResult.ok) {
+      await db.collection("waitlist").updateOne({ _id: oid }, { $set: { inviteSentAt: new Date() } })
+    } else {
       console.error("Failed to resend approval email:", emailResult.error)
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, emailOk: emailResult.ok })
   } catch (err) {
     console.error("POST /api/admin/waitlist/[id]/resend:", err)
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 })

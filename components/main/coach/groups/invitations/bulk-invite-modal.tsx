@@ -137,7 +137,12 @@ export function BulkInviteModal({ open, onOpenChange, groupId, onSent }: BulkInv
       ]
       setResults(resultRows)
       if (data.sent.length > 0) {
-        toast.success(`${data.sent.length} invite${data.sent.length !== 1 ? "s" : ""} sent`)
+        const failedCount = data.errors?.length ?? 0
+        if (failedCount > 0) {
+          toast.warning(`${data.sent.length} sent, ${failedCount} failed — see results below`)
+        } else {
+          toast.success(`${data.sent.length} invite${data.sent.length !== 1 ? "s" : ""} sent`)
+        }
         onSent()
       }
     } catch {
