@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Loader2,
   Shield,
@@ -11,17 +10,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
-
-export interface Comment {
-  id: string;
-  logId: string;
-  authorId: string;
-  authorName: string;
-  authorRole: string;
-  authorEmoji?: string | null;
-  text: string;
-  createdAt: string;
-}
+import type { Comment } from "@/types/dashboard";
 
 interface CommentItemProps {
   comment: Comment;
@@ -51,10 +40,7 @@ export function CommentItem({
   const isEditing = editingId === comment.id;
 
   return (
-    <motion.div
-      key={comment.id}
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       data-testid="comment-item"
       className={`group/comment flex gap-2.5 ${isOwn ? "flex-row-reverse" : ""}`}
     >
@@ -175,6 +161,6 @@ export function CommentItem({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

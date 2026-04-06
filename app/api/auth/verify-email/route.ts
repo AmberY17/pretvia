@@ -49,6 +49,7 @@ export async function GET(req: Request) {
       authProvider: "email",
       emailVerified: true,
       createdAt: new Date(),
+      ...(pending.subscription ? { subscription: pending.subscription } : {}),
     })
 
     await db.collection("pending_signups").deleteOne({ token })

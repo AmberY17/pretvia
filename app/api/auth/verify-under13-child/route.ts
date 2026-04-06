@@ -3,6 +3,7 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { createSession } from "@/lib/auth"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
+import type { TrainingSlot } from "@/types/dashboard"
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
@@ -89,7 +90,7 @@ export async function GET(req: Request) {
         db,
         athleteId,
         groupId,
-        group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[]
+        group.trainingScheduleTemplate as TrainingSlot[]
       )
     }
 

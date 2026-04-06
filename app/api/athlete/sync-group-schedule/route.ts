@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
+import type { TrainingSlot, TrainingSlotItem } from "@/types/dashboard"
 
 /**
  * POST: Sync the current group's training schedule into the athlete's schedule.
@@ -36,7 +37,7 @@ export async function POST() {
     }
 
     const template = Array.isArray(group.trainingScheduleTemplate)
-      ? (group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[])
+      ? (group.trainingScheduleTemplate as TrainingSlot[])
       : []
 
     await applyGroupTrainingScheduleToUser(
@@ -50,7 +51,7 @@ export async function POST() {
       _id: new ObjectId(session.userId),
     })
     const trainingSlots = Array.isArray(user?.trainingSlots)
-      ? (user.trainingSlots as { dayOfWeek: number; time: string; sourceGroupId?: string }[])
+      ? (user.trainingSlots as TrainingSlotItem[])
       : []
 
     return NextResponse.json({

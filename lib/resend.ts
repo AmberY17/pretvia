@@ -312,6 +312,45 @@ export async function sendAthleteInviteEmail(
   return { ok: true }
 }
 
+export async function sendCoachInviteEmail(
+  to: string,
+  inviteUrl: string,
+  groupName: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (shouldSkipEmail()) return { ok: true }
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.error("RESEND_API_KEY is not set")
+    return { ok: false, error: "Email service is not configured" }
+  }
+
+  const resend = new Resend(apiKey)
+  const content = `
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 600; color: #18181b;">You've been invited to coach ${escapeHtml(groupName)}</h1>
+    <p style="margin: 0 0 24px; font-size: 16px; color: #71717a;">You've been added as a coach for this group on Pretvia. Click below to set up your account and get started.</p>
+    <table role="presentation" align="center" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+      <tr>
+        <td align="center" style="border-radius: 8px; background-color: #18181b;">
+          <a href="${inviteUrl}" target="_blank" rel="noopener" style="display: inline-block; padding: 14px 28px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">Accept invite</a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin: 24px 0 0; font-size: 14px; color: #a1a1aa;">Or copy and paste this URL: ${inviteUrl}</p>
+    <p style="margin: 32px 0 0; font-size: 13px; color: #a1a1aa;">This link expires in 7 days.</p>
+  `
+  const { error } = await resend.emails.send({
+    from: FROM_DISPLAY,
+    to: resolveRecipient(to),
+    subject: `You've been invited to coach ${groupName} – Pretvia`,
+    html: emailWrapper(content),
+  })
+  if (error) {
+    console.error("Resend coach invite error:", error)
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
+}
+
 export async function sendUnder13ParentInviteEmail(
   to: string,
   inviteUrl: string,

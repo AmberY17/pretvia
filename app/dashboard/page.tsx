@@ -9,7 +9,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth"
 import { useDashboardFilters } from "@/components/main/dashboard/filters/hooks/use-dashboard-filters"
 import { useDashboardPanel } from "@/components/main/dashboard/logs/hooks/use-dashboard-panel"
 import dynamic from "next/dynamic"
-import { DashboardHeader } from "@/components/main/dashboard/layout/dashboard-header"
+import { DashboardHeader } from "@/components/main/dashboard/layout"
 import { OnboardingModal } from "@/components/main/dashboard/layout/onboarding/onboarding-modal"
 import { LoadingScreen } from "@/components/loading-screen"
 
@@ -25,8 +25,7 @@ const DashboardPanel = dynamic(() =>
 const GuardianDashboard = dynamic(() =>
   import("@/components/main/guardian/guardian-dashboard").then((m) => m.GuardianDashboard),
 )
-import type { LogEntry } from "@/types/dashboard"
-import type { CheckinItem } from "@/components/main/dashboard/checkins/checkin-card"
+import type { LogEntry, CheckinItem, TrainingSlot } from "@/types/dashboard"
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, mutate: mutateAuth, loggingOutRef } = useRequireAuth()
@@ -61,15 +60,18 @@ export default function DashboardPage() {
   const { data: tagsData, isLoading: tagsLoading } = useQuery<{
     tags: { id: string; name: string }[]
   }>({
-    queryKey: [...queryKeys.tags.all, user?.id],
-    queryFn: () => apiFetcher("/api/tags"),
+    queryKey: [...queryKeys.tags.all, user?.id, user?.activeGroupId],
+    queryFn: () =>
+      apiFetcher(
+        user?.activeGroupId ? `/api/tags?groupId=${user.activeGroupId}` : "/api/tags",
+      ),
     enabled: !!user,
   })
 
   const { data: membersData } = useQuery<{
     members: { id: string; displayName: string; email: string; role: string }[]
     roles: { id: string; name: string }[]
-    trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+    trainingScheduleTemplate?: TrainingSlot[]
   }>({
     queryKey: [...queryKeys.members.all, user?.id, user?.activeGroupId],
     queryFn: () => apiFetcher(`/api/groups?groupId=${user!.activeGroupId}`),
@@ -108,8 +110,12 @@ export default function DashboardPage() {
     canSkipToday: boolean
     skipDisabledReason: "no_training" | "already_skipped" | "already_logged" | null
   }>({
-    queryKey: [...queryKeys.stats.all, user?.id, localDate],
-    queryFn: () => apiFetcher(`/api/stats?localDate=${localDate}`),
+    queryKey: [...queryKeys.stats.all, user?.id, localDate, user?.activeGroupId],
+    queryFn: () => {
+      const params = new URLSearchParams({ localDate })
+      if (user?.activeGroupId) params.set("groupId", user.activeGroupId)
+      return apiFetcher(`/api/stats?${params.toString()}`)
+    },
     enabled: user?.role === "athlete",
   })
 
@@ -122,6 +128,7 @@ export default function DashboardPage() {
       id: string
       text: string
       coachName: string
+      coachId: string
       createdAt: string
     }[]
   }>({
@@ -195,7 +202,7 @@ export default function DashboardPage() {
       id: string
       name: string
       code: string
-      coachId: string
+      headCoachId: string
       trainingScheduleUpdatedAt?: string | null
     }[]
   }>({

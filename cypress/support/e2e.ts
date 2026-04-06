@@ -5,11 +5,19 @@ before(() => {
   cy.task("cleanupTestData");
 });
 
-// Skip onboarding UI in all tests by pre-setting localStorage flags.
+// Skip onboarding UI in all tests by pre-setting localStorage flags (scoped per user).
+// Set the Vercel Flags override cookie so tests always run with beta=true
+beforeEach(() => {
+  cy.setCookie("__vercel_flags_overrides", Cypress.env("betaFlagCookie"));
+});
+
 beforeEach(() => {
   cy.on("window:before:load", (win) => {
-    win.localStorage.setItem("pretvia-onboarded", "1");
-    win.localStorage.setItem("pretvia-coach-onboarding-done", "1");
+    const userId = Cypress.env("CURRENT_USER_ID") as string | undefined;
+    if (userId) {
+      win.localStorage.setItem(`pretvia-onboarded-${userId}`, "1");
+      win.localStorage.setItem(`pretvia-coach-onboarding-done-${userId}`, "1");
+    }
   });
 });
 

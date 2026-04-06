@@ -17,7 +17,7 @@ export function FeaturesRoleTabs({
           <button
             key={section.id}
             onClick={() => onTabChange(section.id)}
-            className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
+            className={`relative rounded-full px-3 py-2 sm:px-6 sm:py-2.5 text-sm font-medium transition-colors ${
               activeTab === section.id
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"

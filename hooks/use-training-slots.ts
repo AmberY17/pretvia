@@ -1,20 +1,20 @@
 "use client";
 
 import { useState, useCallback } from "react";
-
-interface TrainingSlotState {
-  dayOfWeek: number;
-  time: string;
-  sourceGroupId?: string;
-}
+import type { TrainingSlotItem } from "@/types/dashboard";
 
 export function useTrainingSlots(
-  initial: TrainingSlotState[] = [],
+  initial: TrainingSlotItem[] = [],
 ) {
-  const [slots, setSlots] = useState<TrainingSlotState[]>(initial);
+  const [slots, setSlots] = useState<TrainingSlotItem[]>(initial);
 
-  const addSlot = useCallback(() => {
-    setSlots((prev) => [...prev, { dayOfWeek: 1, time: "09:00" }]);
+  const addSlot = useCallback((sourceGroupId?: string) => {
+    setSlots((prev) => [
+      ...prev,
+      sourceGroupId
+        ? { dayOfWeek: 1, time: "09:00", sourceGroupId }
+        : { dayOfWeek: 1, time: "09:00" },
+    ]);
   }, []);
 
   const removeSlot = useCallback((index: number) => {

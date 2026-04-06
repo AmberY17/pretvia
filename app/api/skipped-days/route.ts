@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { date, reason } = await req.json()
+    const { date, reason, groupId } = await req.json()
 
     if (!date || typeof reason !== "string" || !reason.trim()) {
       return NextResponse.json(
@@ -24,10 +25,11 @@ export async function POST(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    const trainingSlots = (user?.trainingSlots ?? []) as {
-      dayOfWeek: number
-      time: string
-    }[]
+    // Every slot is group-scoped via sourceGroupId; filter strictly to the requested group.
+    const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
+    const trainingSlots = groupId
+      ? allTrainingSlots.filter((s) => s.sourceGroupId === groupId)
+      : allTrainingSlots
 
     // Parse as local midnight (not UTC midnight) so getDay() returns the correct
     // local day of week matching the client-supplied date string.

@@ -4,7 +4,7 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { removeRedundantSkipsForLog } from "@/lib/streak"
-import type { TrainingSlot } from "@/lib/streak"
+import type { TrainingSlotItem } from "@/types/dashboard"
 import {
   buildVisibilityFilter,
   applyDateFilter,
@@ -240,18 +240,24 @@ export async function POST(req: Request) {
       _id: new ObjectId(session.userId),
     })
 
-    // Enforce daily log limit for standalone logs (not checkin logs)
+    // Enforce daily log limit for standalone logs (not checkin logs).
+    // The limit is per group — athletes in multiple groups each get one shared
+    // and one private log per day per group.
     if (!checkinId) {
       const now = new Date()
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+      const todayLogFilter: Record<string, unknown> = {
+        userId: session.userId,
+        createdAt: { $gte: startOfToday, $lt: endOfToday },
+        checkinId: { $exists: false },
+      }
+      if (user?.activeGroupId) {
+        todayLogFilter.groupId = user.activeGroupId
+      }
       const todayLogs = await db
         .collection("logs")
-        .find({
-          userId: session.userId,
-          createdAt: { $gte: startOfToday, $lt: endOfToday },
-          checkinId: { $exists: false },
-        })
+        .find(todayLogFilter)
         .project({ visibility: 1, isGroup: 1 })
         .toArray()
 
@@ -275,6 +281,7 @@ export async function POST(req: Request) {
 
     const logEntry: Record<string, unknown> = {
       userId: session.userId,
+      groupId: user?.activeGroupId ?? null,
       emoji,
       timestamp: timestamp ? new Date(timestamp) : new Date(),
       visibility: resolvedVisibility,
@@ -293,7 +300,11 @@ export async function POST(req: Request) {
     const totalCount = await db.collection("logs").countDocuments({ userId: session.userId })
 
     const logTimestamp = logEntry.timestamp as Date
-    const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
+    const logGroupId = logEntry.groupId as string | null
+    const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
+    const trainingSlots = logGroupId
+      ? allTrainingSlots.filter((s) => s.sourceGroupId === logGroupId)
+      : allTrainingSlots
     await removeRedundantSkipsForLog(db, session.userId, logTimestamp, trainingSlots)
 
     const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []
@@ -381,6 +392,8 @@ export async function PUT(req: Request) {
         userId: session.userId,
         createdAt: { $gte: startOfToday, $lt: endOfToday },
         checkinId: { $exists: false },
+        // Scope the conflict check to the same group as the log being edited
+        ...(existing.groupId ? { groupId: existing.groupId } : {}),
         $or:
           resolvedNewVisibility === "coach"
             ? [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }]

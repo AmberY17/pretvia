@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { computeStreak, computeTodaySkipStatus } from "@/lib/streak"
-import type { TrainingSlot } from "@/lib/streak"
+import type { TrainingSlotItem } from "@/types/dashboard"
 
 export async function GET(req: Request) {
   try {
@@ -15,14 +15,32 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     // "YYYY-MM-DD" string in the user's local timezone, sent by the client.
     const localDate = searchParams.get("localDate") ?? undefined
+    // Active group ID sent by the client — used to scope stats per group.
+    const groupId = searchParams.get("groupId") ?? null
 
     const db = await getDb()
     const user = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
 
-    const trainingSlots = (user?.trainingSlots ?? []) as TrainingSlot[]
-    const deletedSlots = (user?.deletedSlots ?? []) as TrainingSlot[]
+    // Filter training slots to the requested group only — every slot is group-scoped via sourceGroupId.
+    const allTrainingSlots = (user?.trainingSlots ?? []) as TrainingSlotItem[]
+    const allDeletedSlots = (user?.deletedSlots ?? []) as TrainingSlotItem[]
+    // Include slots with no sourceGroupId for backward compatibility — personal slots
+    // created before group-scoping was introduced should still count toward the streak.
+    const trainingSlots: TrainingSlotItem[] = groupId
+      ? allTrainingSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+      : allTrainingSlots
+    const deletedSlots: TrainingSlotItem[] = groupId
+      ? allDeletedSlots.filter((s) => !s.sourceGroupId || s.sourceGroupId === groupId)
+      : allDeletedSlots
+
+    // Build a group-scoped log filter. Include logs with no groupId for backward
+    // compatibility so pre-migration history still counts toward the athlete's stats.
+    const baseLogFilter: Record<string, unknown> = { userId: session.userId }
+    if (groupId) {
+      baseLogFilter.$or = [{ groupId }, { groupId: { $exists: false } }, { groupId: null }]
+    }
 
     // Pre-fetch the logs window once and share it between computeStreak and
     // computeTodaySkipStatus to avoid two full log-collection scans per request.
@@ -30,10 +48,10 @@ export async function GET(req: Request) {
     const lookbackDate = new Date(now)
     lookbackDate.setDate(lookbackDate.getDate() - 100)
     const [totalLogs, prefetchedLogs, prefetchedSkips] = await Promise.all([
-      db.collection("logs").countDocuments({ userId: session.userId }),
+      db.collection("logs").countDocuments(baseLogFilter),
       db
         .collection("logs")
-        .find({ userId: session.userId, timestamp: { $gte: lookbackDate } })
+        .find({ ...baseLogFilter, timestamp: { $gte: lookbackDate } })
         .project({ timestamp: 1 })
         .sort({ timestamp: 1 })
         .toArray(),

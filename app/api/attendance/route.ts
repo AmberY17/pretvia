@@ -167,7 +167,7 @@ export async function POST(req: Request) {
       groupId: userGroupId,
       sessionDate: checkin.sessionDate,
       entries: validEntries,
-      coachId: session.userId,
+      headCoachId: session.userId,
       updatedAt: new Date(),
     }
 

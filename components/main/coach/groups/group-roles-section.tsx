@@ -3,7 +3,7 @@
 import { Settings, Plus, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared";
 import type { Role } from "@/types/dashboard";
 
 interface GroupRolesSectionProps {

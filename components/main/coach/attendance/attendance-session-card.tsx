@@ -10,19 +10,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import type { AttendanceStatus } from "@/types/dashboard";
-import type { CheckinItem } from "./attendance-session-dropdown";
-
-interface Athlete {
-  id: string;
-  displayName?: string;
-  email?: string;
-  status?: string | null;
-}
+import type { AttendanceStatus, CheckinItem, AttendanceAthlete } from "@/types/dashboard";
 
 interface AttendanceSessionCardProps {
   selectedCheckin: CheckinItem;
-  athletes: Athlete[];
+  athletes: AttendanceAthlete[];
   entries: Record<string, AttendanceStatus>;
   saving: boolean;
   onSetStatus: (athleteId: string, status: AttendanceStatus) => void;

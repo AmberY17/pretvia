@@ -1,20 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { format, startOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { AttendanceStatus } from "@/types/dashboard";
 
 const WEEKDAYS_FULL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAYS_SHORT = ["S", "M", "T", "W", "T", "F", "S"];
 
-type AttendanceStatus = "present" | "absent" | "excused";
-
 interface GuardianCalendarWeeklyProps {
   weekStart: string;
-  dates: Record<string, string>;
-  attendanceByDate?: Record<string, AttendanceStatus>;
+  dates: Record<string, string[]>;
+  attendanceByDate?: Record<string, NonNullable<AttendanceStatus>>;
   trainingDayDates?: Record<string, boolean>;
   onPrevWeek: () => void;
   onNextWeek: () => void;
@@ -28,6 +27,12 @@ export function GuardianCalendarWeekly({
   onPrevWeek,
   onNextWeek,
 }: GuardianCalendarWeeklyProps) {
+  const [emojiIndexByDate, setEmojiIndexByDate] = useState<Record<string, number>>({});
+
+  const cycleEmoji = useCallback((key: string, count: number) => {
+    setEmojiIndexByDate((prev) => ({ ...prev, [key]: ((prev[key] ?? 0) + 1) % count }));
+  }, []);
+
   const weekStartDate = useMemo(() => new Date(weekStart + "T12:00:00"), [weekStart]);
   const days = useMemo(() => {
     const start = startOfWeek(weekStartDate, { weekStartsOn: 0 });
@@ -75,9 +80,12 @@ export function GuardianCalendarWeekly({
         ))}
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
-          const emoji = dates[key];
+          const emojis = dates[key] ?? [];
           const attendance = attendanceByDate[key];
-          const hasEmoji = !!emoji;
+          const hasEmoji = emojis.length > 0;
+          const hasMultiple = emojis.length > 1;
+          const emojiIndex = emojiIndexByDate[key] ?? 0;
+          const emoji = emojis[emojiIndex] ?? "";
           const today = isToday(day);
           const isActive = hasEmoji || !!attendance || !!trainingDayDates[key];
           const borderColor =
@@ -92,19 +100,26 @@ export function GuardianCalendarWeekly({
           return (
             <div
               key={key}
+              onClick={hasMultiple ? () => cycleEmoji(key, emojis.length) : undefined}
               className={cn(
                 "relative flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 transition-colors sm:min-h-[44px]",
                 isActive ? "text-foreground" : "opacity-50 text-muted-foreground",
                 today && !attendance && "border-primary/30",
-                attendance && borderColor
+                attendance && borderColor,
+                hasMultiple && "cursor-pointer",
               )}
             >
               {hasEmoji ? (
                 <>
                   <span className="absolute left-1 top-1 text-[10px] font-medium">{format(day, "d")}</span>
-                  <span className="text-2xl leading-none" role="img" aria-label="log mood">
+                  <span key={emojiIndex} className="animate-emoji-pop text-2xl leading-none" role="img" aria-label="log mood">
                     {emoji}
                   </span>
+                  {hasMultiple && (
+                    <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">
+                      {emojiIndex + 1}/{emojis.length}
+                    </span>
+                  )}
                 </>
               ) : (
                 <span className="text-xs font-medium">{format(day, "d")}</span>

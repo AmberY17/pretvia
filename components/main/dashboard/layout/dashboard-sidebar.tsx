@@ -2,20 +2,18 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { RotateCcw } from "lucide-react"
-import { SidebarProfile } from "@/components/main/dashboard/sidebar/sidebar-profile"
-import { CollapsibleFilterSection } from "@/components/main/dashboard/filters/collapsible-filter-section"
-import { TagFilter } from "@/components/main/dashboard/filters/tag-filter"
-import { SessionFilter } from "@/components/main/dashboard/filters/session-filter"
-import { DateFilter } from "@/components/main/dashboard/filters/date-filter"
-import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter"
-import { RoleFilter } from "@/components/main/dashboard/filters/role-filter"
-import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter"
-import { VisibilityFilter } from "@/components/main/dashboard/filters/visibility-filter"
+import { SidebarProfile, SidebarStatsCard } from "@/components/main/dashboard/sidebar"
 import {
-  SidebarFilterSkeleton,
-  SidebarStatsCardSkeleton,
-} from "@/components/main/dashboard/layout/dashboard-skeletons"
-import { SidebarStatsCard } from "@/components/main/dashboard/sidebar/sidebar-stats-card"
+  CollapsibleFilterSection,
+  TagFilter,
+  SessionFilter,
+  DateFilter,
+  AthleteFilter,
+  RoleFilter,
+  ReviewStatusFilter,
+  VisibilityFilter,
+} from "@/components/main/dashboard/filters"
+import { SidebarFilterSkeleton, SidebarStatsCardSkeleton } from "./dashboard-skeletons"
 import type { User } from "@/hooks/use-auth"
 import type {
   DashboardFiltersState,
@@ -192,6 +190,7 @@ export function DashboardSidebar({
             hasTrainingSlots={stats.hasTrainingSlots}
             canSkipToday={stats.canSkipToday}
             skipDisabledReason={stats.skipDisabledReason}
+            activeGroupId={user.activeGroupId}
             onMutateStats={onMutateStats}
           />
         ) : null)}

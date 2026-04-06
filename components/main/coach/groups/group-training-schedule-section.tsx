@@ -2,8 +2,7 @@
 
 import { Calendar, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DayWheelPicker } from "@/components/main/shared/day-wheel-picker";
-import { TimeWheelPicker } from "@/components/main/shared/time-wheel-picker";
+import { DayWheelPicker, TimeWheelPicker } from "@/components/main/shared";
 import type { TrainingSlot } from "@/types/dashboard";
 
 interface GroupTrainingScheduleSectionProps {

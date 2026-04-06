@@ -8,6 +8,7 @@ import {
   generateUniqueGroupCode,
   addUserToGroup,
 } from "@/lib/group-actions"
+import { getUserSubscription, getEffectiveLimits } from "@/lib/subscription"
 
 export async function handleCreate(
   db: Db,
@@ -20,6 +21,27 @@ export async function handleCreate(
       { error: "Only coaches can create groups" },
       { status: 403 },
     )
+  }
+
+  const sub = await getUserSubscription(db, session.userId)
+  if (sub.isAssistant) {
+    return NextResponse.json(
+      { error: "Assistant coaches cannot create groups" },
+      { status: 403 },
+    )
+  }
+
+  const limits = getEffectiveLimits(sub)
+  if (limits.groups !== Infinity) {
+    const groupCount = await db
+      .collection("groups")
+      .countDocuments({ headCoachId: session.userId })
+    if (groupCount >= limits.groups) {
+      return NextResponse.json(
+        { error: "Group limit reached", plan: sub.plan, limit: limits.groups },
+        { status: 403 },
+      )
+    }
   }
 
   const { name } = body
@@ -35,7 +57,7 @@ export async function handleCreate(
   const result = await db.collection("groups").insertOne({
     name: name.trim(),
     code,
-    coachId: session.userId,
+    headCoachId: session.userId,
     coachIds: [session.userId],
     roles: [],
     createdAt: new Date(),

@@ -8,12 +8,14 @@ import type { Announcement } from "@/types/dashboard";
 interface AnnouncementBannerProps {
   announcements: Announcement[];
   isCoach: boolean;
+  currentUserId?: string;
   onMutate: () => void;
 }
 
 export function AnnouncementBanner({
   announcements,
   isCoach,
+  currentUserId,
   onMutate,
 }: AnnouncementBannerProps) {
   return (
@@ -24,6 +26,7 @@ export function AnnouncementBanner({
             key={announcement.id}
             announcement={announcement}
             isCoach={isCoach}
+            currentUserId={currentUserId}
             onMutate={onMutate}
           />
         ))}

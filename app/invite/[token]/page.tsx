@@ -174,6 +174,18 @@ export default function InvitePage() {
     );
   }
 
+  if (invite.type === "coach") {
+    return (
+      <InviteCoachForm
+        token={token}
+        invite={invite}
+        redeem={redeem}
+        redeeming={redeeming}
+        queryClient={queryClient}
+      />
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <p className="text-muted-foreground">Unknown invite type</p>
@@ -555,6 +567,146 @@ function InviteAthleteForm({
               >
                 Continue with Google
               </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  );
+}
+
+function InviteCoachForm({
+  token: _token,
+  invite,
+  redeem,
+  redeeming,
+  queryClient,
+}: {
+  token: string;
+  invite: InviteData;
+  redeem: (body: Record<string, unknown>) => Promise<{ redirect?: string } | undefined>;
+  redeeming: boolean;
+  queryClient: ReturnType<typeof useQueryClient>;
+}) {
+  const router = useRouter();
+  const [isLogin, setIsLogin] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [password, setPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLogin) {
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: invite.email, password }),
+      });
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) {
+        toast.error(loginData.error || "Login failed");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+      const result = await redeem({ createAccount: false, email: invite.email });
+      if (result?.redirect) router.push(result.redirect);
+    } else {
+      if (!agreedToTerms) {
+        toast.error("Please agree to the Terms of Service and Privacy Policy");
+        return;
+      }
+      const result = await redeem({
+        createAccount: true,
+        firstName,
+        lastName,
+        email: invite.email,
+        password,
+      });
+      if (result?.redirect) router.push(result.redirect);
+    }
+  };
+
+  return (
+    <main className="relative flex min-h-screen items-center justify-center px-6 py-12">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/[0.06] blur-[150px]" />
+      </div>
+      <div className="relative z-10 w-full max-w-md">
+        <Link href="/auth" className="mb-8 inline-flex gap-2 text-sm text-muted-foreground hover:text-foreground">
+          Back to sign in
+        </Link>
+        <Card className="border-border bg-card">
+          <CardHeader>
+            <Image src="/logo.png" alt="Pretvia" width={44} height={44} className="mb-2 h-11 w-11 object-contain dark:hidden" />
+            <Image src="/logo_dark.png" alt="Pretvia" width={44} height={44} className="mb-2 hidden h-11 w-11 object-contain dark:block" />
+            <CardTitle>
+              {isLogin ? "Sign in as coach" : `Coach ${invite.groupName ?? "the group"}`}
+            </CardTitle>
+            <CardDescription>
+              You&apos;ve been invited to coach {invite.groupName ?? "this group"} on Pretvia.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {!isLogin && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>First name</Label>
+                    <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="bg-secondary border-border" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last name</Label>
+                    <Input value={lastName} onChange={(e) => setLastName(e.target.value)} required className="bg-secondary border-border" />
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={invite.email} disabled className="bg-muted" />
+              </div>
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isLogin ? "Your password" : "Min. 6 characters"}
+                  required
+                  minLength={6}
+                  className="bg-secondary border-border"
+                />
+              </div>
+              {!isLogin && (
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="coach-terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(v) => setAgreedToTerms(v === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="coach-terms" className="text-sm text-muted-foreground leading-snug cursor-pointer">
+                    I agree to the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+              )}
+              <Button type="submit" disabled={redeeming || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
+                {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and join" : "Create account and join"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm text-muted-foreground hover:text-primary"
+              >
+                {isLogin ? "Create new account instead" : "Already have an account? Sign in"}
+              </button>
             </form>
           </CardContent>
         </Card>

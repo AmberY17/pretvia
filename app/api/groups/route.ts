@@ -9,6 +9,7 @@ import {
   handleSwitch,
   handleLeave,
 } from "./post-handlers"
+import type { TrainingSlot } from "@/types/dashboard"
 
 // POST: create a group (coach only), join a group, switch group, or leave a group
 export async function POST(req: Request) {
@@ -55,7 +56,7 @@ export async function GET(req: Request) {
       const groups = await db
         .collection("groups")
         .find({
-          $or: [{ coachId: session.userId }, { coachIds: session.userId }],
+          $or: [{ headCoachId: session.userId }, { coachIds: session.userId }],
         })
         .sort({ createdAt: -1 })
         .toArray()
@@ -99,7 +100,7 @@ export async function GET(req: Request) {
           id: g._id.toString(),
           name: g.name,
           code: g.code,
-          coachId: g.coachId,
+          headCoachId: g.headCoachId,
           trainingScheduleUpdatedAt: g.trainingScheduleUpdatedAt ?? null,
         })),
       })
@@ -125,7 +126,7 @@ export async function GET(req: Request) {
       group &&
       ((Array.isArray(group.coachIds) &&
         group.coachIds.includes(session.userId)) ||
-        group.coachId === session.userId ||
+        group.headCoachId === session.userId ||
         (Array.isArray(user?.groupIds) && user.groupIds.includes(groupId)))
 
     const members = await db
@@ -202,7 +203,7 @@ export async function GET(req: Request) {
         email: string
         status: "pending"
       }[]
-      trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+      trainingScheduleTemplate?: TrainingSlot[]
     } = {
       members: members.map((m) => ({
         id: m._id.toString(),

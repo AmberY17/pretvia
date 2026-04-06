@@ -2,12 +2,13 @@ import type { Db, ObjectId as ObjectIdType } from "mongodb"
 import { ObjectId } from "mongodb"
 import { createSession, type SessionPayload } from "@/lib/auth"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
+import type { TrainingSlot } from "@/types/dashboard"
 
 /**
  * Generate a unique 6-character alphanumeric group code.
  * Excludes ambiguous characters (0, O, 1, I).
  */
-export function generateGroupCode(): string {
+function generateGroupCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
   let code = ""
   for (let i = 0; i < 6; i++) {
@@ -57,28 +58,13 @@ export async function generateUniqueGroupCode(db: Db): Promise<string> {
 }
 
 /**
- * Update the user's active group and refresh their session.
- */
-export async function switchActiveGroup(
-  db: Db,
-  session: SessionPayload,
-  groupId: string | null,
-) {
-  await db.collection("users").updateOne(
-    { _id: new ObjectId(session.userId) },
-    { $set: { activeGroupId: groupId } },
-  )
-  await createSession({ ...session, activeGroupId: groupId || undefined })
-}
-
-/**
  * Add a user to a group: update groupIds, create membership, apply training schedule.
  */
 export async function addUserToGroup(
   db: Db,
   session: SessionPayload,
   groupId: string,
-  group: { _id: ObjectIdType; trainingScheduleTemplate?: { dayOfWeek: number; time: string }[] },
+  group: { _id: ObjectIdType; trainingScheduleTemplate?: TrainingSlot[] },
   userRole: string,
 ) {
   await db.collection("users").updateOne(

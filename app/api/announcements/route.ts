@@ -22,14 +22,28 @@ export async function GET() {
       return NextResponse.json({ announcements: [] })
     }
 
+    const activeGroupOid = safeObjectId(activeGroupId)
+    if (!activeGroupOid) {
+      return NextResponse.json({ announcements: [] })
+    }
+    const group = await db.collection("groups").findOne(
+      { _id: activeGroupOid },
+      { projection: { headCoachId: 1 } }
+    )
+    const groupHeadCoachId = group?.headCoachId ?? null
+
+    const announcementQuery = groupHeadCoachId
+      ? { $or: [{ groupId: activeGroupId }, { scope: "club", headCoachId: groupHeadCoachId }] }
+      : { groupId: activeGroupId }
+
     const docs = await db
       .collection("announcements")
-      .find({ groupId: activeGroupId })
+      .find(announcementQuery)
       .sort({ createdAt: -1 })
       .limit(100)
       .toArray()
 
-    const coachIdStrs = [...new Set(docs.map((d) => d.coachId).filter(Boolean))] as string[]
+    const coachIdStrs = [...new Set(docs.map((d) => d.headCoachId).filter(Boolean))] as string[]
     const coachOids = coachIdStrs.map((id) => safeObjectId(id)).filter((id): id is ObjectId => id !== null)
     const coaches = await db
       .collection("users")
@@ -43,8 +57,10 @@ export async function GET() {
     const announcements = docs.map((d) => ({
       id: d._id.toString(),
       text: d.text,
-      coachName: coachMap.get(d.coachId) ?? "Coach",
+      coachName: coachMap.get(d.headCoachId) ?? "Coach",
+      coachId: d.headCoachId,
       createdAt: d.createdAt,
+      scope: d.scope ?? "group",
     }))
 
     return NextResponse.json({ announcements })
@@ -84,7 +100,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const { text } = await req.json()
+    const { text, scope } = await req.json()
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json(
@@ -100,10 +116,13 @@ export async function POST(req: Request) {
       )
     }
 
+    const announcementScope = scope === "club" ? "club" : "group"
+
     const result = await db.collection("announcements").insertOne({
       groupId: user.activeGroupId,
-      coachId: session.userId,
+      headCoachId: session.userId,
       text: text.trim(),
+      scope: announcementScope,
       active: true,
       createdAt: new Date(),
     })
@@ -114,6 +133,7 @@ export async function POST(req: Request) {
         id: result.insertedId.toString(),
         text: text.trim(),
         coachName: user.displayName || "Coach",
+        coachId: session.userId,
         createdAt: new Date(),
       },
     })
@@ -167,12 +187,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Invalid announcement id" }, { status: 400 })
     }
 
-    const announcement = await db.collection("announcements").findOne({
-      _id: oid,
-      groupId: user.activeGroupId,
-      coachId: session.userId,
-    })
-    if (!announcement) {
+    const announcement = await db.collection("announcements").findOne({ _id: oid })
+    const isOwner = announcement?.headCoachId === session.userId &&
+      (announcement?.groupId === user.activeGroupId || announcement?.scope === "club")
+    if (!announcement || !isOwner) {
       return NextResponse.json(
         { error: "Announcement not found" },
         { status: 404 }
@@ -245,12 +263,10 @@ export async function PATCH(req: Request) {
       )
     }
 
-    const announcement = await db.collection("announcements").findOne({
-      _id: oid,
-      groupId: user.activeGroupId,
-      coachId: session.userId,
-    })
-    if (!announcement) {
+    const announcement = await db.collection("announcements").findOne({ _id: oid })
+    const isOwner = announcement?.headCoachId === session.userId &&
+      (announcement?.groupId === user.activeGroupId || announcement?.scope === "club")
+    if (!announcement || !isOwner) {
       return NextResponse.json(
         { error: "Announcement not found" },
         { status: 404 }

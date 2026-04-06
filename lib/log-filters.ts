@@ -45,19 +45,34 @@ export async function buildVisibilityFilter(
     $or: [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }],
   }
 
+  // Scope athlete logs to the active group, with backward-compat for pre-migration
+  // logs that have no groupId field.
+  const groupScopeCondition = {
+    $or: [{ groupId: userGroupId }, { groupId: { $exists: false } }, { groupId: null }],
+  }
+
   if (filterUserIds.length > 0 && userRole === "coach") {
     const validIds = filterUserIds.filter((id) => memberIds.includes(id))
     if (validIds.length === 0) return { _id: null } // no results
-    return { userId: { $in: validIds }, ...coachVisibilityCondition }
+    return {
+      userId: { $in: validIds },
+      $and: [coachVisibilityCondition, groupScopeCondition],
+    }
   }
 
   if (userRole === "coach") {
     return {
-      $or: [{ userId }, { userId: { $in: memberIds }, ...coachVisibilityCondition }],
+      userId: { $in: memberIds },
+      $and: [coachVisibilityCondition, groupScopeCondition],
     }
   }
 
-  return { userId }
+  // Athletes: scope to the active group's logs, plus pre-migration logs (no groupId field)
+  // for backward compatibility so existing history isn't silently hidden.
+  return {
+    userId,
+    $or: [{ groupId: userGroupId }, { groupId: { $exists: false } }, { groupId: null }],
+  }
 }
 
 /**

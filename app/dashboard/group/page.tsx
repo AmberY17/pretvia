@@ -7,16 +7,17 @@ import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
 import { Settings } from "lucide-react";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { PageHeader } from "@/components/main/shared/page-header";
+import { PageHeader, EmptyStateCard } from "@/components/main/shared";
 import { LoadingScreen } from "@/components/loading-screen";
-import { EmptyStateCard } from "@/components/main/shared/empty-state-card";
-import { ManageGroupPageSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons";
-import { GroupRolesSection } from "@/components/main/coach/groups/group-roles-section";
-import { GroupTrainingScheduleSection } from "@/components/main/coach/groups/group-training-schedule-section";
-import { GroupAthletesSection } from "@/components/main/coach/groups/group-athletes-section";
+import { ManageGroupPageSkeleton } from "@/components/main/dashboard/layout";
+import {
+  GroupRolesSection,
+  GroupTrainingScheduleSection,
+  GroupAthletesSection,
+} from "@/components/main/coach/groups";
 import { toast } from "sonner";
 import { useTrainingSlots } from "@/hooks/use-training-slots";
-import type { Member, PendingAthlete, Role } from "@/types/dashboard";
+import type { Member, PendingAthlete, Role, TrainingSlot } from "@/types/dashboard";
 
 export default function GroupManagementPage() {
   const { user, isLoading: authLoading } = useRequireAuth({ requireCoach: true });
@@ -95,7 +96,7 @@ export default function GroupManagementPage() {
   const transferableGroups = coachGroups.filter((g) => g.id !== user?.activeGroupId);
 
   const { data: trainingScheduleData, isLoading: trainingScheduleLoading } = useQuery<{
-    trainingScheduleTemplate: { dayOfWeek: number; time: string }[];
+    trainingScheduleTemplate: TrainingSlot[];
   }>({
     queryKey: [...queryKeys.groups.trainingSchedule(user?.activeGroupId ?? ""), user?.id],
     queryFn: () => apiFetcher(`/api/groups/${user!.activeGroupId}/training-schedule`),
@@ -401,7 +402,7 @@ export default function GroupManagementPage() {
               />
               <GroupTrainingScheduleSection
                 trainingSchedule={trainingSchedule}
-                onAddSlot={addTrainingSlot}
+                onAddSlot={() => addTrainingSlot()}
                 onRemoveSlot={removeTrainingSlot}
                 onUpdateSlot={updateTrainingSlot}
               />

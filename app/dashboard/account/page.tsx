@@ -3,14 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { PageHeader } from "@/components/main/shared/page-header";
+import { PageHeader } from "@/components/main/shared";
 import { LoadingScreen } from "@/components/loading-screen";
-import { AccountProfileEmojiSection } from "@/components/main/account/account-profile-emoji-section";
-import { AccountTrainingSlotsSection } from "@/components/main/account/account-training-slots-section";
-import { AccountCelebrationSection } from "@/components/main/account/account-celebration-section";
-import { AccountFilterOrderSection } from "@/components/main/account/account-filter-order-section";
-import { AccountDeleteSection } from "@/components/main/account/account-delete-section";
-import { AccountInstallSection } from "@/components/main/account/account-install-section";
+import {
+  AccountProfileEmojiSection,
+  AccountTrainingSlotsSection,
+  AccountCelebrationSection,
+  AccountFilterOrderSection,
+  AccountDeleteSection,
+  AccountInstallSection,
+} from "@/components/main/account";
 import { toast } from "sonner";
 import {
   CELEBRATION_KEY,
@@ -42,6 +44,9 @@ export default function AccountPage() {
     removeSlot: removeTrainingSlot,
     updateSlot: updateTrainingSlot,
   } = useTrainingSlots();
+  // Slots from other groups that are hidden on this page but must be preserved
+  // when saving so that other groups' schedules are not accidentally deleted.
+  const [hiddenGroupSlots, setHiddenGroupSlots] = useState<TrainingSlotItem[]>([]);
   const [, setSavingSlots] = useState(false);
   const [deleteGroupSlotConfirmIndex, setDeleteGroupSlotConfirmIndex] =
     useState<number | null>(null);
@@ -96,23 +101,34 @@ export default function AccountPage() {
     }
   }, [user?.profileEmoji]);
 
-  // Sync training slots from server only on initial load (user id), so other
-  // profile updates (e.g. emoji) don’t overwrite unsaved schedule changes.
+  // Sync training slots from server when user id or active group changes.
+  // Only show slots for the active group + personal (no sourceGroupId) slots;
+  // slots from other groups are stashed in hiddenGroupSlots so they are
+  // preserved when saving (not silently deleted).
   useEffect(() => {
     if (!user?.id || user?.trainingSlots === undefined) return;
-    const raw =
-      Array.isArray(user.trainingSlots) && user.trainingSlots.length > 0
-        ? user.trainingSlots.map((s) => ({
-            dayOfWeek: s.dayOfWeek,
-            time: s.time || "09:00",
-            sourceGroupId: (s as { sourceGroupId?: string }).sourceGroupId,
-          }))
-        : [];
-    const slots = sortSlotsChronologically(raw);
+    const activeGroupId = user.activeGroupId ?? null;
+    const allRaw = Array.isArray(user.trainingSlots)
+      ? user.trainingSlots.map((s) => ({
+          dayOfWeek: s.dayOfWeek,
+          time: s.time || "09:00",
+          sourceGroupId: (s as { sourceGroupId?: string }).sourceGroupId,
+        }))
+      : [];
+    // Slots from other groups: hidden from display but kept for save merging
+    const hidden = allRaw.filter(
+      (s) => s.sourceGroupId && s.sourceGroupId !== activeGroupId,
+    );
+    // Slots visible on this page: personal + active group's coach-set slots
+    const visible = allRaw.filter(
+      (s) => !s.sourceGroupId || s.sourceGroupId === activeGroupId,
+    );
+    const slots = sortSlotsChronologically(visible);
+    setHiddenGroupSlots(hidden);
     setTrainingSlots(slots);
     lastSavedTrainingSlotsRef.current = slots;
     trainingScheduleSaveSkippedRef.current = false;
-  }, [user?.id]);
+  }, [user?.id, user?.activeGroupId]);
 
   // Auto-save training schedule when it changes (debounced). Skip the first run after load.
   useEffect(() => {
@@ -151,15 +167,17 @@ export default function AccountPage() {
   };
 
   async function saveTrainingSlotsToServer(
-    slots: { dayOfWeek: number; time: string; sourceGroupId?: string }[],
+    slots: TrainingSlotItem[],
     _options?: { silent?: boolean },
   ) {
     setSavingSlots(true);
     try {
+      // Re-merge hidden slots from other groups so they are not lost on save.
+      const merged = [...slots, ...hiddenGroupSlots];
       const res = await fetch("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trainingSlots: slots }),
+        body: JSON.stringify({ trainingSlots: merged }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -200,14 +218,23 @@ export default function AccountPage() {
         return;
       }
       if (Array.isArray(data.trainingSlots)) {
-        const raw = data.trainingSlots.map(
-          (s: { dayOfWeek: number; time: string; sourceGroupId?: string }) => ({
+        const activeGroupId = user?.activeGroupId ?? null;
+        const allRaw = data.trainingSlots.map(
+          (s: TrainingSlotItem) => ({
             dayOfWeek: s.dayOfWeek,
             time: s.time || "09:00",
             sourceGroupId: s.sourceGroupId,
           }),
         );
-        const nextSlots = sortSlotsChronologically(raw);
+        // Re-filter after sync: show only active group + personal, stash the rest
+        const hidden = allRaw.filter(
+          (s: { sourceGroupId?: string }) => s.sourceGroupId && s.sourceGroupId !== activeGroupId,
+        );
+        const visible = allRaw.filter(
+          (s: { sourceGroupId?: string }) => !s.sourceGroupId || s.sourceGroupId === activeGroupId,
+        );
+        const nextSlots = sortSlotsChronologically(visible);
+        setHiddenGroupSlots(hidden);
         setTrainingSlots(nextSlots);
         lastSavedTrainingSlotsRef.current = nextSlots;
       }
@@ -261,7 +288,7 @@ export default function AccountPage() {
               syncingSchedule={syncingSchedule}
               deleteGroupSlotConfirmIndex={deleteGroupSlotConfirmIndex}
               setDeleteGroupSlotConfirmIndex={setDeleteGroupSlotConfirmIndex}
-              onAddSlot={addTrainingSlot}
+              onAddSlot={() => addTrainingSlot()}
               onRemoveSlot={removeTrainingSlot}
               onUpdateSlot={updateTrainingSlot}
               onSyncGroupSchedule={handleSyncGroupSchedule}

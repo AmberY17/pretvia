@@ -1,18 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { User as UserIcon, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CollapsibleFilterSection } from "@/components/main/dashboard/filters/collapsible-filter-section";
+import { CollapsibleFilterSection } from "@/components/main/dashboard/filters";
 import type { User } from "@/hooks/use-auth";
-
-export type GuardianPair = {
-  athleteId: string;
-  athleteName: string;
-  groupId: string;
-  groupName: string;
-};
+import type { GuardianPair } from "@/types/dashboard";
 
 interface GuardianSidebarProps {
   user: User;
@@ -66,15 +60,6 @@ export function GuardianSidebar({
               {user.email}
             </p>
             <div className="mt-3 flex flex-col gap-1 w-full">
-              <Button
-                variant="ghost-secondary"
-                size="sm"
-                className="justify-center gap-2"
-                onClick={() => router.push("/dashboard/account")}
-              >
-                <UserIcon className="h-3.5 w-3.5" />
-                Account Settings
-              </Button>
               <Button
                 variant="ghost-secondary"
                 size="sm"

@@ -67,8 +67,12 @@ export async function PATCH(
       )
     }
 
-    const userGroupId = currentUser.activeGroupId || null
-    if (!userGroupId) {
+    const coachGroupIds = [
+      ...(currentUser.activeGroupId ? [currentUser.activeGroupId] : []),
+      ...(Array.isArray(currentUser.groupIds) ? currentUser.groupIds : []),
+    ].filter((v, i, arr) => arr.indexOf(v) === i)
+
+    if (coachGroupIds.length === 0) {
       return NextResponse.json(
         { error: "Coach must belong to a group" },
         { status: 403 }
@@ -77,7 +81,7 @@ export async function PATCH(
 
     const groupMembers = await db
       .collection("users")
-      .find({ groupIds: userGroupId })
+      .find({ groupIds: { $in: coachGroupIds } })
       .project({ _id: 1 })
       .toArray()
     const memberIds = groupMembers.map((m) => m._id.toString())

@@ -13,16 +13,17 @@ import { GuardianCalendarWeekly } from "./guardian-calendar-weekly";
 import {
   GuardianCalendarSkeleton,
   GuardianCalendarWeeklySkeleton,
-} from "@/components/main/dashboard/layout/dashboard-skeletons";
-import type { GuardianPair } from "./guardian-sidebar";
+} from "@/components/main/dashboard/layout";
+import type { GuardianPair } from "@/types/dashboard";
+import type { AttendanceStatus } from "@/types/dashboard";
 
 type CalendarData = {
   athleteId: string;
   groupId: string;
   athleteName: string;
   groupName: string;
-  dates: Record<string, string>;
-  attendanceByDate: Record<string, "present" | "absent" | "excused">;
+  dates: Record<string, string[]>;
+  attendanceByDate: Record<string, NonNullable<AttendanceStatus>>;
   trainingDayDates?: Record<string, true>;
 };
 

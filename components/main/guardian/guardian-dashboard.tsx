@@ -6,7 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { keepPreviousData } from "@tanstack/react-query";
 import { apiFetcher } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
-import { GuardianSidebar, type GuardianPair } from "./guardian-sidebar";
+import { GuardianSidebar } from "./guardian-sidebar";
+import type { GuardianPair } from "@/types/dashboard";
 import { GuardianDashboardContent } from "./guardian-dashboard-content";
 import type { User } from "@/hooks/use-auth";
 
@@ -40,7 +41,7 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
       groupId: string;
       athleteName: string;
       groupName: string;
-      dates: Record<string, string>;
+      dates: Record<string, string[]>;
       attendanceByDate: Record<string, "present" | "absent" | "excused">;
     }[];
   }>({

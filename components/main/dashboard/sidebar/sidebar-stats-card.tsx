@@ -41,6 +41,7 @@ interface SidebarStatsCardProps {
     | "already_skipped"
     | "already_logged"
     | null;
+  activeGroupId?: string | null;
   onMutateStats: () => void;
 }
 
@@ -50,6 +51,7 @@ export function SidebarStatsCard({
   hasTrainingSlots,
   canSkipToday,
   skipDisabledReason,
+  activeGroupId,
   onMutateStats,
 }: SidebarStatsCardProps) {
   const [skipOpen, setSkipOpen] = useState(false);
@@ -73,7 +75,11 @@ export function SidebarStatsCard({
       const res = await fetch("/api/skipped-days", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: todayStr, reason: skipReason.trim() }),
+        body: JSON.stringify({
+          date: todayStr,
+          reason: skipReason.trim(),
+          ...(activeGroupId ? { groupId: activeGroupId } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {

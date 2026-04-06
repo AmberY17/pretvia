@@ -1,16 +1,16 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { LogForm } from "@/components/main/dashboard/logs/log-form";
-import { LogDetail } from "@/components/main/dashboard/logs/log-detail";
-import { ConfettiCelebration } from "@/components/main/dashboard/layout/confetti-celebration";
+import { LogForm, LogDetail } from "@/components/main/dashboard/logs";
+import { ConfettiCelebration } from "./confetti-celebration";
 import type { User } from "@/hooks/use-auth";
-import type { LogEntry } from "@/components/main/dashboard/logs/log-card";
+import type { LogEntry } from "@/types/dashboard";
+import type { CheckinPrefill } from "@/components/main/dashboard/logs/hooks/use-dashboard-panel";
 
 export interface PanelState {
   panelMode: "new" | "view" | "edit" | null;
   selectedLog: LogEntry | null;
-  checkinPrefill: { timestamp: string; checkinId: string } | null;
+  checkinPrefill: CheckinPrefill | null;
   celebrationCount: number | null;
   isPanelOpen: boolean;
 }
@@ -60,6 +60,7 @@ export function DashboardPanel({
     existingTags: tagNames,
     prefillTimestamp: checkinPrefill?.timestamp ?? null,
     checkinId: checkinPrefill?.checkinId ?? null,
+    activeGroupId: user.activeGroupId,
   };
 
   const desktopPanelContent = (

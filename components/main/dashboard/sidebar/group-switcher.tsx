@@ -3,8 +3,7 @@
 import { useState } from "react"
 import { ArrowRightLeft, Users, Check, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
-
-type UserGroup = { id: string; name: string; code: string; coachId: string }
+import type { UserGroup } from "@/types/dashboard"
 
 interface GroupSwitcherProps {
   userGroups: UserGroup[]

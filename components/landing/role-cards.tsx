@@ -16,16 +16,14 @@ import {
   Flame,
   PartyPopper,
   Shield,
-  type LucideIcon,
+  LayoutDashboard,
+  Building2,
+  TrendingUp,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-interface Feature {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}
+import type { Feature } from "./features-data";
 
 interface RoleData {
   id: string;
@@ -76,6 +74,20 @@ const roles: RoleData[] = [
       { icon: Shield, title: "Respectful Access", description: "" },
     ],
   },
+  {
+    id: "club",
+    title: "Club",
+    subtitle: "Run your entire organization from one place",
+    color: "primary",
+    features: [
+      { icon: LayoutDashboard, title: "Club Dashboard", description: "" },
+      { icon: Users, title: "Coach Management", description: "" },
+      { icon: Building2, title: "Multi-Group Management", description: "" },
+      { icon: Megaphone, title: "Club-Wide Announcements", description: "" },
+      { icon: TrendingUp, title: "Activity Insights", description: "" },
+      { icon: CreditCard, title: "Billing & Seats", description: "" },
+    ],
+  },
 ];
 
 export function RoleCards() {
@@ -90,7 +102,7 @@ export function RoleCards() {
           <button
             key={role.id}
             onClick={() => setActiveRole(role.id)}
-            className={`relative px-6 py-3 text-sm font-medium rounded-full transition-colors ${
+            className={`relative px-3 py-2 sm:px-6 sm:py-3 text-sm font-medium rounded-full transition-colors ${
               activeRole === role.id
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -155,24 +167,3 @@ export function RoleCards() {
   );
 }
 
-// Compact role preview for hero section
-export function RolePreviewCards() {
-  return (
-    <div className="flex flex-wrap justify-center gap-3">
-      {roles.map((role, i) => (
-        <motion.div
-          key={role.id}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 + i * 0.1 }}
-          className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm"
-        >
-          <span className="font-medium text-foreground">{role.title}</span>
-          <span className="text-muted-foreground">
-            {role.features.length} features
-          </span>
-        </motion.div>
-      ))}
-    </div>
-  );
-}

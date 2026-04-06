@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { CheckCircle2, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const CHECKLIST_KEY = "pretvia-coach-checklist"
-export const COACH_ONBOARDING_DONE_KEY = "pretvia-coach-onboarding-done"
+const checklistKey = (userId: string) => `pretvia-coach-checklist-${userId}`
+const coachOnboardingDoneKey = (userId: string) => `pretvia-coach-onboarding-done-${userId}`
 
 type ChecklistState = {
   createGroup: boolean
@@ -48,11 +48,13 @@ const ITEMS: {
 ]
 
 interface CoachOnboardingChecklistProps {
+  userId: string
   hasGroup: boolean
   onComplete: () => void
 }
 
 export function CoachOnboardingChecklist({
+  userId,
   hasGroup,
   onComplete,
 }: CoachOnboardingChecklistProps) {
@@ -67,32 +69,32 @@ export function CoachOnboardingChecklist({
   useEffect(() => {
     try {
       const saved: Partial<ChecklistState> =
-        JSON.parse(localStorage.getItem(CHECKLIST_KEY) ?? "null") ?? {}
+        JSON.parse(localStorage.getItem(checklistKey(userId)) ?? "null") ?? {}
       const next: ChecklistState = {
         createGroup: Boolean(saved.createGroup) || hasGroup,
         setupGroup: Boolean(saved.setupGroup),
         inviteAthletes: Boolean(saved.inviteAthletes),
         installApp: Boolean(saved.installApp),
       }
-      localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next))
+      localStorage.setItem(checklistKey(userId), JSON.stringify(next))
       setChecks(next)
       if (Object.values(next).every(Boolean)) {
-        localStorage.setItem(COACH_ONBOARDING_DONE_KEY, "1")
+        localStorage.setItem(coachOnboardingDoneKey(userId), "1")
         onComplete()
       }
     } catch {
       // ignore storage errors
     }
-  }, [hasGroup])
+  }, [hasGroup, userId])
 
   const markAndNavigate = (key: keyof ChecklistState, href: string) => {
     setChecks((prev) => {
       const next = { ...prev, [key]: true }
       try {
-        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next))
+        localStorage.setItem(checklistKey(userId), JSON.stringify(next))
         if (Object.values(next).every(Boolean)) {
-          localStorage.setItem(COACH_ONBOARDING_DONE_KEY, "1")
-          onComplete()
+          localStorage.setItem(coachOnboardingDoneKey(userId), "1")
+          setTimeout(onComplete, 0)
         }
       } catch {
         // ignore
@@ -104,7 +106,7 @@ export function CoachOnboardingChecklist({
 
   const skipAll = () => {
     try {
-      localStorage.setItem(COACH_ONBOARDING_DONE_KEY, "1")
+      localStorage.setItem(coachOnboardingDoneKey(userId), "1")
     } catch {
       // ignore
     }
@@ -169,9 +171,9 @@ export function CoachOnboardingChecklist({
   )
 }
 
-export function isCoachOnboardingDone(): boolean {
+export function isCoachOnboardingDone(userId: string): boolean {
   try {
-    return !!localStorage.getItem(COACH_ONBOARDING_DONE_KEY)
+    return !!localStorage.getItem(coachOnboardingDoneKey(userId))
   } catch {
     return false
   }

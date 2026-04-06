@@ -1,10 +1,8 @@
 import type { Db } from "mongodb"
 import { ObjectId } from "mongodb"
-import type { TrainingSlot } from "@/types/dashboard"
+import type { TrainingSlot, TrainingSlotItem } from "@/types/dashboard"
 
-export type GroupTrainingSlot = TrainingSlot
-
-type StoredSlot = { dayOfWeek: number; time: string; sourceGroupId?: string; addedAt?: Date; removedAt?: Date }
+type GroupTrainingSlot = TrainingSlot
 
 function normalizeSlot(slot: { dayOfWeek: number; time: string }): GroupTrainingSlot {
   const t = String(slot.time).trim()
@@ -49,10 +47,10 @@ export async function applyGroupTrainingScheduleToAllMembers(
 
   const bulkOps = members.map((user) => {
     const currentSlots = Array.isArray(user.trainingSlots)
-      ? (user.trainingSlots as StoredSlot[])
+      ? (user.trainingSlots as TrainingSlotItem[])
       : []
     const existingDeleted = Array.isArray(user.deletedSlots)
-      ? (user.deletedSlots as StoredSlot[])
+      ? (user.deletedSlots as TrainingSlotItem[])
       : []
     const existingByKey = new Map(currentSlots.map((s) => [`${s.dayOfWeek}:${s.time}`, s]))
 
@@ -102,10 +100,10 @@ export async function applyGroupTrainingScheduleToUser(
   if (!user) return
 
   const currentSlots = Array.isArray(user.trainingSlots)
-    ? (user.trainingSlots as StoredSlot[])
+    ? (user.trainingSlots as TrainingSlotItem[])
     : []
   const existingDeleted = Array.isArray(user.deletedSlots)
-    ? (user.deletedSlots as StoredSlot[])
+    ? (user.deletedSlots as TrainingSlotItem[])
     : []
   const existingByKey = new Map(currentSlots.map((s) => [`${s.dayOfWeek}:${s.time}`, s]))
   const now = new Date()

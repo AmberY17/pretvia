@@ -4,14 +4,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Trash2, Pencil, User } from "lucide-react";
 import { format } from "date-fns";
-import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
-import { VisibilityBadge } from "@/components/main/dashboard/logs/visibility-badge";
-import { TagPill } from "@/components/main/dashboard/logs/tag-pill";
+import { DeleteConfirmDialog } from "@/components/main/shared";
+import { VisibilityBadge } from "./visibility-badge";
+import { TagPill } from "./tag-pill";
 import { CommentSection } from "./comment-section";
 import { ReviewStatusBadge } from "./review-status-badge";
 import type { LogEntry } from "@/types/dashboard";
-
-export type { LogEntry };
 
 interface LogCardProps {
   log: LogEntry;

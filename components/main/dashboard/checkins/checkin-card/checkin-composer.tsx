@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { getNextPracticeFromSchedule } from "@/lib/next-practice-from-schedule";
-import { DateTimeWheelPicker } from "@/components/main/dashboard/shared/datetime-wheel-picker";
+import { DateTimeWheelPicker } from "@/components/main/dashboard/shared";
+import type { TrainingSlot } from "@/types/dashboard";
 
 function toLocalDatetime(isoString?: string) {
   const d = isoString ? new Date(isoString) : new Date();
@@ -19,7 +20,7 @@ function toLocalDatetime(isoString?: string) {
 
 interface CheckinComposerProps {
   onMutate: () => void;
-  trainingScheduleTemplate?: { dayOfWeek: number; time: string }[];
+  trainingScheduleTemplate?: TrainingSlot[];
 }
 
 export function CheckinComposer({

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Megaphone, Trash2, Send, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DeleteConfirmDialog } from "@/components/main/shared/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/main/shared";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -13,12 +13,14 @@ import type { Announcement } from "@/types/dashboard";
 interface AnnouncementItemProps {
   announcement: Announcement;
   isCoach: boolean;
+  currentUserId?: string;
   onMutate: () => void;
 }
 
 export function AnnouncementItem({
   announcement,
   isCoach,
+  currentUserId,
   onMutate,
 }: AnnouncementItemProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -87,9 +89,15 @@ export function AnnouncementItem({
                 <span className="text-xs font-semibold text-primary">
                   Announcement
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  from {announcement.coachName}
-                </span>
+                {announcement.scope === "club" ? (
+                  <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                    Club
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    from {announcement.coachName}
+                  </span>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(announcement.createdAt), {
                     addSuffix: true,
@@ -97,7 +105,7 @@ export function AnnouncementItem({
                 </span>
               </div>
             </div>
-            {isCoach && !isEditing && (
+            {isCoach && announcement.coachId === currentUserId && !isEditing && (
               <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/announcement:opacity-100">
                 <button
                   type="button"

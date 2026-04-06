@@ -14,7 +14,11 @@ import { AUTH_ERROR_MESSAGES } from "@/lib/auth-errors";
 import { LoadingScreen } from "@/components/loading-screen";
 import { toast } from "sonner";
 
-export function AuthForm() {
+interface AuthFormProps {
+  betaMode: boolean;
+}
+
+export function AuthForm({ betaMode }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: authLoading, mutate: mutateAuth } = useAuth();
@@ -116,7 +120,7 @@ export function AuthForm() {
                 onSwitchToSignUp={handleSwitchToSignUp}
               />
             ) : (
-              <SignUpForm onSwitchToLogin={handleSwitchToLogin} />
+              <SignUpForm onSwitchToLogin={handleSwitchToLogin} betaMode={betaMode} />
             )}
           </Card>
         </motion.div>

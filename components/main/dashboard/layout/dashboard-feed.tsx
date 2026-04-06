@@ -8,7 +8,8 @@ import {
   CoachOnboardingChecklist,
   isCoachOnboardingDone,
 } from "@/components/main/dashboard/layout/onboarding/coach-onboarding-checklist"
-import { LogCard, type LogEntry } from "@/components/main/dashboard/logs/log-card"
+import { LogCard } from "@/components/main/dashboard/logs"
+import type { LogEntry } from "@/types/dashboard"
 import { LogCardSkeleton } from "@/components/main/dashboard/layout/dashboard-skeletons"
 import { MobileFilters } from "@/components/main/dashboard/layout/dashboard-feed/mobile-filters"
 import { FeedAnnouncementSection } from "@/components/main/dashboard/layout/dashboard-feed/feed-announcement-section"
@@ -18,7 +19,7 @@ import type {
   DashboardFiltersState,
   DashboardFiltersHandlers,
 } from "@/components/main/dashboard/filters/hooks/use-dashboard-filters"
-import type { Athlete, Role, Announcement, CheckinItem } from "@/types/dashboard"
+import type { Athlete, Role, Announcement, CheckinItem, TrainingSlot } from "@/types/dashboard"
 
 interface DashboardFeedProps {
   user: User
@@ -40,7 +41,7 @@ interface DashboardFeedProps {
   checkins: CheckinItem[]
   announcementLoading?: boolean
   checkinsLoading?: boolean
-  trainingScheduleTemplate?: { dayOfWeek: number; time: string }[]
+  trainingScheduleTemplate?: TrainingSlot[]
   onMutateAnnouncement: () => void
   onMutateCheckins: () => void
   onMutateLogs?: () => void
@@ -83,15 +84,16 @@ export function DashboardFeed({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const loadingTriggeredRef = useRef(false)
 
-  // For coaches: start with checklist visible, hide once onboarding confirmed done
-  const [coachOnboardingDone, setCoachOnboardingDone] = useState(
-    user.role !== "coach",
-  )
+  // Show onboarding only when the coach heads their active group, or has no group yet.
+  // Co-coaches (regardless of isAssistant flag) don't need to set up someone else's group.
+  const isHeadOfActiveGroup =
+    user.role === "coach" && (!user.activeGroupId || user.id === user.group?.headCoachId)
+  const [coachOnboardingDone, setCoachOnboardingDone] = useState(!isHeadOfActiveGroup)
 
   useEffect(() => {
-    if (user.role !== "coach") return
-    setCoachOnboardingDone(isCoachOnboardingDone())
-  }, [user.role])
+    if (!isHeadOfActiveGroup) return
+    setCoachOnboardingDone(isCoachOnboardingDone(user.id))
+  }, [isHeadOfActiveGroup, user.id])
 
   useEffect(() => {
     if (!isLoadingMore) loadingTriggeredRef.current = false
@@ -150,6 +152,7 @@ export function DashboardFeed({
           loading={announcementLoading}
           announcements={announcements}
           isCoach={user.role === "coach"}
+          currentUserId={user.id}
           onMutate={onMutateAnnouncement}
         />
 
@@ -186,6 +189,7 @@ export function DashboardFeed({
         <div className="flex flex-col gap-3">
           {!coachOnboardingDone ? (
             <CoachOnboardingChecklist
+              userId={user.id}
               hasGroup={!!user.activeGroupId}
               onComplete={() => setCoachOnboardingDone(true)}
             />

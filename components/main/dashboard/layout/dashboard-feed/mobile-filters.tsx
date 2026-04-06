@@ -1,11 +1,13 @@
 "use client"
 
 import { RotateCcw } from "lucide-react"
-import { TagFilter } from "@/components/main/dashboard/filters/tag-filter"
-import { DateFilter } from "@/components/main/dashboard/filters/date-filter"
-import { AthleteFilter } from "@/components/main/dashboard/filters/athlete-filter"
-import { RoleFilter } from "@/components/main/dashboard/filters/role-filter"
-import { ReviewStatusFilter } from "@/components/main/dashboard/filters/review-status-filter"
+import {
+  TagFilter,
+  DateFilter,
+  AthleteFilter,
+  RoleFilter,
+  ReviewStatusFilter,
+} from "@/components/main/dashboard/filters"
 import type { User } from "@/hooks/use-auth"
 import type {
   DashboardFiltersState,

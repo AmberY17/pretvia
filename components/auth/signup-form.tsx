@@ -16,13 +16,14 @@ import { GoogleAuthButton } from "@/components/auth/google-auth-button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type Role = "athlete" | "coach";
+type SignupRole = "athlete" | "coach";
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void;
+  betaMode: boolean;
 }
 
-export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
+export function SignUpForm({ onSwitchToLogin, betaMode }: SignUpFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -32,7 +33,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [dateOfBirth] = useState("");
-  const [role, setRole] = useState<Role>(
+  const [role, setRole] = useState<SignupRole>(
     searchParams.get("signup") === "coach" ? "coach" : "athlete"
   );
   const [loading, setLoading] = useState(false);
@@ -160,8 +161,8 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
             )}
           </motion.div>
 
-          {/* Coach: no token — waitlist gate */}
-          {isCoach && !waitlistToken && (
+          {/* Coach: beta mode, no token — waitlist gate */}
+          {isCoach && betaMode && !waitlistToken && (
             <>
               <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                 Pretvia is currently invite-only for coaches. Join the waitlist to
@@ -178,8 +179,8 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
             </>
           )}
 
-          {/* Coach: valid token — full signup form */}
-          {isCoach && !!waitlistToken && (
+          {/* Coach: open signup (beta off) or valid token — full signup form */}
+          {isCoach && (!betaMode || !!waitlistToken) && (
             <>
               <motion.div
                 initial={{ opacity: 0, height: 0 }}

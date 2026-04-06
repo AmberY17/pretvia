@@ -6,6 +6,7 @@ import { ObjectId } from "mongodb"
 import type { Db, Document } from "mongodb"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
 import { sendUnder13ChildVerificationEmail } from "@/lib/resend"
+import type { TrainingSlot } from "@/types/dashboard"
 
 function getDisplayName(firstName: string, lastName: string): string {
   return [firstName?.trim(), lastName?.trim()].filter(Boolean).join(" ") || "User"
@@ -157,7 +158,7 @@ export async function handleUnder13ParentInvite(
       db,
       athleteId,
       groupId,
-      group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[],
+      group.trainingScheduleTemplate as TrainingSlot[],
     )
   }
 
@@ -280,7 +281,7 @@ export async function handleAthleteInvite(
           db,
           userId,
           groupId,
-          group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[],
+          group.trainingScheduleTemplate as TrainingSlot[],
         )
       }
     }
@@ -321,7 +322,7 @@ export async function handleAthleteInvite(
         db,
         userId,
         groupId,
-        group.trainingScheduleTemplate as { dayOfWeek: number; time: string }[],
+        group.trainingScheduleTemplate as TrainingSlot[],
       )
     }
   } else {
@@ -360,6 +361,137 @@ export async function handleAthleteInvite(
     redirect: "/dashboard",
     user: { id: userId, role: "athlete", activeGroupId: groupId },
   })
+}
+
+export async function handleCoachInvite(
+  db: Db,
+  invite: Document,
+  group: Document,
+  body: Record<string, unknown>,
+  token: string,
+): Promise<NextResponse> {
+  const invEmail = (invite.email as string).toLowerCase()
+  const groupId = invite.groupId as string
+  const { firstName, lastName, email, password, createAccount } = body as Record<string, unknown>
+
+  const emailNorm = ((email as string) ?? invEmail).trim().toLowerCase()
+  if (emailNorm !== invEmail) {
+    return NextResponse.json({ error: "Email must match the invite" }, { status: 400 })
+  }
+
+  const existing = await db.collection("users").findOne({ email: emailNorm })
+
+  if (existing) {
+    if (existing.role !== "coach") {
+      return NextResponse.json(
+        { error: "An account with this email already exists with a different role" },
+        { status: 400 }
+      )
+    }
+
+    const currentSession = await getSession()
+    if (!currentSession || currentSession.email?.toLowerCase() !== emailNorm) {
+      return NextResponse.json(
+        { error: "Please sign in first with the invite email" },
+        { status: 401 }
+      )
+    }
+
+    const update: Record<string, unknown> = {
+      $addToSet: { groupIds: groupId, coachIds: groupId },
+    }
+    if (!existing.activeGroupId) {
+      update.$set = { activeGroupId: groupId }
+    }
+    // Mark as assistant if they have no groups they head-coach
+    const ownGroups = await db
+      .collection("groups")
+      .countDocuments({ headCoachId: existing._id.toString() })
+    if (ownGroups === 0 && !existing.subscription?.plan) {
+      update.$set = {
+        ...(update.$set as object),
+        "subscription.isAssistant": true,
+        "subscription.plan": "squad",
+      }
+    }
+
+    await db.collection("users").updateOne({ _id: existing._id }, update as never)
+    await db
+      .collection("groups")
+      .updateOne(
+        { _id: new ObjectId(groupId) },
+        { $addToSet: { coachIds: existing._id.toString() } as never }
+      )
+    await db.collection("invites").deleteOne({ token })
+
+    await createSession({
+      userId: existing._id.toString(),
+      email: existing.email,
+      displayName: existing.displayName,
+      role: "coach",
+      activeGroupId: existing.activeGroupId ?? groupId,
+    })
+
+    return NextResponse.json({ success: true, redirect: "/dashboard" })
+  }
+
+  if (!createAccount) {
+    return NextResponse.json(
+      { error: "No account found. Create an account to join." },
+      { status: 400 }
+    )
+  }
+
+  if (!firstName || !lastName || !password) {
+    return NextResponse.json(
+      { error: "First name, last name, and password are required" },
+      { status: 400 }
+    )
+  }
+  if ((password as string).length < 6) {
+    return NextResponse.json(
+      { error: "Password must be at least 6 characters" },
+      { status: 400 }
+    )
+  }
+
+  const displayName = getDisplayName(firstName as string, lastName as string)
+  const hash = await bcrypt.hash(password as string, 12)
+  const result = await db.collection("users").insertOne({
+    email: emailNorm,
+    password: hash,
+    displayName,
+    firstName: (firstName as string).trim(),
+    lastName: (lastName as string).trim(),
+    role: "coach",
+    activeGroupId: groupId,
+    groupIds: [groupId],
+    profileComplete: true,
+    authProvider: "email",
+    emailVerified: true,
+    subscription: { plan: "squad", isAssistant: true, addOnGroups: 0, addOnSeats: 0 },
+    createdAt: new Date(),
+  })
+  const userId = result.insertedId.toString()
+
+  await db
+    .collection("groups")
+    .updateOne(
+      { _id: new ObjectId(groupId) },
+      { $addToSet: { coachIds: userId } as never }
+    )
+
+  await db.collection("invites").deleteOne({ token })
+
+  await createSession({
+    userId,
+    email: emailNorm,
+    displayName,
+    role: "coach",
+    activeGroupId: groupId,
+  })
+
+  return NextResponse.json({ success: true, redirect: "/dashboard" })
 }
 
 export async function handleParentInvite(

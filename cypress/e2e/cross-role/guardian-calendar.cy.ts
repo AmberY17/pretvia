@@ -2,6 +2,10 @@ describe("Cross-Role: Guardian Sees Athlete Log on Calendar", () => {
   let logId: string;
 
   before(() => {
+    // cleanupTestData (global before) deletes "E2E Test Group" — re-seed so the athlete
+    // has a valid group when creating the log, and the guardian sees the correct pairing.
+    cy.exec("pnpm seed:test", { timeout: 30000 });
+    cy.then(() => Cypress.session.clearAllSavedSessions());
     cy.loginAsAthlete();
     cy.request("/api/logs").then((res) => {
       (res.body.logs ?? [])
