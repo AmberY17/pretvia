@@ -11,28 +11,26 @@ const options: Record<string, unknown> = {
   autoSelectFamily: false,
   serverSelectionTimeoutMS: 15000,
   connectTimeoutMS: 15000,
-  maxPoolSize: 150,
-  minPoolSize: 50,
+  // Serverless: each function instance shares one pool; multiple instances
+  // run concurrently, so keep per-instance pool small to avoid exhausting
+  // Atlas connection limits.
+  maxPoolSize: 10,
+  minPoolSize: 0,
   waitQueueTimeoutMS: 5000,
 };
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
 
 const globalWithMongo = global as typeof globalThis & {
   _mongoClientPromise?: Promise<MongoClient>;
 };
 
-if (process.env.NODE_ENV === "development") {
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
-  }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+// Cache the client promise on the global object so it is reused across
+// requests within the same function instance (both dev and production).
+if (!globalWithMongo._mongoClientPromise) {
+  const client = new MongoClient(uri, options);
+  globalWithMongo._mongoClientPromise = client.connect();
 }
+
+const clientPromise: Promise<MongoClient> = globalWithMongo._mongoClientPromise;
 
 export default clientPromise;
 
