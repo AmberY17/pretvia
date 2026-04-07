@@ -315,3 +315,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Sonner close button: ensure X icon is visible against custom toast backgrounds */
+[data-sonner-toast] [data-close-button] {
+  color: hsl(var(--foreground)) !important;
+  background: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+}

@@ -294,6 +294,34 @@ export async function POST(
       )
     }
 
+    const existingAthlete = await db.collection("users").findOne({ email: athlete })
+    if (existingAthlete) {
+      const memberGroupIds: string[] = Array.isArray(existingAthlete.groupIds)
+        ? existingAthlete.groupIds
+        : []
+      if (existingAthlete.groupId && !memberGroupIds.includes(existingAthlete.groupId as string))
+        memberGroupIds.push(existingAthlete.groupId as string)
+      if (memberGroupIds.includes(groupId)) {
+        return NextResponse.json(
+          { error: "This athlete is already a member of this group" },
+          { status: 409 }
+        )
+      }
+    }
+
+    const existingAthleteInvite = await db.collection("invites").findOne({
+      groupId,
+      email: athlete,
+      type: "athlete",
+      expiresAt: { $gt: new Date() },
+    })
+    if (existingAthleteInvite) {
+      return NextResponse.json(
+        { error: "An active invite already exists for this email" },
+        { status: 409 }
+      )
+    }
+
     const results: { sent: string[]; errors: string[] } = { sent: [], errors: [] }
 
     const athleteToken = randomUUID()
