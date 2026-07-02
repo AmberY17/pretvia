@@ -50,18 +50,15 @@ return NextResponse.json("not found", { status: 404 })
 
 ## Dual Fields Gotcha
 
-Users and groups use both singular and array relationship fields:
-- `groupId` / `groupIds` on users
-- `coachId` / `coachIds` on groups
-
-Always handle both when querying:
-```typescript
-const groups = Array.isArray(user.groupIds) ? user.groupIds : []
-if (user.groupId && !groups.includes(user.groupId)) groups.push(user.groupId)
-```
+See "Key Gotcha: Dual/Overlapping Fields" and "DB Audit Findings" in the root `CLAUDE.md`. Short version:
+- **users:** `groupIds` + `activeGroupId`; legacy singular `groupId` is read-only compat in one spot (pending migration M1)
+- **groups:** `headCoachId` (owner) + `coachIds` (coaches) — head coach not guaranteed to be in `coachIds`; check both, compare via `.toString()` (types vary)
+- Membership lives in BOTH `users.groupIds` and `groupMemberships` — keep in sync
 
 `canManageGroup()` already handles this for coach checks.
 
 ## DB Collections
 
-`users`, `groups`, `logs`, `comments`, `checkins`, `announcements`, `tags`, `invites`, `skippedDays`, `attendance`, `guardianLinks`, `groupMemberships`
+`users`, `groups`, `logs`, `comments`, `checkins`, `announcements`, `invites`, `skippedDays`, `attendance`, `guardianLinks`, `groupMemberships`, `log_reviews`, `comment_reads`, `waitlist`, `pending_signups`, `password_reset_tokens`, `pending_under13_child`, `guardianPendingAthletes`
+
+No `tags` collection — tags are aggregated from `logs.tags`. Indexes: `lib/ensure-indexes.ts`.
