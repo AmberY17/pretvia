@@ -57,6 +57,8 @@ See "Key Gotcha: Dual/Overlapping Fields" and "DB Audit Findings" in the root `C
 
 `canManageGroup()` already handles this for coach checks.
 
+See "API Audit Findings (2026-07-07)" in the root `CLAUDE.md` for known open route-layer issues (authz gaps, visibility-model leaks, membership desync, input validation).
+
 ## DB Collections
 
 `users`, `groups`, `logs`, `comments`, `checkins`, `announcements`, `invites`, `skippedDays`, `attendance`, `guardianLinks`, `groupMemberships`, `log_reviews`, `comment_reads`, `waitlist`, `pending_signups`, `password_reset_tokens`, `pending_under13_child`, `guardianPendingAthletes`
