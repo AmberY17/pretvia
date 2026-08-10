@@ -53,6 +53,32 @@ export async function PATCH(
       )
     }
 
+    // `canManageGroup` passes for any coach of the group, so without this an
+    // assistant coach could evict or transfer the head coach — bypassing the
+    // head-coach-only gate that DELETE /coaches/[coachId] enforces.
+    if (action === "remove" || action === "transfer") {
+      const groupOid = safeObjectId(groupId)
+      if (!groupOid) {
+        return NextResponse.json({ error: "Invalid group ID" }, { status: 400 })
+      }
+      const group = await db.collection("groups").findOne(
+        { _id: groupOid },
+        { projection: { headCoachId: 1 } }
+      )
+      if (group?.headCoachId?.toString() === userId) {
+        return NextResponse.json(
+          { error: "The head coach cannot be removed from their own group" },
+          { status: 403 }
+        )
+      }
+      if (targetUser.role === "coach") {
+        return NextResponse.json(
+          { error: "Remove coaches from the group's coach list instead" },
+          { status: 403 }
+        )
+      }
+    }
+
     if (action === "remove") {
       const updatedGroupIds = (targetUser.groupIds ?? []).filter(
         (id: string) => id !== groupId

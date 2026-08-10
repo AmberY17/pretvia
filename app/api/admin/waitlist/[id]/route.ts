@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { getDb } from "@/lib/mongodb"
 import { safeObjectId } from "@/lib/objectid"
-
-async function verifyAdminSession(): Promise<boolean> {
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) return false
-  const cookieStore = await cookies()
-  return cookieStore.get("admin_session")?.value === adminSecret
-}
+import { verifyAdminSession } from "@/lib/admin-auth"
 
 export async function DELETE(
   _req: Request,

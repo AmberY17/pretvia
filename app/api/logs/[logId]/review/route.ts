@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
+import { canManageGroup } from "@/lib/api-auth"
+import { isLogVisibleToCoach } from "@/lib/log-filters"
 
 const VALID_STATUSES = ["pending", "reviewed", "revisit"] as const
 
@@ -59,38 +61,53 @@ export async function PATCH(
       return NextResponse.json({ error: "Log not found" }, { status: 404 })
     }
 
-    const visibility = log.visibility || (log.isGroup ? "coach" : "private")
-    if (visibility !== "coach") {
+    if (!isLogVisibleToCoach(log)) {
       return NextResponse.json(
         { error: "Can only review coach-shared logs" },
         { status: 403 }
       )
     }
 
-    const coachGroupIds = [
-      ...(currentUser.activeGroupId ? [currentUser.activeGroupId] : []),
-      ...(Array.isArray(currentUser.groupIds) ? currentUser.groupIds : []),
-    ].filter((v, i, arr) => arr.indexOf(v) === i)
+    if (log.userId !== session.userId) {
+      // Preferred check: the caller coaches the log's own group.
+      let authorized =
+        !!log.groupId &&
+        (await canManageGroup(db, session.userId, log.groupId.toString()))
 
-    if (coachGroupIds.length === 0) {
-      return NextResponse.json(
-        { error: "Coach must belong to a group" },
-        { status: 403 }
-      )
-    }
+      // Fallback: the owner belongs to a group the caller coaches. Needed for
+      // logs written before `groupId` existed, and for logs whose group has since
+      // been deleted — group deletion leaves `logs.groupId` dangling (DB-audit
+      // bug 7), and those logs must stay reviewable. Note this asks whether the
+      // caller *coaches* the group, not merely belongs to it.
+      if (!authorized) {
+        const coachedGroups = await db
+          .collection("groups")
+          .find({
+            $or: [{ headCoachId: session.userId }, { coachIds: session.userId }],
+          })
+          .project({ _id: 1 })
+          .toArray()
+        const coachedGroupIds = coachedGroups.map((g) => g._id.toString())
 
-    const groupMembers = await db
-      .collection("users")
-      .find({ groupIds: { $in: coachGroupIds } })
-      .project({ _id: 1 })
-      .toArray()
-    const memberIds = groupMembers.map((m) => m._id.toString())
+        const owner = await db
+          .collection("users")
+          .findOne(
+            { _id: new ObjectId(log.userId) },
+            { projection: { groupIds: 1 } }
+          )
+        const ownerGroupIds: string[] = Array.isArray(owner?.groupIds)
+          ? owner.groupIds.flatMap((id: unknown) => (id == null ? [] : [id.toString()]))
+          : []
 
-    if (log.userId !== session.userId && !memberIds.includes(log.userId)) {
-      return NextResponse.json(
-        { error: "Log is not from a member of your group" },
-        { status: 403 }
-      )
+        authorized = ownerGroupIds.some((id) => coachedGroupIds.includes(id))
+      }
+
+      if (!authorized) {
+        return NextResponse.json(
+          { error: "Log is not from a member of a group you coach" },
+          { status: 403 }
+        )
+      }
     }
 
     await db.collection("log_reviews").updateOne(

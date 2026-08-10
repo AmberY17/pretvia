@@ -4,6 +4,7 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { apiRateLimiter, getIp } from "@/lib/rate-limit"
+import { isLogVisibleToCoach } from "@/lib/log-filters"
 
 // GET: fetch comments for a specific log
 // Only the log owner and coaches in the same group can view comments
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     // Verify the log exists
     const log = await db.collection("logs").findOne(
       { _id: logOid },
-      { projection: { userId: 1, visibility: 1 } }
+      { projection: { userId: 1, visibility: 1, isGroup: 1 } }
     )
 
     if (!log) {
@@ -61,6 +62,12 @@ export async function GET(req: Request) {
 
     // Only log owner or a coach in the same group can see comments
     if (!isLogOwner && !isCoach) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // A private log is owner-only — coaches never see it in the feed, so they
+    // must not reach its comment thread either.
+    if (!isLogOwner && !isLogVisibleToCoach(log)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -217,6 +224,14 @@ export async function POST(req: Request) {
     if (!isLogOwner && !isCoach) {
       return NextResponse.json(
         { error: "Only the log owner or a coach can comment" },
+        { status: 403 }
+      )
+    }
+
+    // A private log is owner-only — see the GET handler.
+    if (!isLogOwner && !isLogVisibleToCoach(log)) {
+      return NextResponse.json(
+        { error: "You can only comment on logs shared with coaches" },
         { status: 403 }
       )
     }

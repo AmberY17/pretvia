@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { randomUUID } from "crypto"
 import { getDb } from "@/lib/mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { sendWaitlistApprovalEmail } from "@/lib/resend"
+import { verifyAdminSession } from "@/lib/admin-auth"
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-
-async function verifyAdminSession(): Promise<boolean> {
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) return false
-  const cookieStore = await cookies()
-  return cookieStore.get("admin_session")?.value === adminSecret
-}
 
 export async function POST(
   _req: Request,

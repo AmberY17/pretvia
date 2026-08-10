@@ -1,15 +1,8 @@
-import { cookies } from "next/headers"
+import { verifyAdminSession } from "@/lib/admin-auth"
 import { AdminLoginPage } from "@/components/admin/admin-login-page"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const adminSecret = process.env.ADMIN_SECRET
-  if (!adminSecret) {
-    return <AdminLoginPage />
-  }
-
-  const cookieStore = await cookies()
-  const session = cookieStore.get("admin_session")?.value
-  if (session !== adminSecret) {
+  if (!(await verifyAdminSession())) {
     return <AdminLoginPage />
   }
 

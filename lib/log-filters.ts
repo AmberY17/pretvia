@@ -3,6 +3,31 @@ import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 
 /**
+ * The canonical rule for "a coach may see this athlete's log".
+ *
+ * A log is coach-visible when it is explicitly `visibility: "coach"`, or when it
+ * predates the visibility field and was a group log. Anything else — notably
+ * `visibility: "private"` — is owner-only.
+ *
+ * This is the single source of truth: the feed query uses it as a Mongo
+ * condition, and per-document checks use `isLogVisibleToCoach()` below. Do not
+ * re-derive it inline.
+ */
+export const COACH_VISIBILITY_CONDITION = {
+  $or: [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }],
+} as const
+
+/**
+ * In-memory counterpart to `COACH_VISIBILITY_CONDITION`, for routes that have
+ * already loaded a single log document. Requires `visibility` and `isGroup` to
+ * be present in the projection.
+ */
+export function isLogVisibleToCoach(log: Record<string, unknown>): boolean {
+  if (log.visibility === "coach") return true
+  return log.visibility === undefined && log.isGroup === true
+}
+
+/**
  * Build the base visibility filter for log queries.
  * Determines which logs a user can see based on their role and group membership.
  */
@@ -41,9 +66,7 @@ export async function buildVisibilityFilter(
     memberIds = memberIds.filter((id) => roleMemberIds.includes(id))
   }
 
-  const coachVisibilityCondition = {
-    $or: [{ visibility: "coach" }, { visibility: { $exists: false }, isGroup: true }],
-  }
+  const coachVisibilityCondition = COACH_VISIBILITY_CONDITION
 
   // Scope athlete logs to the active group, with backward-compat for pre-migration
   // logs that have no groupId field.

@@ -87,13 +87,20 @@ export async function GET(req: Request) {
     }
 
     const userInfo: GoogleUserInfo = await userInfoRes.json()
-    const { id: googleId, email, name } = userInfo
+    const { id: googleId, email, name, verified_email: verifiedEmail } = userInfo
 
     if (!email) {
       return NextResponse.redirect(`${APP_URL}/auth?error=no_email`)
     }
 
-    const normalizedEmail = email.toLowerCase()
+    // An unverified Google address proves nothing about who controls the mailbox.
+    // Accepting one would let an attacker link to — and sign in as — any existing
+    // password account with the same address.
+    if (verifiedEmail !== true) {
+      return NextResponse.redirect(`${APP_URL}/auth?error=email_not_verified`)
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
     const db = await getDb()
 
     let user = await db

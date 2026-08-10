@@ -121,13 +121,24 @@ export async function GET(req: Request) {
     const user = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
-    const isCoachOfGroup =
+    // Types vary across the codebase (string vs ObjectId) — compare via toString().
+    const isMemberOfGroup =
+      Array.isArray(user?.groupIds) &&
+      user.groupIds.some((id: unknown) => id?.toString() === groupId)
+    const coachesGroup =
       user?.role === "coach" &&
-      group &&
+      !!group &&
       ((Array.isArray(group.coachIds) &&
-        group.coachIds.includes(session.userId)) ||
-        group.headCoachId === session.userId ||
-        (Array.isArray(user?.groupIds) && user.groupIds.includes(groupId)))
+        group.coachIds.some((id: unknown) => id?.toString() === session.userId)) ||
+        group.headCoachId?.toString() === session.userId)
+
+    // The roster carries email, real names and dateOfBirth — only members and
+    // coaches of this group may read it.
+    if (!isMemberOfGroup && !coachesGroup) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const isCoachOfGroup = coachesGroup || (user?.role === "coach" && isMemberOfGroup)
 
     const members = await db
       .collection("users")
