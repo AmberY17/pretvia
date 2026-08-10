@@ -2,6 +2,7 @@ import type { Db, ObjectId as ObjectIdType } from "mongodb"
 import { ObjectId } from "mongodb"
 import { createSession, type SessionPayload } from "@/lib/auth"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
+import { safeObjectId } from "@/lib/objectid"
 import type { TrainingSlot } from "@/types/dashboard"
 
 /**
@@ -80,6 +81,91 @@ export async function insertGroupWithUniqueCode(
   }
   // 32^6 codes; five collisions in a row means something is wrong, not unlucky.
   throw new Error("Could not allocate a unique group code")
+}
+
+/**
+ * Membership lives in three places that must move together:
+ *
+ *   - `users.groupIds`        — member lists and log visibility (`lib/log-filters.ts`)
+ *   - `groupMemberships`      — per-group roles
+ *   - `groups.coachIds`       — who may coach the group (`canManageGroup`)
+ *
+ * Every add/remove goes through one of the helpers below. Writing only some of
+ * them is what produced the drift these fix: a coach added without a
+ * `groupMemberships` row had no roles, and a coach removed without pulling
+ * `coachIds` kept passing `canManageGroup` for a group they had left.
+ *
+ * `addUserToGroup` covers the *self-service* case (the session holder joining,
+ * which also re-issues their session); these two cover a coach acting on
+ * someone else.
+ */
+
+/** Ids are stored as strings in some places and ObjectIds in others. */
+function idForms(id: string): unknown[] {
+  const oid = safeObjectId(id)
+  return oid ? [id, oid] : [id]
+}
+
+/**
+ * Add an existing user to a group as a coach, writing all three stores.
+ */
+export async function addCoachToGroup(
+  db: Db,
+  coachId: string,
+  groupId: string,
+  groupOid: ObjectIdType,
+): Promise<void> {
+  await db
+    .collection("groups")
+    .updateOne({ _id: groupOid }, { $addToSet: { coachIds: coachId } } as never)
+
+  await db
+    .collection("users")
+    .updateOne({ _id: new ObjectId(coachId) }, { $addToSet: { groupIds: groupId } } as never)
+
+  await db.collection("groupMemberships").updateOne(
+    { userId: coachId, groupId },
+    { $setOnInsert: { userId: coachId, groupId, roleIds: [] } },
+    { upsert: true },
+  )
+}
+
+/**
+ * Remove a user from a group, writing all three stores.
+ *
+ * `coachIds` is pulled unconditionally — it is a no-op for an athlete, and doing
+ * it always means no caller has to remember whether the target is a coach.
+ * If the group being left was the user's active one, the active group moves to
+ * another of their groups (or null, which the join/create flow handles).
+ */
+export async function removeUserFromGroup(
+  db: Db,
+  userId: string,
+  groupId: string,
+  groupOid: ObjectIdType,
+): Promise<void> {
+  const userOid = new ObjectId(userId)
+
+  await db
+    .collection("groups")
+    .updateOne({ _id: groupOid }, { $pull: { coachIds: { $in: idForms(userId) } } } as never)
+
+  await db.collection("groupMemberships").deleteOne({ userId, groupId })
+
+  const user = await db
+    .collection("users")
+    .findOne({ _id: userOid }, { projection: { groupIds: 1, activeGroupId: 1 } })
+
+  const remaining = (Array.isArray(user?.groupIds) ? user.groupIds : []).filter(
+    (id: string) => id !== groupId,
+  )
+
+  const update: Record<string, unknown> = { $set: { groupIds: remaining } }
+  if (user?.activeGroupId === groupId) {
+    ;(update.$set as Record<string, unknown>).activeGroupId = remaining[0] ?? null
+  }
+
+  await db.collection("users").updateOne({ _id: userOid }, update)
 }
 
 /**

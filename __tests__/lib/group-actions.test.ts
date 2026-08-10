@@ -17,7 +17,13 @@ vi.mock("@/lib/group-training-schedule", () => ({
   applyGroupTrainingScheduleToUser: vi.fn(),
 }))
 
-import { ensureGroupIds, insertGroupWithUniqueCode, addUserToGroup } from "@/lib/group-actions"
+import {
+  ensureGroupIds,
+  insertGroupWithUniqueCode,
+  addUserToGroup,
+  addCoachToGroup,
+  removeUserFromGroup,
+} from "@/lib/group-actions"
 import { createSession } from "@/lib/auth"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
 
@@ -212,5 +218,102 @@ describe("addUserToGroup", () => {
     const { db } = createMockDb({})
     await addUserToGroup(db, session as never, "g1", { _id: "g1" } as never, "athlete")
     expect(createSession).toHaveBeenCalledWith({ ...session, activeGroupId: "g1" })
+  })
+})
+
+/**
+ * Membership lives in three stores that must move together: users.groupIds,
+ * the groupMemberships collection, and groups.coachIds. The bugs these helpers
+ * fix were all "wrote two of the three".
+ */
+describe("addCoachToGroup / removeUserFromGroup", () => {
+  const COACH_ID = "507f1f77bcf86cd799439011"
+  const GROUP_ID = "507f1f77bcf86cd799439012"
+  const OTHER_GROUP = "507f1f77bcf86cd799439013"
+
+  type Op = { collection: string; op: string; filter: unknown; update?: unknown }
+
+  function makeDb(user: Record<string, unknown> | null) {
+    const ops: Op[] = []
+    const db = {
+      collection: (name: string) => ({
+        findOne: () => Promise.resolve(user),
+        updateOne: (filter: unknown, update: unknown) => {
+          ops.push({ collection: name, op: "updateOne", filter, update })
+          return Promise.resolve({ modifiedCount: 1 })
+        },
+        deleteOne: (filter: unknown) => {
+          ops.push({ collection: name, op: "deleteOne", filter })
+          return Promise.resolve({ deletedCount: 1 })
+        },
+      }),
+    } as never
+    return { db, ops }
+  }
+
+  const on = (ops: Op[], collection: string) => ops.filter((o) => o.collection === collection)
+  const groupOid = { toString: () => GROUP_ID } as never
+
+  it("addCoachToGroup writes all three stores", async () => {
+    // Previously this skipped groupMemberships, leaving the coach with no roles.
+    const { db, ops } = makeDb(null)
+    await addCoachToGroup(db, COACH_ID, GROUP_ID, groupOid)
+
+    expect(on(ops, "groups")[0].update).toEqual({ $addToSet: { coachIds: COACH_ID } })
+    expect(on(ops, "users")[0].update).toEqual({ $addToSet: { groupIds: GROUP_ID } })
+    const membership = on(ops, "groupMemberships")[0]
+    expect(membership.filter).toEqual({ userId: COACH_ID, groupId: GROUP_ID })
+  })
+
+  it("removeUserFromGroup writes all three stores", async () => {
+    // Previously the members route left coachIds set, so a removed coach kept
+    // passing canManageGroup for a group they had left.
+    const { db, ops } = makeDb({ groupIds: [GROUP_ID, OTHER_GROUP], activeGroupId: OTHER_GROUP })
+    await removeUserFromGroup(db, COACH_ID, GROUP_ID, groupOid)
+
+    expect(on(ops, "groups")[0].update).toHaveProperty("$pull")
+    expect(on(ops, "groupMemberships")[0].op).toBe("deleteOne")
+    expect(on(ops, "users")[0].update).toEqual({ $set: { groupIds: [OTHER_GROUP] } })
+  })
+
+  it("pulls coachIds in both string and ObjectId form", async () => {
+    const { db, ops } = makeDb({ groupIds: [], activeGroupId: null })
+    await removeUserFromGroup(db, COACH_ID, GROUP_ID, groupOid)
+
+    const pull = on(ops, "groups")[0].update as { $pull: { coachIds: { $in: unknown[] } } }
+    expect(pull.$pull.coachIds.$in).toHaveLength(2)
+    expect(pull.$pull.coachIds.$in.map(String)).toEqual([COACH_ID, COACH_ID])
+  })
+
+  it("moves activeGroupId to another group when the active one is left", async () => {
+    const { db, ops } = makeDb({ groupIds: [GROUP_ID, OTHER_GROUP], activeGroupId: GROUP_ID })
+    await removeUserFromGroup(db, COACH_ID, GROUP_ID, groupOid)
+
+    expect(on(ops, "users")[0].update).toEqual({
+      $set: { groupIds: [OTHER_GROUP], activeGroupId: OTHER_GROUP },
+    })
+  })
+
+  it("nulls activeGroupId when no groups remain", async () => {
+    const { db, ops } = makeDb({ groupIds: [GROUP_ID], activeGroupId: GROUP_ID })
+    await removeUserFromGroup(db, COACH_ID, GROUP_ID, groupOid)
+
+    expect(on(ops, "users")[0].update).toEqual({
+      $set: { groupIds: [], activeGroupId: null },
+    })
+  })
+
+  it("leaves an unrelated activeGroupId alone", async () => {
+    const { db, ops } = makeDb({ groupIds: [GROUP_ID, OTHER_GROUP], activeGroupId: OTHER_GROUP })
+    await removeUserFromGroup(db, COACH_ID, GROUP_ID, groupOid)
+
+    expect((on(ops, "users")[0].update as { $set: Record<string, unknown> }).$set)
+      .not.toHaveProperty("activeGroupId")
+  })
+
+  it("is safe for a user with no groupIds array", async () => {
+    const { db, ops } = makeDb({})
+    await removeUserFromGroup(db, COACH_ID, GROUP_ID, groupOid)
+    expect(on(ops, "users")[0].update).toEqual({ $set: { groupIds: [] } })
   })
 })

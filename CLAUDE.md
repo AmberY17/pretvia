@@ -75,6 +75,20 @@ Full audit of schemas/indexes/query patterns. Not yet fixed; ordered by priority
 - **M3:** Backfill `groupMemberships` from `users.groupIds` and make it the single membership authority; derive or drop `users.groupIds`. Highest risk — touches member lists + log visibility.
 - ~~Wrap the account-deletion cascade (~15 sequential writes, no transaction) in a multi-document transaction.~~ **DONE (2026-08-10)** — the cascade runs inside `session.withTransaction()`. Standalone mongod (no replica set) can't do transactions, so a "transactions unsupported" error — and *only* that error — falls back to sequential writes with a warning; any other failure still surfaces as a 500 rather than silently replaying the cascade unwrapped. Covered by `__tests__/api/account-deletion-cascade.test.ts`.
 
+### E2E test-data invariants
+
+`cy.task("cleanupTestData")` (`cypress.config.ts`) runs once before every Cypress
+run and deletes groups named `/^E2E /`. Two rules it must keep:
+
+- **Never delete the seeded fixture group** (code `E2ETST`, from `scripts/seed-test-users.ts`).
+  The seeded coach head-coaches it and the seeded athlete belongs to it. Deleting it left both
+  accounts pointing at a group that no longer existed, so the coach head-coached nothing — which
+  silently broke the log-review authorization tests, since the review route (correctly) requires the
+  caller to actually coach the log's group.
+- **Clear what it deletes.** Removing a group must also `$pull` it from `users.groupIds` and
+  `$unset` a matching `activeGroupId` — the same cleanup the app performs (DB-audit 7). Note
+  `groupMemberships.groupId` is a **string**, so it must be matched with string ids, not ObjectIds.
+
 ### Migrations
 
 Schema/data migrations live in `scripts/migrations/` and run through the harness in
@@ -112,8 +126,8 @@ Full audit of `app/api/` route handlers (auth/authz boundaries, token handling, 
 8. ~~**Head coach can leave and orphan their group.**~~ **DONE (2026-08-10)** — `handleLeave` now 400s when the caller is the group's `headCoachId`, telling them to transfer ownership or delete the group first. **Open follow-up (found 2026-08-10):** that error message is a dead end — there is no delete-group endpoint anywhere in `app/api/`. The only code path that deletes a group is the account-deletion cascade, so a head coach's sole route to removing a group is deleting their entire account. Either add a `DELETE /api/groups/[groupId]` (head-coach-gated, reusing the cascade's group cleanup incl. the DB-7 member fixup) or reword the message to say transfer-only.
 
 **Medium — membership dual-field drift** (`users.groupIds` ⇄ `groupMemberships` ⇄ `groups.coachIds`; interacts with migrations M2/M3 — sequence together)
-9. **Coach add/remove desyncs the three membership stores.** Adding a coach (`coaches/route.ts:63-70`) updates `coachIds` + `groupIds` but never inserts a `groupMemberships` doc. Removing via `members/route.ts` `remove` deletes `groupMemberships` + pulls `groupIds` but never pulls `coachIds` (removed coach still passes `canManageGroup`); removing via `coaches/[coachId]` DELETE pulls `coachIds` + `groupIds` but never deletes the `groupMemberships` doc. Fix: each add/remove touches all three stores.
-10. **`handleCoachInvite` writes a bogus `coachIds` onto the user doc.** `redeem/type-handlers.ts:305-307` does `$addToSet: { groupIds, coachIds: groupId }` on the *user* — `coachIds` is a group-only field. Fix: drop `coachIds` from the user update (correct group-side update already at `:324-329`).
+9. ~~**Coach add/remove desyncs the three membership stores.**~~ **DONE (2026-08-10)** — two helpers in `lib/group-actions.ts` are now the only way membership changes: `addCoachToGroup()` and `removeUserFromGroup()`, each writing **all three** stores (`users.groupIds`, `groupMemberships`, `groups.coachIds`). `removeUserFromGroup` pulls `coachIds` unconditionally (a no-op for athletes, so no caller has to know the target's role), matches both the string and ObjectId forms of the id, and moves `activeGroupId` to another of the user's groups when the one being left was active. All add/remove sites route through them: `coaches/route.ts` POST, `coaches/[coachId]` DELETE, and `members/route.ts` `remove`/`transfer`. `addUserToGroup()` remains the self-service counterpart (session holder joining; it also re-issues the session).
+10. ~~**`handleCoachInvite` writes a bogus `coachIds` onto the user doc.**~~ **DONE (2026-08-10)** — dropped from the user update; the correct group-side `$addToSet: { coachIds }` was already there.
 
 **Medium — races & input validation** (12, 13 share the unique-index + upsert remedy of DB-audit bugs 3, 4)
 11. ~~**Roles CRUD is a lost-update race.**~~ **DONE (2026-08-10)** — POST uses `$push`, PATCH a positional `roles.$.name` update matched on `roles.id`, DELETE a `$pull`. No handler reads-then-rewrites the array, so concurrent co-coach edits no longer clobber each other; `matchedCount`/`modifiedCount` drive the 404s. The route also gained `safeObjectId` guards (part of API-17). Covered by `__tests__/api/group-roles-atomicity.test.ts`.
@@ -129,7 +143,7 @@ Full audit of `app/api/` route handlers (auth/authz boundaries, token handling, 
 **Low — hardening / consistency**
 16. **`activeGroupId` read but not projected** in guardian calendar (`guardian/calendar/route.ts:64-79` projects `groupId, groupIds` but reads `a.activeGroupId` at line 77 → always undefined); a drifted active group drops from `availablePairs`.
 17. ~~**`safeObjectId` not applied to `groupId`/`athleteId`**~~ **MOSTLY DONE (2026-08-10)** — `canManageGroup()` now parses both ids with `safeObjectId` and returns `false` instead of throwing, which removes the 500 from **every** route that gates on it (the authz check runs before any `new ObjectId` in all of them). The `roles` route validates `groupId` explicitly (400), and the guardians route validates `athleteId`, which `canManageGroup` does not cover. **Remaining nuance:** routes relying solely on the `canManageGroup` guard answer a malformed id with 403 rather than the documented 400 — no longer a 500, but not yet the documented status.
-18. **Bulk invites skip the single-invite guards** (`invites/bulk/route.ts:61-160`): no already-member check, no existing-invite dedupe, no plan/seat limit; re-invites and re-emails everyone.
+18. ~~**Bulk invites skip the single-invite guards.**~~ **MOSTLY DONE (2026-08-10)** — the already-member and active-invite checks now live in `app/api/groups/[groupId]/invites/guards.ts` (`isAlreadyGroupMember`, `hasActiveInvite`) and **both** routes call them, so they cannot drift. Bulk reports skipped rows in its existing `errors[]` array rather than silently dropping them, so the coach sees why someone was not invited. **Note:** there is no athlete seat limit to apply — only *coach* invites have one (`coachSeats`), and bulk import does not create coach invites, so the original finding overstated this part.
 19. ~~**Attendance `entries` unvalidated.**~~ **DONE (2026-08-10)** — entries are parsed with `attendanceEntriesSchema` (shape + status enum + 500-element cap) and then filtered against actual group membership, so a coach can no longer write attendance rows against arbitrary `userId`s. Non-members are dropped rather than rejected, so an athlete removed mid-session doesn't fail the coach's whole submission. Covered by `__tests__/api/attendance-entries.test.ts`. **Deliberately unchanged:** GET still returns athlete emails to coaches — consistent with the group roster endpoint, which coaches already read.
 20. **User enumeration** via differing responses on login (`login/route.ts` — unknown vs google-only vs unverified), signup 409, and forgot-password's 500-only-when-email-exists path; plus non-timing-safe `bcrypt.compare` gated on user existence.
 21. **Stateless 7-day JWTs can't be revoked** (`lib/auth.ts`): logout, password reset, and account deletion don't invalidate already-issued tokens.

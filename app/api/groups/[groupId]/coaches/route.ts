@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { safeObjectId } from "@/lib/objectid"
+import { addCoachToGroup } from "@/lib/group-actions"
 
 export async function POST(
   req: Request,
@@ -60,13 +61,10 @@ export async function POST(
       )
     }
 
-    await db
-      .collection("groups")
-      .updateOne({ _id: groupOid }, { $addToSet: { coachIds: coachId } as never })
-
-    await db
-      .collection("users")
-      .updateOne({ _id: coachOid }, { $addToSet: { groupIds: groupId } as never })
+    // Writes all three membership stores. Previously this updated coachIds and
+    // groupIds but never inserted a groupMemberships row, so the added coach had
+    // no membership document and therefore no roles in the group.
+    await addCoachToGroup(db, coachId, groupId, groupOid)
 
     return NextResponse.json({ success: true })
   } catch (err) {

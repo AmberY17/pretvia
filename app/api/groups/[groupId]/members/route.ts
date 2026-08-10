@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
-import { ObjectId } from "mongodb"
 import { canManageGroup } from "@/lib/api-auth"
 import { safeObjectId } from "@/lib/objectid"
+import { removeUserFromGroup } from "@/lib/group-actions"
 
 // PATCH: update member (assign roles, remove from group, transfer)
 export async function PATCH(
@@ -16,6 +16,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     const { groupId } = await params
+    // Parsed once up front: every branch below needs it, and validating here
+    // returns the documented 400 rather than the 403 canManageGroup would give.
+    const groupOid = safeObjectId(groupId)
+    if (!groupOid) {
+      return NextResponse.json({ error: "Invalid group ID" }, { status: 400 })
+    }
     const db = await getDb()
 
     if (!(await canManageGroup(db, session.userId, groupId))) {
@@ -57,10 +63,6 @@ export async function PATCH(
     // assistant coach could evict or transfer the head coach — bypassing the
     // head-coach-only gate that DELETE /coaches/[coachId] enforces.
     if (action === "remove" || action === "transfer") {
-      const groupOid = safeObjectId(groupId)
-      if (!groupOid) {
-        return NextResponse.json({ error: "Invalid group ID" }, { status: 400 })
-      }
       const group = await db.collection("groups").findOne(
         { _id: groupOid },
         { projection: { headCoachId: 1 } }
@@ -80,19 +82,9 @@ export async function PATCH(
     }
 
     if (action === "remove") {
-      const updatedGroupIds = (targetUser.groupIds ?? []).filter(
-        (id: string) => id !== groupId
-      )
-      const newGroupId =
-        targetUser.activeGroupId === groupId
-          ? updatedGroupIds[0] ?? null
-          : targetUser.activeGroupId
-
-      await db.collection("users").updateOne(
-        { _id: userOid },
-        { $set: { groupIds: updatedGroupIds, activeGroupId: newGroupId } }
-      )
-      await db.collection("groupMemberships").deleteOne({ userId, groupId })
+      // Shared helper so all three membership stores move together. This path
+      // previously left `groups.coachIds` untouched.
+      await removeUserFromGroup(db, userId, groupId, groupOid)
       return NextResponse.json({ success: true })
     }
 
@@ -128,23 +120,27 @@ export async function PATCH(
         )
       }
 
-      const updatedGroupIds = [
-        ...(targetUser.groupIds ?? []).filter((id: string) => id !== groupId),
-        targetGroupId,
-      ]
-      const newGroupId =
-        targetUser.activeGroupId === groupId ? targetGroupId : targetUser.activeGroupId
-
-      await db.collection("users").updateOne(
-        { _id: userOid },
-        { $set: { groupIds: updatedGroupIds, activeGroupId: newGroupId } }
-      )
-      await db.collection("groupMemberships").deleteOne({ userId, groupId })
+      // Only athletes reach here — the guard above sends coaches to the coach
+      // endpoints — so this adds membership without touching `coachIds`.
+      await removeUserFromGroup(db, userId, groupId, groupOid)
+      await db
+        .collection("users")
+        .updateOne(
+          { _id: userOid },
+          { $addToSet: { groupIds: targetGroupId } } as never,
+        )
       await db.collection("groupMemberships").updateOne(
         { userId, groupId: targetGroupId },
         { $setOnInsert: { userId, groupId: targetGroupId, roleIds: [] } },
         { upsert: true }
       )
+      // The removal above may have pointed them at an unrelated group; a
+      // transfer should land them in the group they were transferred to.
+      if (targetUser.activeGroupId === groupId) {
+        await db
+          .collection("users")
+          .updateOne({ _id: userOid }, { $set: { activeGroupId: targetGroupId } })
+      }
       return NextResponse.json({ success: true })
     }
 
@@ -156,9 +152,7 @@ export async function PATCH(
           { status: 400 }
         )
       }
-      const group = await db.collection("groups").findOne({
-        _id: new ObjectId(groupId),
-      })
+      const group = await db.collection("groups").findOne({ _id: groupOid })
       const validRoleIds = (group?.roles ?? [])
         .map((r: { id: string }) => r.id)
         .filter((id: string) => roleIds.includes(id))

@@ -52,24 +52,16 @@ export function CoachRow({ coach, groupId, otherGroups = [] }: CoachRowProps) {
     setMoving(true);
     setMoveOpen(false);
     try {
-      const removeRes = await fetch(`/api/groups/${groupId}/coaches/${coach.id}`, {
-        method: "DELETE",
-      });
-      if (!removeRes.ok) {
-        const data = await removeRes.json();
-        toast.error(data.error || "Failed to move coach");
-        return;
-      }
-
-      const addRes = await fetch(`/api/groups/${targetGroupId}/coaches`, {
-        method: "POST",
+      // Single request: this was a DELETE followed by a POST, so a failure on
+      // the second left the coach in neither group with nothing to undo it.
+      const res = await fetch(`/api/groups/${groupId}/coaches/${coach.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ coachId: coach.id }),
+        body: JSON.stringify({ targetGroupId }),
       });
-      if (!addRes.ok) {
-        const data = await addRes.json();
-        toast.error(data.error || `Removed from this group but could not add to ${targetGroupName}`);
-        invalidate();
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || `Could not move ${coach.displayName} to ${targetGroupName}`);
         return;
       }
       toast.success(`${coach.displayName} moved to ${targetGroupName}`);

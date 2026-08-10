@@ -2,6 +2,13 @@ import { defineConfig } from "cypress";
 import fs from "fs";
 import { resolve } from "path";
 
+/**
+ * Code of the fixture group created by `pnpm seed:test`. Test cleanup must not
+ * delete it — see the note in `cleanupTestData`. Keep in sync with
+ * `scripts/seed-test-users.ts`.
+ */
+const SEED_GROUP_CODE = "E2ETST";
+
 // Load .env.local so MONGODB_URI is available to cy.task handlers at runtime
 for (const file of [".env.local", ".env"]) {
   const envPath = resolve(process.cwd(), file);
@@ -70,21 +77,40 @@ export default defineConfig({
             }),
           ]);
 
+          // Groups created *by tests*, excluding the fixture group that
+          // `pnpm seed:test` provisions (code "E2ETST"). That group is shared
+          // infrastructure: the seeded coach head-coaches it and the seeded
+          // athlete belongs to it, so deleting it here left both accounts
+          // pointing at a group that no longer existed — the coach then
+          // head-coached nothing and could not review the athlete's logs.
           const e2eGroups = await db
             .collection("groups")
-            .find({ name: /^E2E / })
+            .find({ name: /^E2E /, code: { $ne: SEED_GROUP_CODE } })
             .project({ _id: 1 })
             .toArray();
           const e2eGroupIds = e2eGroups.map((g) => g._id);
 
           if (e2eGroupIds.length > 0) {
+            const idStrings = e2eGroupIds.map((id) => id.toString());
             await Promise.all([
-              db
-                .collection("groups")
-                .deleteMany({ _id: { $in: e2eGroupIds } }),
+              db.collection("groups").deleteMany({ _id: { $in: e2eGroupIds } }),
               db
                 .collection("groupMemberships")
-                .deleteMany({ groupId: { $in: e2eGroupIds } }),
+                .deleteMany({ groupId: { $in: idStrings } }),
+              // Same cleanup the app performs when a group is deleted: leaving
+              // these dangling is what made the failure above so hard to see.
+              db
+                .collection("users")
+                .updateMany(
+                  { groupIds: { $in: idStrings } },
+                  { $pull: { groupIds: { $in: idStrings } } } as never,
+                ),
+              db
+                .collection("users")
+                .updateMany(
+                  { activeGroupId: { $in: idStrings } },
+                  { $unset: { activeGroupId: "" } },
+                ),
             ]);
           }
 

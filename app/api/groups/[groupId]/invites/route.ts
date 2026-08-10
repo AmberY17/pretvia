@@ -4,6 +4,12 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { canManageGroup } from "@/lib/api-auth"
+import {
+  isAlreadyGroupMember,
+  hasActiveInvite,
+  ALREADY_MEMBER_ERROR,
+  ACTIVE_INVITE_ERROR,
+} from "./guards"
 
 export async function DELETE(
   req: Request,
@@ -141,17 +147,8 @@ export async function POST(
         }
       }
 
-      const existingInvite = await db.collection("invites").findOne({
-        groupId,
-        email,
-        type: "coach",
-        expiresAt: { $gt: new Date() },
-      })
-      if (existingInvite) {
-        return NextResponse.json(
-          { error: "An active invite already exists for this email" },
-          { status: 409 }
-        )
+      if (await hasActiveInvite(db, groupId, email, "coach")) {
+        return NextResponse.json({ error: ACTIVE_INVITE_ERROR }, { status: 409 })
       }
 
       const token = randomUUID()
@@ -294,32 +291,13 @@ export async function POST(
       )
     }
 
-    const existingAthlete = await db.collection("users").findOne({ email: athlete })
-    if (existingAthlete) {
-      const memberGroupIds: string[] = Array.isArray(existingAthlete.groupIds)
-        ? existingAthlete.groupIds
-        : []
-      if (existingAthlete.groupId && !memberGroupIds.includes(existingAthlete.groupId as string))
-        memberGroupIds.push(existingAthlete.groupId as string)
-      if (memberGroupIds.includes(groupId)) {
-        return NextResponse.json(
-          { error: "This athlete is already a member of this group" },
-          { status: 409 }
-        )
-      }
+    // Shared with the bulk-invite route so the two cannot drift apart.
+    if (await isAlreadyGroupMember(db, groupId, athlete)) {
+      return NextResponse.json({ error: ALREADY_MEMBER_ERROR }, { status: 409 })
     }
 
-    const existingAthleteInvite = await db.collection("invites").findOne({
-      groupId,
-      email: athlete,
-      type: "athlete",
-      expiresAt: { $gt: new Date() },
-    })
-    if (existingAthleteInvite) {
-      return NextResponse.json(
-        { error: "An active invite already exists for this email" },
-        { status: 409 }
-      )
+    if (await hasActiveInvite(db, groupId, athlete, "athlete")) {
+      return NextResponse.json({ error: ACTIVE_INVITE_ERROR }, { status: 409 })
     }
 
     const results: { sent: string[]; errors: string[] } = { sent: [], errors: [] }

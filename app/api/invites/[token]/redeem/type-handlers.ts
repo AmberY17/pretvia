@@ -302,8 +302,11 @@ export async function handleCoachInvite(
       )
     }
 
+    // `coachIds` is a field on the *group*, not the user — the group-side update
+    // below is the real one. Adding it here wrote a meaningless array of group
+    // ids onto the user document.
     const update: Record<string, unknown> = {
-      $addToSet: { groupIds: groupId, coachIds: groupId },
+      $addToSet: { groupIds: groupId },
     }
     if (!existing.activeGroupId) {
       update.$set = { activeGroupId: groupId }

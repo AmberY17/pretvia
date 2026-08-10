@@ -5,6 +5,12 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { canManageGroup } from "@/lib/api-auth"
 import {
+  isAlreadyGroupMember,
+  hasActiveInvite,
+  ALREADY_MEMBER_ERROR,
+  ACTIVE_INVITE_ERROR,
+} from "../guards"
+import {
   sendAthleteInviteEmail,
   sendUnder13ParentInviteEmail,
   sendParentInviteEmail,
@@ -74,6 +80,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ groupId
           })
           continue
         }
+        // The single-invite route's dedupe, applied per row: re-importing a
+        // roster used to re-send to everyone in it.
+        if (await hasActiveInvite(db, groupId, parentEmail, "under13_parent")) {
+          errors.push({ email: parentEmail, error: ACTIVE_INVITE_ERROR })
+          continue
+        }
         const token = randomUUID()
         await db.collection("invites").insertOne({
           groupId,
@@ -101,6 +113,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ groupId
         const athleteEmail = (row.athleteEmail ?? "").trim().toLowerCase()
         if (!athleteEmail) {
           errors.push({ email: "(athlete row)", error: "Athlete email is required" })
+          continue
+        }
+
+        if (await isAlreadyGroupMember(db, groupId, athleteEmail)) {
+          errors.push({ email: athleteEmail, error: ALREADY_MEMBER_ERROR })
+          continue
+        }
+        if (await hasActiveInvite(db, groupId, athleteEmail, "athlete")) {
+          errors.push({ email: athleteEmail, error: ACTIVE_INVITE_ERROR })
           continue
         }
 
@@ -132,6 +153,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ groupId
         const parentEmail =
           typeof row.parentEmail === "string" ? row.parentEmail.trim().toLowerCase() : ""
         if (parentEmail && parentEmail !== athleteEmail) {
+          if (await hasActiveInvite(db, groupId, parentEmail, "parent")) {
+            errors.push({ email: parentEmail, error: ACTIVE_INVITE_ERROR })
+            continue
+          }
           const parentToken = randomUUID()
           await db.collection("invites").insertOne({
             groupId,
