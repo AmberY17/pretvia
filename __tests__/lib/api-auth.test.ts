@@ -14,6 +14,13 @@ vi.mock("mongodb", () => ({
 
 import { canManageGroup } from "@/lib/api-auth"
 
+// Real 24-char hex ids: canManageGroup parses them with safeObjectId, so
+// placeholder strings would be rejected before any lookup happens.
+const USER_ID = "507f1f77bcf86cd799439011"
+const GROUP_ID = "507f1f77bcf86cd799439012"
+const OTHER_USER_ID = "507f1f77bcf86cd799439013"
+const OTHER_GROUP_ID = "507f1f77bcf86cd799439014"
+
 function createMockDb(
   userDoc: Record<string, unknown> | null,
   groupDoc: Record<string, unknown> | null,
@@ -34,59 +41,71 @@ function createMockDb(
 describe("canManageGroup", () => {
   it("returns false if user not found", async () => {
     const db = createMockDb(null, null)
-    expect(await canManageGroup(db, "user1", "group1")).toBe(false)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(false)
   })
 
   it("returns false if user is not a coach", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "athlete" },
-      { _id: "group1", coachIds: ["user1"] },
+      { _id: USER_ID, role: "athlete" },
+      { _id: GROUP_ID, coachIds: [USER_ID] },
     )
-    expect(await canManageGroup(db, "user1", "group1")).toBe(false)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(false)
   })
 
   it("returns false if group not found", async () => {
-    const db = createMockDb({ _id: "user1", role: "coach" }, null)
-    expect(await canManageGroup(db, "user1", "group1")).toBe(false)
+    const db = createMockDb({ _id: USER_ID, role: "coach" }, null)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(false)
   })
 
   it("returns true if userId is in coachIds", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "coach", groupIds: [] },
-      { _id: "group1", coachIds: ["user1"] },
+      { _id: USER_ID, role: "coach", groupIds: [] },
+      { _id: GROUP_ID, coachIds: [USER_ID] },
     )
-    expect(await canManageGroup(db, "user1", "group1")).toBe(true)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(true)
   })
 
   it("falls back to singular headCoachId if coachIds not present", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "coach", groupIds: [] },
-      { _id: "group1", headCoachId: "user1" },
+      { _id: USER_ID, role: "coach", groupIds: [] },
+      { _id: GROUP_ID, headCoachId: USER_ID },
     )
-    expect(await canManageGroup(db, "user1", "group1")).toBe(true)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(true)
   })
 
   it("returns true if groupId is in user.groupIds", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "coach", groupIds: ["group1"] },
-      { _id: "group1", coachIds: ["other"] },
+      { _id: USER_ID, role: "coach", groupIds: [GROUP_ID] },
+      { _id: GROUP_ID, coachIds: [OTHER_USER_ID] },
     )
-    expect(await canManageGroup(db, "user1", "group1")).toBe(true)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(true)
   })
 
   it("falls back to singular activeGroupId on user", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "coach", activeGroupId: "group1" },
-      { _id: "group1", coachIds: ["other"] },
+      { _id: USER_ID, role: "coach", activeGroupId: GROUP_ID },
+      { _id: GROUP_ID, coachIds: [OTHER_USER_ID] },
     )
-    expect(await canManageGroup(db, "user1", "group1")).toBe(true)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(true)
+  })
+
+  it("returns false for a malformed id instead of throwing a 500", async () => {
+    // Ids arrive from route params and bodies; constructing an ObjectId from a
+    // malformed one used to throw, surfacing as a generic 500.
+    const db = createMockDb(
+      { _id: USER_ID, role: "coach", groupIds: [GROUP_ID] },
+      { _id: GROUP_ID, coachIds: [USER_ID] },
+    )
+    expect(await canManageGroup(db, "not-an-id", GROUP_ID)).toBe(false)
+    expect(await canManageGroup(db, USER_ID, "not-an-id")).toBe(false)
+    expect(await canManageGroup(db, "", "")).toBe(false)
   })
 
   it("returns false if coach has no relation to group", async () => {
     const db = createMockDb(
-      { _id: "user1", role: "coach", groupIds: ["other-group"] },
-      { _id: "group1", coachIds: ["other-user"] },
+      { _id: USER_ID, role: "coach", groupIds: [OTHER_GROUP_ID] },
+      { _id: GROUP_ID, coachIds: [OTHER_USER_ID] },
     )
-    expect(await canManageGroup(db, "user1", "group1")).toBe(false)
+    expect(await canManageGroup(db, USER_ID, GROUP_ID)).toBe(false)
   })
 })

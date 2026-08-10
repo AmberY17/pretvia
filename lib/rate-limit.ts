@@ -38,6 +38,14 @@ export const passwordResetRateLimiter = createRateLimiter(2, "1 m")
 // 60 requests per minute per IP for hot read/write paths
 export const apiRateLimiter = createRateLimiter(60, "1 m")
 
+// 5 admin password attempts per minute per IP — the admin gate is a single
+// shared secret, so it needs at least as much protection as user login.
+export const adminAuthRateLimiter = createRateLimiter(5, "1 m")
+
+// 3 waitlist submissions per minute per IP. Unauthenticated and public, so it
+// was the one write endpoint anyone on the internet could hit without a limit.
+export const waitlistRateLimiter = createRateLimiter(3, "1 m")
+
 export function getIp(req: Request): string {
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous"

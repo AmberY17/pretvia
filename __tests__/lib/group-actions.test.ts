@@ -17,7 +17,7 @@ vi.mock("@/lib/group-training-schedule", () => ({
   applyGroupTrainingScheduleToUser: vi.fn(),
 }))
 
-import { ensureGroupIds, generateUniqueGroupCode, addUserToGroup } from "@/lib/group-actions"
+import { ensureGroupIds, insertGroupWithUniqueCode, addUserToGroup } from "@/lib/group-actions"
 import { createSession } from "@/lib/auth"
 import { applyGroupTrainingScheduleToUser } from "@/lib/group-training-schedule"
 
@@ -90,28 +90,71 @@ describe("ensureGroupIds", () => {
   })
 })
 
-describe("generateUniqueGroupCode", () => {
-  it("returns a 6-character code from the unambiguous alphabet", async () => {
-    const { db } = createMockDb({ findOneByCollection: { groups: () => null } })
-    const code = await generateUniqueGroupCode(db)
-    expect(code).toHaveLength(6)
+describe("insertGroupWithUniqueCode", () => {
+  /** Mock whose insertOne fails with a duplicate-code error `failures` times. */
+  function dbWithCodeCollisions(failures: number, errOverride?: unknown) {
+    let attempts = 0
+    const codes: string[] = []
+    const db = {
+      collection: () => ({
+        insertOne: (doc: { code: string }) => {
+          attempts += 1
+          codes.push(doc.code)
+          if (attempts <= failures) {
+            return Promise.reject(
+              errOverride ?? Object.assign(new Error("E11000"), { code: 11000, keyPattern: { code: 1 } }),
+            )
+          }
+          return Promise.resolve({ insertedId: { toString: () => "newGroup" } })
+        },
+      }),
+    } as never
+    return { db, codes, getAttempts: () => attempts }
+  }
+
+  it("inserts with a 6-character code from the unambiguous alphabet", async () => {
+    const { db, codes } = dbWithCodeCollisions(0)
+    const { groupId, code } = await insertGroupWithUniqueCode(db, { name: "G" })
+
+    expect(groupId).toBe("newGroup")
     // Ambiguous glyphs are excluded so codes can be read aloud / typed from a whiteboard.
     expect(code).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/)
+    expect(codes[0]).toBe(code)
   })
 
-  it("retries until it finds a code not already taken", async () => {
-    let calls = 0
-    const { db } = createMockDb({
-      findOneByCollection: {
-        groups: () => {
-          calls += 1
-          return calls <= 2 ? { _id: "existing" } : null
-        },
-      },
+  it("retries with a fresh code when the unique index rejects a collision", async () => {
+    const { db, codes, getAttempts } = dbWithCodeCollisions(2)
+    const { code } = await insertGroupWithUniqueCode(db, { name: "G" })
+
+    expect(getAttempts()).toBe(3)
+    expect(code).toBe(codes[2])
+    // Each retry must generate a new code, not resubmit the rejected one.
+    expect(new Set(codes).size).toBe(3)
+  })
+
+  it("gives up rather than looping forever", async () => {
+    const { db, getAttempts } = dbWithCodeCollisions(Infinity)
+    await expect(insertGroupWithUniqueCode(db, { name: "G" }, 3)).rejects.toThrow(
+      "Could not allocate a unique group code",
+    )
+    expect(getAttempts()).toBe(3)
+  })
+
+  it("rethrows an unrelated write error instead of retrying it", async () => {
+    // Retrying a non-collision failure would mask a real problem.
+    const { db, getAttempts } = dbWithCodeCollisions(Infinity, new Error("connection reset"))
+    await expect(insertGroupWithUniqueCode(db, { name: "G" })).rejects.toThrow("connection reset")
+    expect(getAttempts()).toBe(1)
+  })
+
+  it("rethrows a duplicate-key error on a different index", async () => {
+    const dupOnOtherField = Object.assign(new Error("E11000"), {
+      code: 11000,
+      keyPattern: { name: 1 },
     })
-    const code = await generateUniqueGroupCode(db)
-    expect(calls).toBe(3)
-    expect(code).toHaveLength(6)
+    const { db, getAttempts } = dbWithCodeCollisions(Infinity, dupOnOtherField)
+    await expect(insertGroupWithUniqueCode(db, { name: "G" })).rejects.toThrow("E11000")
+    expect(getAttempts()).toBe(1)
   })
 })
 

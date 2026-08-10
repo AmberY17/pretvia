@@ -47,6 +47,24 @@ export async function ensureIndexes(): Promise<boolean> {
       name: "logs.checkinId_userId",
       run: () => db.collection("logs").createIndex({ checkinId: 1, userId: 1 }),
     },
+    // Enforces one shared and one private standalone log per user per group per
+    // day. The route's read-then-insert check could be raced by a double submit;
+    // this makes the limit an invariant of the data rather than of the handler.
+    //
+    // Partial on `limitKey` existing: only standalone logs carry it (check-in logs
+    // are exempt from the limit), and a partialFilterExpression cannot express
+    // `checkinId: { $exists: false }`. Logs created before this field are simply
+    // not covered, which is why the handler keeps its read-check as well.
+    {
+      name: "logs.userId_groupId_limitKey_unique",
+      run: () =>
+        db
+          .collection("logs")
+          .createIndex(
+            { userId: 1, groupId: 1, limitKey: 1 },
+            { unique: true, partialFilterExpression: { limitKey: { $exists: true } } },
+          ),
+    },
 
     // users
     {
@@ -91,18 +109,38 @@ export async function ensureIndexes(): Promise<boolean> {
       name: "skippedDays.userId_dayOfWeek",
       run: () => db.collection("skippedDays").createIndex({ userId: 1, dayOfWeek: 1 }),
     },
+    // Unique: POST /api/skipped-days upserts one row per training slot, so this
+    // is what makes those upserts safe against a concurrent duplicate.
+    // The non-unique version of this index shipped first, and MongoDB will not
+    // change an existing index's options in place, so drop before creating.
     {
-      name: "skippedDays.userId_dayOfWeek_scheduledTime_date",
-      run: () =>
-        db
+      name: "skippedDays.userId_dayOfWeek_scheduledTime_date_unique",
+      run: async () => {
+        await db
           .collection("skippedDays")
-          .createIndex({ userId: 1, dayOfWeek: 1, scheduledTime: 1, date: 1 }),
+          .dropIndex("userId_1_dayOfWeek_1_scheduledTime_1_date_1")
+          .catch(() => {})
+        return db
+          .collection("skippedDays")
+          .createIndex(
+            { userId: 1, dayOfWeek: 1, scheduledTime: 1, date: 1 },
+            { unique: true },
+          )
+      },
     },
 
-    // attendance
+    // attendance — unique so the findOne-then-insert in POST /api/attendance
+    // cannot produce two rolls for one check-in under a double submit.
+    // Drop the non-unique predecessor first — MongoDB will not change an existing
+    // index's options in place.
     {
-      name: "attendance.checkinId_groupId",
-      run: () => db.collection("attendance").createIndex({ checkinId: 1, groupId: 1 }),
+      name: "attendance.checkinId_groupId_unique",
+      run: async () => {
+        await db.collection("attendance").dropIndex("checkinId_1_groupId_1").catch(() => {})
+        return db
+          .collection("attendance")
+          .createIndex({ checkinId: 1, groupId: 1 }, { unique: true })
+      },
     },
 
     // log_reviews — drop legacy headCoachId index, replace with coachId
@@ -137,10 +175,26 @@ export async function ensureIndexes(): Promise<boolean> {
 
     // guardianLinks
     { name: "guardianLinks.guardianId", run: () => db.collection("guardianLinks").createIndex({ guardianId: 1 }) },
+    // Unique: four call sites create these links (three upserts and one raw
+    // insert), none of them previously protected against a concurrent duplicate.
+    {
+      name: "guardianLinks.guardianId_athleteId_unique",
+      run: () =>
+        db
+          .collection("guardianLinks")
+          .createIndex({ guardianId: 1, athleteId: 1 }, { unique: true }),
+    },
 
     // groups
     { name: "groups.headCoachId", run: () => db.collection("groups").createIndex({ headCoachId: 1 }) },
     { name: "groups.coachIds", run: () => db.collection("groups").createIndex({ coachIds: 1 }) },
+    // Unique + sparse: generateUniqueGroupCode() is check-then-insert, so two
+    // groups created concurrently could share a code and make join-by-code
+    // ambiguous. Sparse because not every group document carries a code.
+    {
+      name: "groups.code_unique",
+      run: () => db.collection("groups").createIndex({ code: 1 }, { unique: true, sparse: true }),
+    },
 
     // waitlist
     {

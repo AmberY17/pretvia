@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
+import { attendanceEntriesSchema, validationError } from "@/lib/validation"
 
 // GET: fetch attendance for a check-in
 export async function GET(req: Request) {
@@ -134,6 +135,11 @@ export async function POST(req: Request) {
       )
     }
 
+    // Shape and size: the entries array is stored as one document, so it needs a
+    // bound, and each status must be one of the three real values.
+    const parsedEntries = attendanceEntriesSchema.safeParse(entries)
+    if (!parsedEntries.success) return validationError(parsedEntries.error)
+
     const checkinOid = safeObjectId(checkinId)
     if (!checkinOid) {
       return NextResponse.json({ error: "Invalid checkin ID" }, { status: 400 })
@@ -151,16 +157,19 @@ export async function POST(req: Request) {
       )
     }
 
-    const validEntries = entries
-      .filter(
-        (e: { userId?: string; status?: string }) =>
-          e?.userId &&
-          ["present", "absent", "excused"].includes(e?.status ?? "")
-      )
-      .map((e: { userId: string; status: string }) => ({
-        userId: e.userId,
-        status: e.status,
-      }))
+    // Restrict entries to actual members of the coach's group. Without this a
+    // coach could record attendance against any userId in the system, writing
+    // rows into a group they have nothing to do with.
+    const members = await db
+      .collection("users")
+      .find({ $or: [{ groupIds: userGroupId }, { groupId: userGroupId }] })
+      .project({ _id: 1 })
+      .toArray()
+    const memberIds = new Set(members.map((m) => m._id.toString()))
+
+    // Non-members are dropped rather than rejected: an athlete removed from the
+    // group mid-session would otherwise fail the coach's whole submission.
+    const validEntries = parsedEntries.data.filter((e) => memberIds.has(e.userId))
 
     const doc = {
       checkinId,
@@ -171,35 +180,20 @@ export async function POST(req: Request) {
       updatedAt: new Date(),
     }
 
-    const existing = await db.collection("attendance").findOne({
-      checkinId,
-      groupId: userGroupId,
-    })
-
-    if (existing) {
-      await db.collection("attendance").updateOne(
-        { _id: existing._id },
-        { $set: doc }
-      )
-      return NextResponse.json({
-        success: true,
-        attendance: {
-          id: existing._id.toString(),
-          checkinId,
-          entries: validEntries,
-        },
-      })
-    }
-
-    const result = await db.collection("attendance").insertOne({
-      ...doc,
-      createdAt: new Date(),
-    })
+    // Single atomic upsert. The previous findOne-then-insert let a double submit
+    // create two attendance documents for one check-in, after which the roll a
+    // coach saw depended on which one findOne happened to return. The unique
+    // index on {checkinId, groupId} is what makes this safe under concurrency.
+    const saved = await db.collection("attendance").findOneAndUpdate(
+      { checkinId, groupId: userGroupId },
+      { $set: doc, $setOnInsert: { createdAt: new Date() } },
+      { upsert: true, returnDocument: "after" },
+    )
 
     return NextResponse.json({
       success: true,
       attendance: {
-        id: result.insertedId.toString(),
+        id: saved?._id.toString(),
         checkinId,
         entries: validEntries,
       },

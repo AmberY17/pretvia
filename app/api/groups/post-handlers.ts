@@ -5,7 +5,7 @@ import type { Db } from "mongodb"
 import type { SessionPayload } from "@/lib/auth"
 import {
   ensureGroupIds,
-  generateUniqueGroupCode,
+  insertGroupWithUniqueCode,
   addUserToGroup,
 } from "@/lib/group-actions"
 import { getUserSubscription, getEffectiveLimits } from "@/lib/subscription"
@@ -52,18 +52,13 @@ export async function handleCreate(
     )
   }
 
-  const code = await generateUniqueGroupCode(db)
-
-  const result = await db.collection("groups").insertOne({
+  const { groupId, code } = await insertGroupWithUniqueCode(db, {
     name: name.trim(),
-    code,
     headCoachId: session.userId,
     coachIds: [session.userId],
     roles: [],
     createdAt: new Date(),
   })
-
-  const groupId = result.insertedId.toString()
 
   await db.collection("users").updateOne(
     { _id: new ObjectId(session.userId) },
@@ -203,6 +198,23 @@ export async function handleLeave(
   const currentGroupId = user.activeGroupId
   if (!currentGroupId) {
     return NextResponse.json({ error: "Not in a group" }, { status: 400 })
+  }
+
+  // A head coach who leaves loses membership but still owns the group: they keep
+  // passing canManageGroup and the group still counts against their plan limit,
+  // while no member can administer it. Require an ownership transfer first.
+  const currentGroup = await db.collection("groups").findOne(
+    { _id: new ObjectId(currentGroupId) },
+    { projection: { headCoachId: 1 } },
+  )
+  if (currentGroup?.headCoachId?.toString() === session.userId) {
+    return NextResponse.json(
+      {
+        error:
+          "Transfer ownership to another coach before leaving a group you run, or delete the group.",
+      },
+      { status: 400 },
+    )
   }
 
   const updatedGroupIds = (user.groupIds || []).filter(

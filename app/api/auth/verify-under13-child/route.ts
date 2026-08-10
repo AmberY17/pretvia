@@ -125,7 +125,13 @@ export async function GET(req: Request) {
         createdAt: new Date(),
       })
       guardianId = parentResult.insertedId.toString()
-      await db.collection("guardianLinks").insertOne({ guardianId, athleteId })
+      // Upsert rather than insert so a retry of this flow cannot create a second
+      // link for the same pair (the other three call sites already upsert).
+      await db.collection("guardianLinks").updateOne(
+        { guardianId, athleteId },
+        { $setOnInsert: { guardianId, athleteId } },
+        { upsert: true },
+      )
     }
 
     if (pending.inviteToken) {

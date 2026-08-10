@@ -18,7 +18,9 @@ export async function POST(req: Request) {
 
     const { email } = await req.json()
 
-    if (!email) {
+    // Type guard before normalization: a non-string email made `.toLowerCase()`
+    // throw, surfacing as a 500 instead of the documented 400.
+    if (typeof email !== "string" || !email) {
       return NextResponse.json(
         { error: "Email is required" },
         { status: 400 }
@@ -26,7 +28,7 @@ export async function POST(req: Request) {
     }
 
     const db = await getDb()
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email.trim().toLowerCase()
     const user = await db.collection("users").findOne({ email: normalizedEmail })
 
     // Always return success to prevent email enumeration

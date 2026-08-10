@@ -44,17 +44,42 @@ export async function ensureGroupIds(db: Db, userId: string) {
   return user
 }
 
+/** Mongo's duplicate-key error. */
+const DUPLICATE_KEY = 11000
+
+function isDuplicateCodeError(err: unknown): boolean {
+  const e = err as { code?: number; keyPattern?: Record<string, unknown> }
+  return e?.code === DUPLICATE_KEY && e?.keyPattern?.code !== undefined
+}
+
 /**
- * Generate a unique group code that doesn't exist in the database.
+ * Insert a group, assigning it a unique code.
+ *
+ * The code is generated and the insert attempted directly: the unique index on
+ * `groups.code` is the thing that guarantees uniqueness, and a collision is
+ * retried. The previous approach — query for a free code, then insert — could
+ * hand the same code to two concurrent requests, which made join-by-code
+ * ambiguous.
+ *
+ * Returns the inserted id and the code that was actually used.
  */
-export async function generateUniqueGroupCode(db: Db): Promise<string> {
-  let code = generateGroupCode()
-  let existing = await db.collection("groups").findOne({ code })
-  while (existing) {
-    code = generateGroupCode()
-    existing = await db.collection("groups").findOne({ code })
+export async function insertGroupWithUniqueCode(
+  db: Db,
+  group: Record<string, unknown>,
+  maxAttempts = 5,
+): Promise<{ groupId: string; code: string }> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const code = generateGroupCode()
+    try {
+      const result = await db.collection("groups").insertOne({ ...group, code })
+      return { groupId: result.insertedId.toString(), code }
+    } catch (err) {
+      if (!isDuplicateCodeError(err)) throw err
+      // Collision on the code index — generate another and try again.
+    }
   }
-  return code
+  // 32^6 codes; five collisions in a row means something is wrong, not unlucky.
+  throw new Error("Could not allocate a unique group code")
 }
 
 /**

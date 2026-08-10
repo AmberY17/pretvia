@@ -13,6 +13,49 @@ import {
   fetchUserDisplayNames,
 } from "@/lib/log-filters"
 import { apiRateLimiter, getIp } from "@/lib/rate-limit"
+import { logCreateSchema, logUpdateSchema, validationError } from "@/lib/validation"
+
+/**
+ * Day component of a log's daily-limit key, in server-local time — the same
+ * notion of "today" the limit's read-check has always used.
+ *
+ * TODO (Phase 6, timezone unification): this should be the *user's* local day.
+ * Changing it requires recomputing `limitKey` on existing logs via a migration.
+ */
+function serverLocalDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+/**
+ * The value behind the partial unique index that enforces one shared and one
+ * private log per user per group per day.
+ *
+ * It exists only on standalone logs: check-in logs are exempt from the limit, and
+ * a partialFilterExpression cannot express `checkinId: { $exists: false }` (only
+ * `$exists: true` is supported), so presence of this field is what scopes the
+ * index instead.
+ */
+function dailyLimitKey(day: string, visibility: string): string {
+  return `${day}:${visibility}`
+}
+
+/** Duplicate key on the daily-limit index, as opposed to any other unique index. */
+function isDailyLimitCollision(err: unknown): boolean {
+  const e = err as { code?: number; keyPattern?: Record<string, unknown> }
+  return e?.code === 11000 && e?.keyPattern?.limitKey !== undefined
+}
+
+function dailyLimitError(visibility: string): NextResponse {
+  return NextResponse.json(
+    {
+      error:
+        visibility === "coach"
+          ? "Daily shared log limit reached"
+          : "Daily private log limit reached",
+    },
+    { status: 409 },
+  )
+}
 
 export async function GET(req: Request) {
   try {
@@ -229,11 +272,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { emoji, timestamp, isGroup, visibility, notes, tags, checkinId } = await req.json()
-
-    if (!emoji) {
-      return NextResponse.json({ error: "An emoji is required" }, { status: 400 })
-    }
+    const parsed = logCreateSchema.safeParse(await req.json())
+    if (!parsed.success) return validationError(parsed.error)
+    const { emoji, timestamp, isGroup, visibility, notes, tags, checkinId } = parsed.data
 
     const db = await getDb()
     const user = await db.collection("users").findOne({
@@ -283,10 +324,10 @@ export async function POST(req: Request) {
       userId: session.userId,
       groupId: user?.activeGroupId ?? null,
       emoji,
-      timestamp: timestamp ? new Date(timestamp) : new Date(),
+      timestamp: timestamp ?? new Date(),
       visibility: resolvedVisibility,
-      notes: notes || "",
-      tags: Array.isArray(tags) ? tags : [],
+      notes: notes ?? "",
+      tags: tags ?? [],
       createdAt: new Date(),
     }
 
@@ -295,7 +336,22 @@ export async function POST(req: Request) {
       if (oid) logEntry.checkinId = checkinId
     }
 
-    const result = await db.collection("logs").insertOne(logEntry)
+    // Only standalone logs are subject to the daily limit, and only they carry the
+    // key the partial unique index is built on.
+    if (!logEntry.checkinId) {
+      logEntry.limitKey = dailyLimitKey(serverLocalDayKey(new Date()), resolvedVisibility)
+    }
+
+    let result
+    try {
+      result = await db.collection("logs").insertOne(logEntry)
+    } catch (err) {
+      // The read-check above already rejects the common case with a friendly
+      // error; this catches the race it cannot close, where two submissions both
+      // read "no log yet" before either inserts.
+      if (isDailyLimitCollision(err)) return dailyLimitError(resolvedVisibility)
+      throw err
+    }
 
     const totalCount = await db.collection("logs").countDocuments({ userId: session.userId })
 
@@ -346,11 +402,16 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id, emoji, timestamp, isGroup, visibility, notes, tags } = await req.json()
+    const rawBody = await req.json()
+    const { id } = rawBody as { id?: unknown }
 
-    if (!id) {
+    if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "Log ID is required" }, { status: 400 })
     }
+
+    const parsed = logUpdateSchema.safeParse(rawBody)
+    if (!parsed.success) return validationError(parsed.error)
+    const { emoji, timestamp, isGroup, visibility, notes, tags } = parsed.data
     const logOid = safeObjectId(id)
     if (!logOid) {
       return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
@@ -418,13 +479,28 @@ export async function PUT(req: Request) {
 
     const update: Record<string, unknown> = { updatedAt: new Date() }
     if (emoji !== undefined) update.emoji = emoji
-    if (timestamp !== undefined) update.timestamp = new Date(timestamp)
+    if (timestamp !== undefined) update.timestamp = timestamp
     if (visibility !== undefined) update.visibility = visibility
     else if (isGroup !== undefined) update.visibility = isGroup ? "coach" : "private"
     if (notes !== undefined) update.notes = notes
-    if (tags !== undefined) update.tags = Array.isArray(tags) ? tags : []
+    if (tags !== undefined) update.tags = tags
 
-    await db.collection("logs").updateOne({ _id: logOid }, { $set: update })
+    // Keep the daily-limit key in step with a visibility change, otherwise a log
+    // edited from private to shared would sit outside the index's guarantee.
+    // Logs predating the key are left without one — the read-check still covers them.
+    if (update.visibility !== undefined && typeof existing.limitKey === "string") {
+      const day = existing.limitKey.split(":")[0]
+      update.limitKey = dailyLimitKey(day, update.visibility as string)
+    }
+
+    try {
+      await db.collection("logs").updateOne({ _id: logOid }, { $set: update })
+    } catch (err) {
+      if (isDailyLimitCollision(err)) {
+        return dailyLimitError((update.visibility as string) ?? existingVisibility)
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

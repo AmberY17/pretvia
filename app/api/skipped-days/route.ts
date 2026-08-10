@@ -44,36 +44,38 @@ export async function POST(req: Request) {
       )
     }
 
-    const inserted: { date: Date; dayOfWeek: number; scheduledTime: string; reason: string }[] =
-      []
-    for (const slot of slotsToSkip) {
-      const existing = await db.collection("skippedDays").findOne({
-        userId: session.userId,
-        date: targetDate,
-        dayOfWeek: slot.dayOfWeek,
-        scheduledTime: slot.time,
-      })
-      if (!existing) {
-        await db.collection("skippedDays").insertOne({
-          userId: session.userId,
-          date: targetDate,
-          dayOfWeek: slot.dayOfWeek,
-          scheduledTime: slot.time,
-          reason: reason.trim().slice(0, 200),
-          createdAt: new Date(),
-        })
-        inserted.push({
-          date: targetDate,
-          dayOfWeek: slot.dayOfWeek,
-          scheduledTime: slot.time,
-          reason: reason.trim(),
-        })
-      }
-    }
+    // One round trip of upserts instead of a findOne + insertOne per slot. The
+    // previous loop could double-insert a slot under a concurrent request, and
+    // cost 2N queries; `$setOnInsert` keeps an existing skip's original reason.
+    const trimmedReason = reason.trim().slice(0, 200)
+    const result = await db.collection("skippedDays").bulkWrite(
+      slotsToSkip.map((slot) => ({
+        updateOne: {
+          filter: {
+            userId: session.userId,
+            date: targetDate,
+            dayOfWeek: slot.dayOfWeek,
+            scheduledTime: slot.time,
+          },
+          update: {
+            $setOnInsert: {
+              userId: session.userId,
+              date: targetDate,
+              dayOfWeek: slot.dayOfWeek,
+              scheduledTime: slot.time,
+              reason: trimmedReason,
+              createdAt: new Date(),
+            },
+          },
+          upsert: true,
+        },
+      })),
+      { ordered: false },
+    )
 
     return NextResponse.json({
       success: true,
-      skipped: inserted.length,
+      skipped: result.upsertedCount,
     })
   } catch (error) {
     console.error("Skip day error:", error)

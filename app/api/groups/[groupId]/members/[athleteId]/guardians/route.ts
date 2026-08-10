@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { canManageGroup } from "@/lib/api-auth"
+import { safeObjectId } from "@/lib/objectid"
 
 export async function GET(
   req: Request,
@@ -15,15 +16,19 @@ export async function GET(
     }
 
     const { groupId, athleteId } = await params
+    // `canManageGroup` validates groupId, but athleteId comes straight from the
+    // path — an unparseable value threw a 500 instead of returning a 400.
+    const athleteOid = safeObjectId(athleteId)
+    if (!athleteOid) {
+      return NextResponse.json({ error: "Invalid athlete ID" }, { status: 400 })
+    }
     const db = await getDb()
 
     if (!(await canManageGroup(db, session.userId, groupId))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const athlete = await db.collection("users").findOne({
-      _id: new ObjectId(athleteId),
-    })
+    const athlete = await db.collection("users").findOne({ _id: athleteOid })
     if (!athlete) {
       return NextResponse.json({ error: "Athlete not found" }, { status: 404 })
     }

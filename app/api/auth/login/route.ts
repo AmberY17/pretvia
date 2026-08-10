@@ -19,7 +19,9 @@ export async function POST(req: Request) {
 
     const { email, password } = await req.json()
 
-    if (!email || !password) {
+    // Type guards before normalization: a non-string email made `.toLowerCase()`
+    // throw, surfacing as a 500 instead of the documented 400.
+    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 }
@@ -27,9 +29,11 @@ export async function POST(req: Request) {
     }
 
     const db = await getDb()
+    // Trimmed as well as lowercased — signup stores the trimmed form, so without
+    // this an address typed with a trailing space would never match at login.
     const user = await db
       .collection("users")
-      .findOne({ email: email.toLowerCase() })
+      .findOne({ email: email.trim().toLowerCase() })
 
     if (!user) {
       return NextResponse.json(

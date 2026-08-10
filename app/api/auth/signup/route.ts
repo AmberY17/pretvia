@@ -32,7 +32,9 @@ export async function POST(req: Request) {
       coachInviteToken,
     } = await req.json()
 
-    if (!email || !password) {
+    // Type guards before normalization: a non-string email made `.toLowerCase()`
+    // throw, surfacing as a 500 instead of the documented 400.
+    if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
     }
 
     const db = await getDb()
-    const normalizedEmail = email.toLowerCase()
+    const normalizedEmail = email.trim().toLowerCase()
     const existingUser = await db.collection("users").findOne({ email: normalizedEmail })
 
     if (existingUser) {

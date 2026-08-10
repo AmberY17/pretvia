@@ -1,27 +1,31 @@
 import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
+import { waitlistSchema, validationError } from "@/lib/validation"
+import { waitlistRateLimiter, getIp } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
   try {
-    const { firstName, lastName, email, clubName, groups } = await req.json()
-
-    if (!firstName || !lastName || !email || !clubName) {
-      return NextResponse.json({ error: "First name, last name, email, and club name are required" }, { status: 400 })
+    if (waitlistRateLimiter) {
+      const { success } = await waitlistRateLimiter.limit(getIp(req))
+      if (!success) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429 },
+        )
+      }
     }
 
-    const trimmedFirst = firstName.trim()
-    const trimmedLast = lastName.trim()
-    const trimmedClub = clubName.trim()
+    const parsed = waitlistSchema.safeParse(await req.json())
+    if (!parsed.success) return validationError(parsed.error)
 
-    if (!trimmedFirst || !trimmedLast || !trimmedClub) {
-      return NextResponse.json({ error: "First name, last name, and club name are required" }, { status: 400 })
-    }
+    const {
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+      clubName: trimmedClub,
+      email: normalizedEmail,
+      groups,
+    } = parsed.data
 
-    if (!Array.isArray(groups) || groups.length === 0 || groups[0]?.ageGroups?.length === 0) {
-      return NextResponse.json({ error: "At least one group with an age group is required" }, { status: 400 })
-    }
-
-    const normalizedEmail = email.toLowerCase().trim()
     const name = `${trimmedFirst} ${trimmedLast}`
 
     const db = await getDb()
