@@ -9,6 +9,22 @@ import {
   handleCoachInvite,
 } from "./type-handlers"
 
+/**
+ * How long a reservation is honoured before another request may take it over.
+ * Bounds the damage if a redeem crashes between claiming and completing.
+ */
+const CLAIM_TTL_MS = 5 * 60 * 1000
+
+/** Hand a reserved invite back so the link keeps working after a failed redeem. */
+async function releaseClaim(db: Awaited<ReturnType<typeof getDb>>, token: string) {
+  try {
+    await db.collection("invites").updateOne({ token }, { $unset: { claimedAt: "" } })
+  } catch (err) {
+    // Never mask the original failure with a cleanup error.
+    console.error("Failed to release invite claim:", err)
+  }
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ token: string }> }
@@ -50,36 +66,66 @@ export async function POST(
       }
     }
 
-    // Atomically claim — invite is consumed only after validation passes
-    const invite = await db.collection("invites").findOneAndDelete({ token })
+    // Reserve the invite rather than deleting it.
+    //
+    // The type handlers run several more validations (password length, name fields,
+    // under-13 parent-email match, role mismatch) and each deletes the invite itself
+    // on the success path. Deleting up front therefore destroyed the link whenever
+    // one of those checks failed — a user who mistyped their password could never
+    // use their invite again.
+    //
+    // A reservation keeps the concurrency guarantee (a second request cannot claim a
+    // reserved invite) while letting a failed redeem hand the link back.
+    const claimedAt = new Date()
+    const staleCutoff = new Date(claimedAt.getTime() - CLAIM_TTL_MS)
+    const invite = await db.collection("invites").findOneAndUpdate(
+      {
+        token,
+        // A reservation left behind by a crashed request becomes claimable again.
+        $or: [{ claimedAt: { $exists: false } }, { claimedAt: { $lt: staleCutoff } }],
+      },
+      { $set: { claimedAt } },
+      { returnDocument: "after" },
+    )
     if (!invite) {
-      // Race: claimed by a concurrent request between findOne and findOneAndDelete
-      return NextResponse.json({ error: "Invite not found" }, { status: 404 })
+      // The invite existed a moment ago (checked above), so losing the claim means a
+      // concurrent redeem holds it.
+      return NextResponse.json(
+        { error: "This invite is already being redeemed. Please try again in a moment." },
+        { status: 409 },
+      )
     }
 
-    const type = invite.type as string
-    const groupId = invite.groupId as string
-    const group = await db.collection("groups").findOne({
-      _id: new ObjectId(groupId),
-    })
-    if (!group) {
-      return NextResponse.json({ error: "Group not found" }, { status: 404 })
-    }
+    try {
+      const type = invite.type as string
+      const groupId = invite.groupId as string
+      const group = await db.collection("groups").findOne({
+        _id: new ObjectId(groupId),
+      })
 
-    if (type === "under13_parent") {
-      return handleUnder13ParentInvite(db, invite, group, body, token)
-    }
-    if (type === "athlete") {
-      return handleAthleteInvite(db, invite, group, body, token)
-    }
-    if (type === "parent") {
-      return handleParentInvite(db, invite, group, body, token)
-    }
-    if (type === "coach") {
-      return handleCoachInvite(db, invite, group, body, token)
-    }
+      let response: NextResponse
+      if (!group) {
+        response = NextResponse.json({ error: "Group not found" }, { status: 404 })
+      } else if (type === "under13_parent") {
+        response = await handleUnder13ParentInvite(db, invite, group, body, token)
+      } else if (type === "athlete") {
+        response = await handleAthleteInvite(db, invite, group, body, token)
+      } else if (type === "parent") {
+        response = await handleParentInvite(db, invite, group, body, token)
+      } else if (type === "coach") {
+        response = await handleCoachInvite(db, invite, group, body, token)
+      } else {
+        response = NextResponse.json({ error: "Unknown invite type" }, { status: 400 })
+      }
 
-    return NextResponse.json({ error: "Unknown invite type" }, { status: 400 })
+      // On success the handler has already deleted the invite, so this matches
+      // nothing. On failure it returns the link to a usable state.
+      if (!response.ok) await releaseClaim(db, token)
+      return response
+    } catch (err) {
+      await releaseClaim(db, token)
+      throw err
+    }
   } catch (error) {
     console.error("Redeem invite error:", error)
     return NextResponse.json(
