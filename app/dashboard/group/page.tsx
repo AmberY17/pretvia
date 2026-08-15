@@ -252,6 +252,8 @@ export default function GroupManagementPage() {
         return;
       }
       mutateMembers();
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
     } catch {
       toast.error("Network error");
     } finally {

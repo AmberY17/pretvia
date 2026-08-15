@@ -10,18 +10,18 @@ interface UseRequireAuthOptions {
 
 export function useRequireAuth(options: UseRequireAuthOptions = {}) {
   const router = useRouter();
-  const { user, isLoading, mutate } = useAuth();
+  const { user, isLoading, isError, mutate } = useAuth();
   const loggingOutRef = useRef(false);
   const requireCoach = options.requireCoach ?? false;
 
   useEffect(() => {
     if (loggingOutRef.current) return;
-    if (!isLoading && !user) {
+    if (!isLoading && !user && !isError) {
       router.push("/auth");
     } else if (!isLoading && requireCoach && user?.role !== "coach") {
       router.push("/dashboard");
     }
-  }, [isLoading, user, router, requireCoach]);
+  }, [isLoading, user, isError, router, requireCoach]);
 
   return { user, isLoading, mutate, loggingOutRef };
 }

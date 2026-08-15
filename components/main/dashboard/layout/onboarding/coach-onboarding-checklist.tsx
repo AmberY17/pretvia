@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, Circle } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -65,6 +65,13 @@ export function CoachOnboardingChecklist({
     inviteAthletes: false,
     installApp: false,
   })
+  const completeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (completeTimeoutRef.current) clearTimeout(completeTimeoutRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     try {
@@ -88,19 +95,17 @@ export function CoachOnboardingChecklist({
   }, [hasGroup, userId])
 
   const markAndNavigate = (key: keyof ChecklistState, href: string) => {
-    setChecks((prev) => {
-      const next = { ...prev, [key]: true }
-      try {
-        localStorage.setItem(checklistKey(userId), JSON.stringify(next))
-        if (Object.values(next).every(Boolean)) {
-          localStorage.setItem(coachOnboardingDoneKey(userId), "1")
-          setTimeout(onComplete, 0)
-        }
-      } catch {
-        // ignore
+    const next = { ...checks, [key]: true }
+    setChecks(next)
+    try {
+      localStorage.setItem(checklistKey(userId), JSON.stringify(next))
+      if (Object.values(next).every(Boolean)) {
+        localStorage.setItem(coachOnboardingDoneKey(userId), "1")
+        completeTimeoutRef.current = setTimeout(onComplete, 0)
       }
-      return next
-    })
+    } catch {
+      // ignore
+    }
     router.push(href)
   }
 

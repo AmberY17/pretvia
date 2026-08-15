@@ -15,7 +15,9 @@ export async function logsFetcher<T = unknown>(url: string, cursor: string | nul
   const fullUrl = cursor
     ? `${url}${limitParam}&cursor=${encodeURIComponent(cursor)}`
     : `${url}${limitParam}`;
-  const data = await fetch(fullUrl).then((r) => r.json());
+  const r = await fetch(fullUrl);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error ?? "Request failed");
   return {
     logs: (data.logs ?? []) as T[],
     nextCursor: data.nextCursor ?? null,

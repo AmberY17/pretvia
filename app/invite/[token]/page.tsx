@@ -436,6 +436,7 @@ function InviteAthleteForm({
   const [password, setPassword] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     setEmail(invite.email);
@@ -444,21 +445,26 @@ function InviteAthleteForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: invite.email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.error || "Login failed");
-        return;
+      setIsLoggingIn(true);
+      try {
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: invite.email, password }),
+        });
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) {
+          toast.error(loginData.error || "Login failed");
+          return;
+        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+        await redeem({
+          createAccount: false,
+          email: invite.email,
+        });
+      } finally {
+        setIsLoggingIn(false);
       }
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
-      await redeem({
-        createAccount: false,
-        email: invite.email,
-      });
     } else {
       if (!agreedToTerms) {
         toast.error("Please agree to the Terms of Service and Privacy Policy");
@@ -549,8 +555,8 @@ function InviteAthleteForm({
                   </label>
                 </div>
               )}
-              <Button type="submit" disabled={redeeming || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
-                {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and join" : "Create account and join"}
+              <Button type="submit" disabled={redeeming || isLoggingIn || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
+                {redeeming || isLoggingIn ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and join" : "Create account and join"}
               </Button>
               <button
                 type="button"
@@ -594,23 +600,29 @@ function InviteCoachForm({
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: invite.email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.error || "Login failed");
-        return;
+      setIsLoggingIn(true);
+      try {
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: invite.email, password }),
+        });
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) {
+          toast.error(loginData.error || "Login failed");
+          return;
+        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+        const result = await redeem({ createAccount: false, email: invite.email });
+        if (result?.redirect) router.push(result.redirect);
+      } finally {
+        setIsLoggingIn(false);
       }
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
-      const result = await redeem({ createAccount: false, email: invite.email });
-      if (result?.redirect) router.push(result.redirect);
     } else {
       if (!agreedToTerms) {
         toast.error("Please agree to the Terms of Service and Privacy Policy");
@@ -697,8 +709,8 @@ function InviteCoachForm({
                   </label>
                 </div>
               )}
-              <Button type="submit" disabled={redeeming || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
-                {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and join" : "Create account and join"}
+              <Button type="submit" disabled={redeeming || isLoggingIn || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
+                {redeeming || isLoggingIn ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and join" : "Create account and join"}
               </Button>
               <button
                 type="button"
@@ -741,22 +753,28 @@ function InviteParentForm({
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: invite.email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.error || "Login failed");
-        return;
+      setIsLoggingIn(true);
+      try {
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: invite.email, password }),
+        });
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) {
+          toast.error(loginData.error || "Login failed");
+          return;
+        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+        await redeem({ createAccount: false, email: invite.email });
+      } finally {
+        setIsLoggingIn(false);
       }
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
-      await redeem({ createAccount: false, email: invite.email });
     } else {
       if (!agreedToTerms) {
         toast.error("Please agree to the Terms of Service and Privacy Policy");
@@ -840,8 +858,8 @@ function InviteParentForm({
                   </label>
                 </div>
               )}
-              <Button type="submit" disabled={redeeming || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
-                {redeeming ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and continue" : "Create account"}
+              <Button type="submit" disabled={redeeming || isLoggingIn || (!isLogin && !agreedToTerms)} className="mt-2 w-full">
+                {redeeming || isLoggingIn ? <Loader2 className="h-4 w-4 animate-spin" /> : isLogin ? "Sign in and continue" : "Create account"}
               </Button>
               <button
                 type="button"

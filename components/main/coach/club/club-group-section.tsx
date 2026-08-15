@@ -40,6 +40,8 @@ export function ClubGroupSection({ groups }: ClubGroupSectionProps) {
       setShowForm(false);
       queryClient.invalidateQueries({ queryKey: queryKeys.club.overview });
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.coachGroups });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groups.myGroups });
     } catch {
       toast.error("Something went wrong");
     } finally {

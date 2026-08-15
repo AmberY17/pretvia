@@ -45,33 +45,25 @@ function pairKey(p: GuardianPair) {
   return `${p.athleteId}:${p.groupId}`;
 }
 
-export function GuardianDashboardContent({
+interface AthletesPopoverProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  availablePairs: GuardianPair[];
+  selectedPairs: GuardianPair[];
+  selectedSet: Set<string>;
+  togglePair: (p: GuardianPair) => void;
+}
+
+function AthletesPopover({
+  open,
+  onOpenChange,
   availablePairs,
   selectedPairs,
-  onSelectedPairsChange,
-  calendars,
-  isLoading,
-  viewMode,
-  onViewModeChange,
-  month,
-  onMonthChange,
-  weekStart,
-  onWeekChange,
-}: GuardianDashboardContentProps) {
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [viewModePopoverOpen, setViewModePopoverOpen] = useState(false);
-  const selectedSet = new Set(selectedPairs.map(pairKey));
-
-  const togglePair = (p: GuardianPair) => {
-    if (selectedSet.has(pairKey(p))) {
-      onSelectedPairsChange(selectedPairs.filter((x) => pairKey(x) !== pairKey(p)));
-    } else {
-      onSelectedPairsChange([...selectedPairs, p]);
-    }
-  };
-
-  const AthletesPopover = () => (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+  selectedSet,
+  togglePair,
+}: AthletesPopoverProps) {
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -118,9 +110,23 @@ export function GuardianDashboardContent({
       </PopoverContent>
     </Popover>
   );
+}
 
-  const ViewModePopover = () => (
-    <Popover open={viewModePopoverOpen} onOpenChange={setViewModePopoverOpen}>
+interface ViewModePopoverProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  viewMode: "month" | "week";
+  onViewModeChange: (mode: "month" | "week") => void;
+}
+
+function ViewModePopover({
+  open,
+  onOpenChange,
+  viewMode,
+  onViewModeChange,
+}: ViewModePopoverProps) {
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -145,7 +151,7 @@ export function GuardianDashboardContent({
             type="button"
             onClick={() => {
               onViewModeChange("month");
-              setViewModePopoverOpen(false);
+              onOpenChange(false);
             }}
             className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors ${
               viewMode === "month"
@@ -160,7 +166,7 @@ export function GuardianDashboardContent({
             type="button"
             onClick={() => {
               onViewModeChange("week");
-              setViewModePopoverOpen(false);
+              onOpenChange(false);
             }}
             className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors ${
               viewMode === "week"
@@ -175,13 +181,46 @@ export function GuardianDashboardContent({
       </PopoverContent>
     </Popover>
   );
+}
+
+export function GuardianDashboardContent({
+  availablePairs,
+  selectedPairs,
+  onSelectedPairsChange,
+  calendars,
+  isLoading,
+  viewMode,
+  onViewModeChange,
+  month,
+  onMonthChange,
+  weekStart,
+  onWeekChange,
+}: GuardianDashboardContentProps) {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [viewModePopoverOpen, setViewModePopoverOpen] = useState(false);
+  const selectedSet = new Set(selectedPairs.map(pairKey));
+
+  const togglePair = (p: GuardianPair) => {
+    if (selectedSet.has(pairKey(p))) {
+      onSelectedPairsChange(selectedPairs.filter((x) => pairKey(x) !== pairKey(p)));
+    } else {
+      onSelectedPairsChange([...selectedPairs, p]);
+    }
+  };
 
   if (selectedPairs.length === 0) {
     return (
       <main className="flex flex-1 flex-col overflow-y-auto p-6">
         <div className="mx-auto w-full max-w-2xl space-y-4">
           <div className="lg:hidden">
-            <AthletesPopover />
+            <AthletesPopover
+              open={popoverOpen}
+              onOpenChange={setPopoverOpen}
+              availablePairs={availablePairs}
+              selectedPairs={selectedPairs}
+              selectedSet={selectedSet}
+              togglePair={togglePair}
+            />
           </div>
           <p className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
             Select athletes and groups to view calendars.
@@ -197,10 +236,22 @@ export function GuardianDashboardContent({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <div className="lg:hidden">
-              <AthletesPopover />
+              <AthletesPopover
+                open={popoverOpen}
+                onOpenChange={setPopoverOpen}
+                availablePairs={availablePairs}
+                selectedPairs={selectedPairs}
+                selectedSet={selectedSet}
+                togglePair={togglePair}
+              />
             </div>
             <div className="lg:hidden">
-              <ViewModePopover />
+              <ViewModePopover
+                open={viewModePopoverOpen}
+                onOpenChange={setViewModePopoverOpen}
+                viewMode={viewMode}
+                onViewModeChange={onViewModeChange}
+              />
             </div>
             <div className="hidden gap-1 lg:flex">
               <button

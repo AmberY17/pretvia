@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
@@ -31,6 +31,7 @@ interface ConfettiCelebrationProps {
 }
 
 export function ConfettiCelebration({ totalCount, onDismiss, userId }: ConfettiCelebrationProps) {
+  const rafIdRef = useRef<number | null>(null);
   const handleDismiss = useCallback(() => {
     onDismiss();
   }, [onDismiss]);
@@ -63,14 +64,17 @@ export function ConfettiCelebration({ totalCount, onDismiss, userId }: ConfettiC
           colors: ["hsl(var(--primary))", "hsl(var(--primary) / 0.8)", "hsl(var(--muted-foreground))"],
         });
         if (Date.now() < end) {
-          requestAnimationFrame(frame);
+          rafIdRef.current = requestAnimationFrame(frame);
         }
       };
-      frame();
+      rafIdRef.current = requestAnimationFrame(frame);
     }
 
     const timer = setTimeout(handleDismiss, 3500);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+    };
   }, [handleDismiss]);
 
   useEffect(() => {
