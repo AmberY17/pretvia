@@ -4,7 +4,7 @@ import React from "react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetcher } from "@/lib/query-client";
+import { apiFetcher, apiMutate } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import {
   MessageCircle,
@@ -58,7 +58,7 @@ export function CommentSection({
 
   const commentsQueryKey = [...queryKeys.comments.byLog(logId), currentUserId, groupId ?? ""];
 
-  const { data } = useQuery<{ comments: Comment[]; unreadCount: number }>({
+  const { data, isError: commentsIsError } = useQuery<{ comments: Comment[]; unreadCount: number }>({
     queryKey: commentsQueryKey,
     queryFn: () => apiFetcher(`/api/comments?logId=${logId}`),
     enabled: canParticipate,
@@ -66,6 +66,10 @@ export function CommentSection({
 
   const comments = data?.comments ?? [];
   const unreadCount = data?.unreadCount ?? 0;
+
+  useEffect(() => {
+    if (commentsIsError) toast.error("Couldn't load comments. Try refreshing the page.");
+  }, [commentsIsError]);
 
   const invalidateComments = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: queryKeys.comments.byLog(logId) });
@@ -78,20 +82,15 @@ export function CommentSection({
 
       setSending(true);
       try {
-        const res = await fetch("/api/comments", {
+        await apiMutate("/api/comments", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ logId, text: newComment.trim() }),
         });
-        if (!res.ok) {
-          const data = await res.json();
-          toast.error(data.error || "Failed to post comment");
-          return;
-        }
         setNewComment("");
         invalidateComments();
-      } catch {
-        toast.error("Network error");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to post comment");
       } finally {
         setSending(false);
       }
@@ -104,21 +103,16 @@ export function CommentSection({
       if (!editText.trim()) return;
       setActionLoading(commentId);
       try {
-        const res = await fetch("/api/comments", {
+        await apiMutate("/api/comments", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: commentId, text: editText.trim() }),
         });
-        if (!res.ok) {
-          const data = await res.json();
-          toast.error(data.error || "Failed to edit comment");
-          return;
-        }
         setEditingId(null);
         setEditText("");
         invalidateComments();
-      } catch {
-        toast.error("Network error");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to edit comment");
       } finally {
         setActionLoading(null);
       }
@@ -130,16 +124,10 @@ export function CommentSection({
     async (commentId: string) => {
       setActionLoading(commentId);
       try {
-        const res = await fetch(`/api/comments?id=${commentId}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) {
-          toast.error("Failed to delete comment");
-          return;
-        }
+        await apiMutate(`/api/comments?id=${commentId}`, { method: "DELETE" });
         invalidateComments();
-      } catch {
-        toast.error("Network error");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to delete comment");
       } finally {
         setActionLoading(null);
       }

@@ -7,9 +7,8 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { apiFetcher } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { GuardianSidebar } from "./guardian-sidebar";
-import type { GuardianPair } from "@/types/dashboard";
+import type { GuardianPair, CalendarData, User } from "@/types/dashboard";
 import { GuardianDashboardContent } from "./guardian-dashboard-content";
-import type { User } from "@/hooks/use-auth";
 
 interface GuardianDashboardProps {
   user: User;
@@ -36,14 +35,7 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
 
   const { data, isLoading, isFetching } = useQuery<{
     availablePairs: GuardianPair[];
-    calendars: {
-      athleteId: string;
-      groupId: string;
-      athleteName: string;
-      groupName: string;
-      dates: Record<string, string[]>;
-      attendanceByDate: Record<string, "present" | "absent" | "excused">;
-    }[];
+    calendars: CalendarData[];
   }>({
     queryKey: [...queryKeys.guardian.calendar(calendarUrl), user.id, month, weekStart, viewMode, pairsParam],
     queryFn: () => apiFetcher(calendarUrl),
@@ -82,7 +74,7 @@ export function GuardianDashboard({ user, onLogout }: GuardianDashboardProps) {
     }
   }, []);
 
-  const linkedAthleteIds = (user as { linkedAthleteIds?: string[] }).linkedAthleteIds ?? [];
+  const linkedAthleteIds = user.linkedAthleteIds ?? [];
 
   if (linkedAthleteIds.length === 0) {
     return (

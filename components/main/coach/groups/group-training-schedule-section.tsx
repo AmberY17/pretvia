@@ -36,7 +36,7 @@ export function GroupTrainingScheduleSection({
       <div className="flex flex-col gap-3">
         {trainingSchedule.map((slot, index) => (
           <div
-            key={index}
+            key={`${slot.dayOfWeek}:${slot.time}`}
             className="flex min-w-0 flex-nowrap items-center gap-2 rounded-lg border border-border bg-secondary/50 p-3"
           >
             <DayWheelPicker

@@ -66,6 +66,24 @@ const CHECKS: Check[] = [
       "Three call sites upsert on this pair and one (verify-under13-child) does a " +
       "raw insertOne. Duplicates repeat the athlete in the guardian's calendar.",
   },
+  {
+    index: "pending_signups.token (unique)",
+    collection: "pending_signups",
+    key: { token: "$token" },
+    match: { token: { $exists: true, $ne: null } },
+    note:
+      "Token lookups are per-request during signup verification; a duplicate " +
+      "token would make the wrong pending signup resolvable.",
+  },
+  {
+    index: "password_reset_tokens.token (unique)",
+    collection: "password_reset_tokens",
+    key: { token: "$token" },
+    match: { token: { $exists: true, $ne: null } },
+    note:
+      "Same as pending_signups.token — a duplicate token would let a reset link " +
+      "resolve to the wrong account.",
+  },
 ]
 
 /**

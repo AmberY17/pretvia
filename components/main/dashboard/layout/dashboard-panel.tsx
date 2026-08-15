@@ -93,6 +93,8 @@ export function DashboardPanel({
               onDelete={handleDeleteLog}
               isCoach={user.role === "coach"}
               onMutateLogs={handleMutateLogs}
+              currentUserId={user.id}
+              groupId={user.activeGroupId}
             />
           </motion.div>
         )}
@@ -144,6 +146,8 @@ export function DashboardPanel({
           onDelete={handleDeleteLog}
           isCoach={user.role === "coach"}
           onMutateLogs={handleMutateLogs}
+          currentUserId={user.id}
+          groupId={user.activeGroupId}
         />
       )}
       {panelMode === "edit" && selectedLog && user.role !== "coach" && (

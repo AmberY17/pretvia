@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { apiMutate } from "@/lib/query-client";
 
 export function FeedbackButton() {
   const [open, setOpen] = useState(false);
@@ -29,7 +30,7 @@ export function FeedbackButton() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch("/api/feedback", {
+      await apiMutate("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -37,16 +38,11 @@ export function FeedbackButton() {
           page: typeof window !== "undefined" ? window.location.pathname : undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? "Failed to send feedback.");
-        return;
-      }
       toast.success("Thanks for your feedback!");
       setMessage("");
       setOpen(false);
-    } catch {
-      toast.error("Failed to send feedback.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send feedback.");
     } finally {
       setSubmitting(false);
     }

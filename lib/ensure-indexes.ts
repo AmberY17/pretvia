@@ -41,7 +41,11 @@ export async function ensureIndexes(): Promise<boolean> {
       name: "logs.userId_timestamp_id",
       run: () => db.collection("logs").createIndex({ userId: 1, timestamp: -1, _id: -1 }),
     },
-    { name: "logs.userId", run: () => db.collection("logs").createIndex({ userId: 1 }) },
+    // Redundant prefix of logs.userId_timestamp_id — drop rather than leave unused.
+    {
+      name: "logs.drop_redundant_userId",
+      run: () => db.collection("logs").dropIndex("userId_1").catch(() => {}),
+    },
     { name: "logs.userId_tags", run: () => db.collection("logs").createIndex({ userId: 1, tags: 1 }) },
     {
       name: "logs.checkinId_userId",
@@ -103,11 +107,16 @@ export async function ensureIndexes(): Promise<boolean> {
         db.collection("comment_reads").createIndex({ userId: 1, logId: 1 }, { unique: true }),
     },
 
-    // skippedDays
-    { name: "skippedDays.userId", run: () => db.collection("skippedDays").createIndex({ userId: 1 }) },
+    // skippedDays — the two prefix indexes below are redundant now that the
+    // unique compound index (right below) starts with the same {userId,
+    // dayOfWeek} prefix; drop them rather than leave them unused.
     {
-      name: "skippedDays.userId_dayOfWeek",
-      run: () => db.collection("skippedDays").createIndex({ userId: 1, dayOfWeek: 1 }),
+      name: "skippedDays.drop_redundant_userId",
+      run: () => db.collection("skippedDays").dropIndex("userId_1").catch(() => {}),
+    },
+    {
+      name: "skippedDays.drop_redundant_userId_dayOfWeek",
+      run: () => db.collection("skippedDays").dropIndex("userId_1_dayOfWeek_1").catch(() => {}),
     },
     // Unique: POST /api/skipped-days upserts one row per training slot, so this
     // is what makes those upserts safe against a concurrent duplicate.
@@ -183,6 +192,66 @@ export async function ensureIndexes(): Promise<boolean> {
         db
           .collection("guardianLinks")
           .createIndex({ guardianId: 1, athleteId: 1 }, { unique: true }),
+    },
+    {
+      name: "guardianLinks.athleteId",
+      run: () => db.collection("guardianLinks").createIndex({ athleteId: 1 }),
+    },
+
+    // pending_signups — token is a per-request lookup on the verify-email hot
+    // path; unique because a duplicate token would resolve to the wrong
+    // pending signup. TTL so abandoned signups auto-expire (routes still do
+    // their own request-time expiry check — TTL deletion is lazy).
+    {
+      name: "pending_signups.token_unique",
+      run: () => db.collection("pending_signups").createIndex({ token: 1 }, { unique: true }),
+    },
+    {
+      name: "pending_signups.ttl",
+      run: () =>
+        db.collection("pending_signups").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    },
+
+    // password_reset_tokens — same shape as pending_signups above.
+    {
+      name: "password_reset_tokens.token_unique",
+      run: () =>
+        db.collection("password_reset_tokens").createIndex({ token: 1 }, { unique: true }),
+    },
+    {
+      name: "password_reset_tokens.ttl",
+      run: () =>
+        db
+          .collection("password_reset_tokens")
+          .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+    },
+
+    // guardianPendingAthletes — dedupe/lookup key used by the upsert in
+    // redeem/type-handlers.ts.
+    {
+      name: "guardianPendingAthletes.guardianId_athleteEmail",
+      run: () =>
+        db
+          .collection("guardianPendingAthletes")
+          .createIndex({ guardianId: 1, athleteEmail: 1 }),
+    },
+
+    // invites — moved here from the ad hoc ensureInviteIndexes() that used to
+    // run on every POST to /api/groups/[groupId]/invites; now created once at
+    // startup like every other index, with the same Sentry-tagged failure
+    // reporting. TTL is a separate single-field index — the compound one below
+    // is still needed for the groupId-scoped queries.
+    {
+      name: "invites.token_unique",
+      run: () => db.collection("invites").createIndex({ token: 1 }, { unique: true }),
+    },
+    {
+      name: "invites.groupId_expiresAt",
+      run: () => db.collection("invites").createIndex({ groupId: 1, expiresAt: 1 }),
+    },
+    {
+      name: "invites.ttl",
+      run: () => db.collection("invites").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     },
 
     // groups

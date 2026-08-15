@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-import { apiFetcher } from "@/lib/query-client";
+import { apiFetcher, apiMutate } from "@/lib/query-client";
 import { Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -71,24 +71,21 @@ export default function InvitePage() {
       if (!token) return;
       setRedeeming(true);
       try {
-        const res = await fetch(`/api/invites/${token}/redeem`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          toast.error(data.error || "Something went wrong");
-          setRedeeming(false);
-          return;
-        }
+        const data = await apiMutate<{ requiresChildVerification?: boolean; redirect?: string }>(
+          `/api/invites/${token}/redeem`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
         queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
         if (!data.requiresChildVerification && data.redirect) {
           router.push(data.redirect);
         }
         return data;
-      } catch {
-        toast.error("Network error. Please try again.");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Network error. Please try again.");
       } finally {
         setRedeeming(false);
       }

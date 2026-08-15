@@ -3,22 +3,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { apiFetcher } from "@/lib/query-client"
 import { queryKeys } from "@/lib/query-keys"
-import type { CoachSubscription, UserGroup, TrainingSlotItem } from "@/types/dashboard"
+import type { User } from "@/types/dashboard"
 
-export interface User {
-  id: string
-  email: string
-  displayName: string | null
-  role: string
-  activeGroupId: string | null
-  group: UserGroup | null
-  groups: UserGroup[]
-  groupIds: string[]
-  profileComplete: boolean
-  profileEmoji: string | null
-  trainingSlots: TrainingSlotItem[]
-  subscription?: CoachSubscription
-}
+export type { User }
 
 export function useAuth() {
   const queryClient = useQueryClient()

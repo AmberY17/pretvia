@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { apiMutate } from "@/lib/query-client"
 
 type WaitlistStatus = "pending" | "approved" | "rejected"
 
@@ -45,12 +46,9 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
   const handleApprove = useCallback(async (id: string) => {
     setApproving(id)
     try {
-      const res = await fetch(`/api/admin/waitlist/${id}/approve`, { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || "Failed to approve")
-        return
-      }
+      const data = await apiMutate<{ emailOk?: boolean }>(`/api/admin/waitlist/${id}/approve`, {
+        method: "POST",
+      })
       setEntries((prev) =>
         prev.map((e) => (e._id === id ? { ...e, status: "approved" as WaitlistStatus } : e))
       )
@@ -59,8 +57,8 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
       } else {
         toast.success("Approved — invite email sent")
       }
-    } catch {
-      toast.error("Network error")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to approve")
     } finally {
       setApproving(null)
     }
@@ -69,16 +67,11 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
   const handleDelete = useCallback(async (id: string) => {
     setDeleting(id)
     try {
-      const res = await fetch(`/api/admin/waitlist/${id}`, { method: "DELETE" })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || "Failed to delete")
-        return
-      }
+      await apiMutate(`/api/admin/waitlist/${id}`, { method: "DELETE" })
       setEntries((prev) => prev.filter((e) => e._id !== id))
       toast.success("Entry deleted")
-    } catch {
-      toast.error("Network error")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete")
     } finally {
       setDeleting(null)
     }
@@ -87,19 +80,16 @@ export function WaitlistTable({ initialEntries }: WaitlistTableProps) {
   const handleResend = useCallback(async (id: string) => {
     setResending(id)
     try {
-      const res = await fetch(`/api/admin/waitlist/${id}/resend`, { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || "Failed to resend")
-        return
-      }
+      const data = await apiMutate<{ emailOk?: boolean }>(`/api/admin/waitlist/${id}/resend`, {
+        method: "POST",
+      })
       if (data.emailOk === false) {
         toast.error("Email failed to send — try again")
       } else {
         toast.success("Invite email resent")
       }
-    } catch {
-      toast.error("Network error")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to resend")
     } finally {
       setResending(null)
     }

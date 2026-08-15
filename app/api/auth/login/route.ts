@@ -5,6 +5,14 @@ import { createSession } from "@/lib/auth"
 import { isTestAccount } from "@/lib/auth-config"
 import { loginRateLimiter, getIp } from "@/lib/rate-limit"
 
+// A precomputed bcrypt hash with no matching plaintext, compared against when
+// there's no real password to check (unknown user / Google-only account) so
+// those responses take roughly as long as a genuine wrong-password attempt —
+// closes the timing side-channel that would otherwise reveal account
+// existence/type before any password is checked.
+const DUMMY_PASSWORD_HASH =
+  "$2a$10$f0N07jjZk.W1AHRvSpPZpeXeF6aISXGuoGlmPoLBcR8RXw2G.Vrxy"
+
 export async function POST(req: Request) {
   try {
     if (loginRateLimiter) {
@@ -36,6 +44,7 @@ export async function POST(req: Request) {
       .findOne({ email: email.trim().toLowerCase() })
 
     if (!user) {
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH)
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
@@ -44,6 +53,7 @@ export async function POST(req: Request) {
 
     // Google-only users have no password; they must use Google sign-in
     if (!user.password) {
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH)
       return NextResponse.json(
         { error: "This account uses Google sign-in. Please sign in with Google." },
         { status: 401 }

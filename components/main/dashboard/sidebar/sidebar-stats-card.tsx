@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 
 const SKIP_DISABLED_MESSAGES: Record<
   "no_training" | "already_skipped" | "already_logged",
@@ -72,7 +73,7 @@ export function SidebarStatsCard({
     }
     setSkipping(true);
     try {
-      const res = await fetch("/api/skipped-days", {
+      await apiMutate("/api/skipped-days", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -81,16 +82,11 @@ export function SidebarStatsCard({
           ...(activeGroupId ? { groupId: activeGroupId } : {}),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to skip");
-        return;
-      }
       setSkipOpen(false);
       setSkipReason("");
       onMutateStats();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to skip");
     } finally {
       setSkipping(false);
     }

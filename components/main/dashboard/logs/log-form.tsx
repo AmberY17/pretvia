@@ -14,6 +14,7 @@ const EmojiPicker = dynamic(
 import { TagInput } from "./tag-input";
 import { DateTimeWheelPicker } from "@/components/main/dashboard/shared";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 import type { LogEntry } from "@/types/dashboard";
 
 interface LogFormProps {
@@ -92,7 +93,7 @@ export function LogForm({
       setNotes("");
       setTags([]);
     }
-  }, [editLog, prefillTimestamp, checkinId]);
+  }, [editLog, prefillTimestamp]);
 
   // Fetch today's log limits when in "new" mode without a checkin
   useEffect(() => {
@@ -114,7 +115,9 @@ export function LogForm({
         setTodaySharedLogId(data.sharedLogId ?? null);
         setTodayPrivateLogId(data.privateLogId ?? null);
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (!cancelled) console.error("Failed to fetch today's log limits:", err);
+      })
       .finally(() => { if (!cancelled) setTodayLoading(false); });
     return () => { cancelled = true; };
   }, [isEditing, checkinId, activeGroupId]);
@@ -139,7 +142,7 @@ export function LogForm({
       try {
         if (isEditing && editLog) {
           // PUT to update
-          const res = await fetch("/api/logs", {
+          await apiMutate("/api/logs", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -151,15 +154,10 @@ export function LogForm({
               tags,
             }),
           });
-          if (!res.ok) {
-            const data = await res.json();
-            toast.error(data.error || "Failed to update log");
-            return;
-          }
           onLogUpdated?.();
         } else {
           // POST to create
-          const res = await fetch("/api/logs", {
+          const data = await apiMutate<{ totalCount?: number }>("/api/logs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -171,17 +169,13 @@ export function LogForm({
               ...(checkinId ? { checkinId } : {}),
             }),
           });
-          if (!res.ok) {
-            const data = await res.json();
-            toast.error(data.error || "Failed to create log");
-            return;
-          }
-          const data = await res.json();
           resetForm();
           onLogCreated(data.totalCount);
         }
-      } catch {
-        toast.error("Network error. Please try again.");
+      } catch (e) {
+        toast.error(
+          e instanceof Error ? e.message : "Network error. Please try again.",
+        );
       } finally {
         setLoading(false);
       }

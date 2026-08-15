@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 
 interface GroupActionFormProps {
   onGroupChanged: () => void;
@@ -37,7 +38,7 @@ export function GroupActionForm({
     setLoading(true);
 
     try {
-      const res = await fetch("/api/groups", {
+      const data = await apiMutate<{ group: { name: string; code: string } }>("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -47,11 +48,6 @@ export function GroupActionForm({
             : { code: groupInput.trim() }),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed");
-        return;
-      }
       toast.success(
         groupAction === "create"
           ? `Group "${data.group.name}" created! Code: ${data.group.code}`
@@ -60,8 +56,8 @@ export function GroupActionForm({
       setShowForm(false);
       setGroupInput("");
       onGroupChanged();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setLoading(false);
     }

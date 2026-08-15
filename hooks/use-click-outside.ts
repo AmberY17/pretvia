@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 /**
  * Listens for mousedown outside the given ref and calls onOutsideClick when active.
@@ -11,14 +11,19 @@ export function useClickOutside<T extends HTMLElement>(
   isActive: boolean,
   onOutsideClick: () => void,
 ) {
+  // Held in a ref so callers passing an inline arrow don't force the
+  // listener to be torn down and re-added on every render.
+  const onOutsideClickRef = useRef(onOutsideClick);
+  onOutsideClickRef.current = onOutsideClick;
+
   useEffect(() => {
     if (!isActive) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        onOutsideClick();
+        onOutsideClickRef.current();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [ref, isActive, onOutsideClick]);
+  }, [ref, isActive]);
 }

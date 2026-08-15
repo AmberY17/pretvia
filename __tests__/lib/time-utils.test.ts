@@ -18,10 +18,13 @@ describe("parseTime", () => {
     expect(parseTime("  14:05  ")).toEqual({ hours: 14, minutes: 5 })
   })
 
-  it("returns NaN/0 for malformed input", () => {
+  it("falls back to 0 for malformed input instead of NaN", () => {
     const result = parseTime("invalid")
-    expect(result.hours).toBeNaN()
-    // minutes defaults to 0 via ?? operator when split produces undefined
+    expect(result.hours).toBe(0)
     expect(result.minutes).toBe(0)
+  })
+
+  it("falls back to 0 for a non-numeric hour with a valid-looking minute", () => {
+    expect(parseTime("ab:30")).toEqual({ hours: 0, minutes: 30 })
   })
 })

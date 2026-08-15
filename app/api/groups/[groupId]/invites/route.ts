@@ -70,12 +70,6 @@ import {
 import { getUserSubscription, getEffectiveLimits } from "@/lib/subscription"
 const INVITE_EXPIRY_DAYS = 7
 
-async function ensureInviteIndexes(db: Awaited<ReturnType<typeof getDb>>) {
-  const invites = db.collection("invites")
-  await invites.createIndex({ token: 1 }, { unique: true })
-  await invites.createIndex({ groupId: 1, expiresAt: 1 })
-}
-
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ groupId: string }> }
@@ -105,8 +99,6 @@ export async function POST(
     }
     const groupName = (group.name as string) ?? "the group"
 
-    await ensureInviteIndexes(db)
-
     const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
 
     if (inviteType === "coach") {
@@ -131,7 +123,7 @@ export async function POST(
       const limits = getEffectiveLimits(sub)
       if (coachIds.length >= limits.coachSeats) {
         return NextResponse.json(
-          { error: "Coach seat limit reached", plan: sub.plan, limit: limits.coachSeats },
+          { error: "Coach seat limit reached" },
           { status: 403 }
         )
       }
@@ -166,9 +158,10 @@ export async function POST(
       const inviteUrl = `${APP_URL}/invite/${token}`
       const sendResult = await sendCoachInviteEmail(email, inviteUrl, groupName)
       if (!sendResult.ok) {
+        console.error("Coach invite email send failed:", sendResult.error)
         await db.collection("invites").deleteOne({ token })
         return NextResponse.json(
-          { error: sendResult.error ?? "Failed to send invite email" },
+          { error: "Failed to send invite email" },
           { status: 500 }
         )
       }
@@ -232,9 +225,10 @@ export async function POST(
         "Athlete"
       )
       if (!sendResult.ok) {
+        console.error("Parent invite email send failed:", sendResult.error)
         await db.collection("invites").deleteOne({ token })
         return NextResponse.json(
-          { error: sendResult.error ?? "Failed to send invite email" },
+          { error: "Failed to send invite email" },
           { status: 500 }
         )
       }
@@ -270,9 +264,10 @@ export async function POST(
       const inviteUrl = `${APP_URL}/invite/${token}`
       const sendResult = await sendUnder13ParentInviteEmail(email, inviteUrl, groupName)
       if (!sendResult.ok) {
+        console.error("Under-13 parent invite email send failed:", sendResult.error)
         await db.collection("invites").deleteOne({ token })
         return NextResponse.json(
-          { error: sendResult.error ?? "Failed to send invite email" },
+          { error: "Failed to send invite email" },
           { status: 500 }
         )
       }
@@ -321,7 +316,8 @@ export async function POST(
     if (athleteSendResult.ok) {
       results.sent.push(athlete)
     } else {
-      results.errors.push(`${athlete}: ${athleteSendResult.error}`)
+      console.error("Athlete invite email send failed:", athlete, athleteSendResult.error)
+      results.errors.push(`${athlete}: failed to send invite email`)
       await db.collection("invites").deleteOne({ token: athleteToken })
     }
 
@@ -349,7 +345,8 @@ export async function POST(
       if (parentSendResult.ok) {
         results.sent.push(parent)
       } else {
-        results.errors.push(`${parent}: ${parentSendResult.error}`)
+        console.error("Parent invite email send failed:", parent, parentSendResult.error)
+        results.errors.push(`${parent}: failed to send invite email`)
         await db.collection("invites").deleteOne({ token: parentToken })
       }
     }

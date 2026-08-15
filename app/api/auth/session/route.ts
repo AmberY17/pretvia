@@ -20,13 +20,14 @@ export async function GET() {
       return NextResponse.json({ user: null })
     }
 
-    // Ensure groupIds is in sync
+    // Ensure groupIds is in sync — $addToSet is atomic and idempotent, so
+    // concurrent session reads can't race and drop each other's addition.
     let groupIds: string[] = Array.isArray(user.groupIds) ? user.groupIds : []
     if (user.activeGroupId && !groupIds.includes(user.activeGroupId)) {
       groupIds = [...groupIds, user.activeGroupId]
       await db.collection("users").updateOne(
         { _id: new ObjectId(session.userId) },
-        { $set: { groupIds } }
+        { $addToSet: { groupIds: user.activeGroupId } }
       )
     }
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { apiMutate } from "@/lib/query-client"
 
 const AGE_GROUPS = ["U8", "U10", "U12", "U14", "U16", "U18", "Adult"]
 const LEVELS = ["Beginner", "Intermediate", "Advanced", "Elite"]
@@ -115,7 +116,7 @@ export function WaitlistForm() {
 
       setLoading(true)
       try {
-        const res = await fetch("/api/waitlist", {
+        await apiMutate("/api/waitlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -126,14 +127,9 @@ export function WaitlistForm() {
             groups: submittedGroups,
           }),
         })
-        const data = await res.json()
-        if (!res.ok) {
-          toast.error(data.error || "Something went wrong")
-          return
-        }
         setSubmitted(true)
-      } catch {
-        toast.error("Network error. Please try again.")
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Network error. Please try again.")
       } finally {
         setLoading(false)
       }

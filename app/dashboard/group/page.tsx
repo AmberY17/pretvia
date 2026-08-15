@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetcher } from "@/lib/query-client";
+import { apiFetcher, apiMutate } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
 import { Settings } from "lucide-react";
@@ -127,23 +127,18 @@ export default function GroupManagementPage() {
     if (trainingSchedule === lastSavedTrainingScheduleRef.current) return;
     const timeout = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/groups/${groupId}/training-schedule`, {
+        await apiMutate(`/api/groups/${groupId}/training-schedule`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ trainingSchedule }),
         });
-        const data = await res.json();
-        if (!res.ok) {
-          toast.error(data.error || "Failed to update training schedule");
-          return;
-        }
         lastSavedTrainingScheduleRef.current = trainingSchedule;
         queryClient.invalidateQueries({
           queryKey: queryKeys.groups.trainingSchedule(groupId),
         });
         toast.success("Training schedule updated.");
-      } catch {
-        toast.error("Network error");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to update training schedule");
       }
     }, 600);
     return () => clearTimeout(timeout);
@@ -165,22 +160,17 @@ export default function GroupManagementPage() {
     if (!newRoleName.trim() || !user?.activeGroupId) return;
     setAddingRole(true);
     try {
-      const res = await fetch(`/api/groups/${user.activeGroupId}/roles`, {
+      await apiMutate(`/api/groups/${user.activeGroupId}/roles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newRoleName.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to add role");
-        return;
-      }
       setNewRoleName("");
       mutateMembers();
       queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add role");
     } finally {
       setAddingRole(false);
     }
@@ -190,7 +180,7 @@ export default function GroupManagementPage() {
     if (!editingRoleId || !newRoleName.trim() || !user?.activeGroupId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.activeGroupId}/roles`, {
+      await apiMutate(`/api/groups/${user.activeGroupId}/roles`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -198,17 +188,12 @@ export default function GroupManagementPage() {
           name: newRoleName.trim(),
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to update role");
-        return;
-      }
       handleCancelEditRole();
       mutateMembers();
       queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update role");
     } finally {
       setSaving(false);
     }
@@ -219,21 +204,15 @@ export default function GroupManagementPage() {
     if (!user?.activeGroupId || !id) return;
     setDeleteRoleConfirmOpen(false);
     try {
-      const res = await fetch(
-        `/api/groups/${user.activeGroupId}/roles?roleId=${id}`,
-        { method: "DELETE" },
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to delete role");
-        return;
-      }
+      await apiMutate(`/api/groups/${user.activeGroupId}/roles?roleId=${id}`, {
+        method: "DELETE",
+      });
       handleCancelEditRole();
       mutateMembers();
       queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete role");
     }
   };
 
@@ -241,21 +220,16 @@ export default function GroupManagementPage() {
     if (!user?.activeGroupId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.activeGroupId}/members`, {
+      await apiMutate(`/api/groups/${user.activeGroupId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "assignRoles", userId, roleIds }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to update roles");
-        return;
-      }
       mutateMembers();
       queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update roles");
     } finally {
       setSaving(false);
     }
@@ -267,22 +241,17 @@ export default function GroupManagementPage() {
     setRemoveConfirmUserId(null);
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.activeGroupId}/members`, {
+      await apiMutate(`/api/groups/${user.activeGroupId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "remove", userId }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to remove");
-        return;
-      }
       mutateMembers();
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to remove");
     } finally {
       setSaving(false);
     }
@@ -292,7 +261,7 @@ export default function GroupManagementPage() {
     if (!transferUserId || !transferGroupId || !user?.activeGroupId) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/groups/${user.activeGroupId}/members`, {
+      await apiMutate(`/api/groups/${user.activeGroupId}/members`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -301,11 +270,6 @@ export default function GroupManagementPage() {
           targetGroupId: transferGroupId,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to transfer");
-        return;
-      }
       setTransferUserId(null);
       setTransferGroupId("");
       setTransferDropdownOpen(false);
@@ -314,8 +278,8 @@ export default function GroupManagementPage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.checkins.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.stats.all });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to transfer");
     } finally {
       setSaving(false);
     }
@@ -325,19 +289,13 @@ export default function GroupManagementPage() {
     if (!user?.activeGroupId) return;
     const token = inviteId.replace("pending-", "");
     try {
-      const res = await fetch(
-        `/api/groups/${user.activeGroupId}/invites?token=${token}`,
-        { method: "DELETE" },
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to cancel invite");
-        return;
-      }
+      await apiMutate(`/api/groups/${user.activeGroupId}/invites?token=${token}`, {
+        method: "DELETE",
+      });
       toast.success("Invite cancelled");
       mutateMembers();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to cancel invite");
     }
   };
 

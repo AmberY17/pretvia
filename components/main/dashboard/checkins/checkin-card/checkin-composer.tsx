@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 import { getNextPracticeFromSchedule } from "@/lib/next-practice-from-schedule";
 import { DateTimeWheelPicker } from "@/components/main/dashboard/shared";
 import type { TrainingSlot } from "@/types/dashboard";
@@ -35,7 +36,7 @@ export function CheckinComposer({
   const handleCreate = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/checkins", {
+      await apiMutate("/api/checkins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,17 +44,12 @@ export function CheckinComposer({
           title: title.trim() || null,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to create check-in");
-        return;
-      }
       setTitle("");
       setSessionDate(toLocalDatetime());
       setIsComposing(false);
       onMutate();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create check-in");
     } finally {
       setLoading(false);
     }

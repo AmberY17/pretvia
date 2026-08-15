@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetcher } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
@@ -33,7 +33,7 @@ export function GuardiansPopover({
 
   const guardiansQueryKey = queryKeys.guardians.byAthlete(groupId, athleteId);
 
-  const { data, isLoading } = useQuery<{
+  const { data, isLoading, isError } = useQuery<{
     guardians: { id: string; displayName: string; email: string }[];
   }>({
     queryKey: guardiansQueryKey,
@@ -41,6 +41,10 @@ export function GuardiansPopover({
     enabled: !!groupId && !!athleteId,
   });
   const guardians = data?.guardians ?? [];
+
+  useEffect(() => {
+    if (isError) toast.error("Couldn't load guardians. Try refreshing the page.");
+  }, [isError]);
 
   async function handleInviteGuardian(e: React.FormEvent) {
     e.preventDefault();

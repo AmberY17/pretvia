@@ -201,3 +201,32 @@ export type UserGroup = {
   code: string;
   headCoachId: string;
 };
+
+/** Authenticated user, as returned by GET /api/auth/session */
+export type User = {
+  id: string;
+  email: string;
+  displayName: string | null;
+  role: string;
+  activeGroupId: string | null;
+  group: UserGroup | null;
+  groups: UserGroup[];
+  groupIds: string[];
+  /** Present (possibly empty) only for role === "guardian" */
+  linkedAthleteIds?: string[];
+  profileComplete: boolean;
+  profileEmoji: string | null;
+  trainingSlots: TrainingSlotItem[];
+  subscription?: CoachSubscription;
+};
+
+/** One athlete's calendar data on the guardian dashboard */
+export type CalendarData = {
+  athleteId: string;
+  groupId: string;
+  athleteName: string;
+  groupName: string;
+  dates: Record<string, string[]>;
+  attendanceByDate: Record<string, NonNullable<AttendanceStatus>>;
+  trainingDayDates?: Record<string, true>;
+};

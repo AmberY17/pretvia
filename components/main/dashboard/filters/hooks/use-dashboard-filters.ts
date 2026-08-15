@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import type { DateFilterKey, CustomDateSelection } from "@/lib/date-utils"
 import {
   useLogsUrl,
@@ -115,35 +115,67 @@ export function useDashboardFilters() {
     setFilterVisibility(null)
   }, [])
 
-  const filtersState: DashboardFiltersState = {
-    activeTags,
-    dateFilter,
-    customDates,
-    filterAthleteIds,
-    filterSessionIds,
-    filterRoleIds,
-    filterReviewStatuses,
-    filterVisibility,
-  }
+  const filtersState: DashboardFiltersState = useMemo(
+    () => ({
+      activeTags,
+      dateFilter,
+      customDates,
+      filterAthleteIds,
+      filterSessionIds,
+      filterRoleIds,
+      filterReviewStatuses,
+      filterVisibility,
+    }),
+    [
+      activeTags,
+      dateFilter,
+      customDates,
+      filterAthleteIds,
+      filterSessionIds,
+      filterRoleIds,
+      filterReviewStatuses,
+      filterVisibility,
+    ],
+  )
 
-  const handlers: DashboardFiltersHandlers = {
-    handleToggleTag,
-    handleClearTags,
-    setDateFilter,
-    setCustomDates,
-    toggleFilterAthleteId,
-    clearFilterAthleteIds,
-    toggleFilterSessionId,
-    clearFilterSessionIds,
-    toggleFilterRoleId,
-    clearFilterRoleIds,
-    toggleFilterReviewStatus,
-    clearFilterReviewStatuses,
-    setFilterVisibility,
-    clearDateFilter,
-    clearAllOnGroupChange,
-    clearAllFilters,
-  }
+  const handlers: DashboardFiltersHandlers = useMemo(
+    () => ({
+      handleToggleTag,
+      handleClearTags,
+      setDateFilter,
+      setCustomDates,
+      toggleFilterAthleteId,
+      clearFilterAthleteIds,
+      toggleFilterSessionId,
+      clearFilterSessionIds,
+      toggleFilterRoleId,
+      clearFilterRoleIds,
+      toggleFilterReviewStatus,
+      clearFilterReviewStatuses,
+      setFilterVisibility,
+      clearDateFilter,
+      clearAllOnGroupChange,
+      clearAllFilters,
+    }),
+    [
+      handleToggleTag,
+      handleClearTags,
+      setDateFilter,
+      setCustomDates,
+      toggleFilterAthleteId,
+      clearFilterAthleteIds,
+      toggleFilterSessionId,
+      clearFilterSessionIds,
+      toggleFilterRoleId,
+      clearFilterRoleIds,
+      toggleFilterReviewStatus,
+      clearFilterReviewStatuses,
+      setFilterVisibility,
+      clearDateFilter,
+      clearAllOnGroupChange,
+      clearAllFilters,
+    ],
+  )
 
   return {
     filters: filtersState,

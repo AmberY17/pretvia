@@ -1,5 +1,8 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
+import * as Sentry from "@sentry/nextjs"
+
+let warnedMissingUpstash = false
 
 function createRateLimiter(
   requests: number,
@@ -13,6 +16,16 @@ function createRateLimiter(
     !process.env.UPSTASH_REDIS_REST_URL ||
     !process.env.UPSTASH_REDIS_REST_TOKEN
   ) {
+    if (!warnedMissingUpstash) {
+      warnedMissingUpstash = true
+      console.error(
+        "Rate limiting disabled in production: missing UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN"
+      )
+      Sentry.captureMessage(
+        "Rate limiting disabled in production: missing Upstash env vars",
+        "warning"
+      )
+    }
     return null
   }
   const redis = new Redis({

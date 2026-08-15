@@ -14,18 +14,7 @@ import {
   GuardianCalendarSkeleton,
   GuardianCalendarWeeklySkeleton,
 } from "@/components/main/dashboard/layout";
-import type { GuardianPair } from "@/types/dashboard";
-import type { AttendanceStatus } from "@/types/dashboard";
-
-type CalendarData = {
-  athleteId: string;
-  groupId: string;
-  athleteName: string;
-  groupName: string;
-  dates: Record<string, string[]>;
-  attendanceByDate: Record<string, NonNullable<AttendanceStatus>>;
-  trainingDayDates?: Record<string, true>;
-};
+import type { GuardianPair, CalendarData } from "@/types/dashboard";
 
 interface GuardianDashboardContentProps {
   availablePairs: GuardianPair[];

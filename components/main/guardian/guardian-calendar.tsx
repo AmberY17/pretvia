@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,19 +19,15 @@ interface GuardianCalendarProps {
 }
 
 export function GuardianCalendar({ month, dates, attendanceByDate = {}, trainingDayDates = {}, onMonthChange }: GuardianCalendarProps) {
-  const [current, setCurrent] = useState(() => {
-    const [y, m] = month.split("-").map(Number);
-    return new Date(y, m - 1, 1);
-  });
   const [emojiIndexByDate, setEmojiIndexByDate] = useState<Record<string, number>>({});
 
   const cycleEmoji = useCallback((key: string, count: number) => {
     setEmojiIndexByDate((prev) => ({ ...prev, [key]: ((prev[key] ?? 0) + 1) % count }));
   }, []);
 
-  useEffect(() => {
+  const current = useMemo(() => {
     const [y, m] = month.split("-").map(Number);
-    setCurrent(new Date(y, m - 1, 1));
+    return new Date(y, m - 1, 1);
   }, [month]);
 
   const monthStart = useMemo(() => startOfMonth(current), [current]);
@@ -46,15 +42,11 @@ export function GuardianCalendar({ month, dates, attendanceByDate = {}, training
   }, [monthStart, monthEnd]);
 
   const handlePrev = () => {
-    const next = subMonths(current, 1);
-    setCurrent(next);
-    onMonthChange(format(next, "yyyy-MM"));
+    onMonthChange(format(subMonths(current, 1), "yyyy-MM"));
   };
 
   const handleNext = () => {
-    const next = addMonths(current, 1);
-    setCurrent(next);
-    onMonthChange(format(next, "yyyy-MM"));
+    onMonthChange(format(addMonths(current, 1), "yyyy-MM"));
   };
 
   return (
@@ -113,33 +105,41 @@ export function GuardianCalendar({ month, dates, attendanceByDate = {}, training
                   ? "border-amber-500/60"
                   : "border-transparent";
 
-          return (
-            <div
+          const cellClassName = cn(
+            "relative flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 transition-colors sm:min-h-[44px]",
+            isActive ? "text-foreground" : "opacity-50 text-muted-foreground",
+            today && !attendance && "border-primary/30",
+            attendance && borderColor,
+            hasMultiple && "cursor-pointer",
+          );
+          const cellContent = hasEmoji ? (
+            <>
+              <span className="absolute left-1 top-1 text-[10px] font-medium">{format(day, "d")}</span>
+              <span key={emojiIndex} className="animate-emoji-pop text-2xl leading-none" role="img" aria-label="log mood">
+                {emoji}
+              </span>
+              {hasMultiple && (
+                <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">
+                  {emojiIndex + 1}/{emojis.length}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-xs font-medium">{format(day, "d")}</span>
+          );
+
+          return hasMultiple ? (
+            <button
               key={key}
-              onClick={hasMultiple ? () => cycleEmoji(key, emojis.length) : undefined}
-              className={cn(
-                "relative flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 transition-colors sm:min-h-[44px]",
-                isActive ? "text-foreground" : "opacity-50 text-muted-foreground",
-                today && !attendance && "border-primary/30",
-                attendance && borderColor,
-                hasMultiple && "cursor-pointer",
-              )}
+              type="button"
+              onClick={() => cycleEmoji(key, emojis.length)}
+              className={cellClassName}
             >
-              {hasEmoji ? (
-                <>
-                  <span className="absolute left-1 top-1 text-[10px] font-medium">{format(day, "d")}</span>
-                  <span key={emojiIndex} className="animate-emoji-pop text-2xl leading-none" role="img" aria-label="log mood">
-                    {emoji}
-                  </span>
-                  {hasMultiple && (
-                    <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">
-                      {emojiIndex + 1}/{emojis.length}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-xs font-medium">{format(day, "d")}</span>
-              )}
+              {cellContent}
+            </button>
+          ) : (
+            <div key={key} className={cellClassName}>
+              {cellContent}
             </div>
           );
         })}

@@ -14,6 +14,7 @@ import {
   AccountInstallSection,
 } from "@/components/main/account";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 import {
   CELEBRATION_KEY,
   COACH_FILTER_ORDER_KEY,
@@ -147,20 +148,15 @@ export default function AccountPage() {
   const handleEmojiChange = async (emoji: string) => {
     setSavingEmoji(true);
     try {
-      const res = await fetch("/api/auth/profile", {
+      await apiMutate("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileEmoji: emoji }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to update");
-        return;
-      }
       setProfileEmoji(emoji);
       mutateAuth();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update");
     } finally {
       setSavingEmoji(false);
     }
@@ -174,20 +170,15 @@ export default function AccountPage() {
     try {
       // Re-merge hidden slots from other groups so they are not lost on save.
       const merged = [...slots, ...hiddenGroupSlots];
-      const res = await fetch("/api/auth/profile", {
+      await apiMutate("/api/auth/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ trainingSlots: merged }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to update training slots");
-        return;
-      }
       mutateAuth();
       lastSavedTrainingSlotsRef.current = slots;
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update training slots");
     } finally {
       setSavingSlots(false);
     }
@@ -209,14 +200,10 @@ export default function AccountPage() {
     if (!user?.activeGroupId) return;
     setSyncingSchedule(true);
     try {
-      const res = await fetch("/api/athlete/sync-group-schedule", {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to sync group schedule");
-        return;
-      }
+      const data = await apiMutate<{ trainingSlots?: TrainingSlotItem[] }>(
+        "/api/athlete/sync-group-schedule",
+        { method: "POST" },
+      );
       if (Array.isArray(data.trainingSlots)) {
         const activeGroupId = user?.activeGroupId ?? null;
         const allRaw = data.trainingSlots.map(
@@ -239,8 +226,8 @@ export default function AccountPage() {
         lastSavedTrainingSlotsRef.current = nextSlots;
       }
       mutateAuth();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to sync group schedule");
     } finally {
       setSyncingSchedule(false);
     }
@@ -249,16 +236,11 @@ export default function AccountPage() {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      const res = await fetch("/api/auth/account", { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to delete account");
-        return;
-      }
+      await apiMutate("/api/auth/account", { method: "DELETE" });
       mutateAuth();
       router.push("/");
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete account");
     } finally {
       setDeleting(false);
       setDeleteConfirmOpen(false);

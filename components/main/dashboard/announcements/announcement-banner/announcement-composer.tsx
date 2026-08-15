@@ -6,6 +6,7 @@ import { Megaphone, Shield, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 
 interface AnnouncementComposerProps {
   onMutate: () => void;
@@ -20,21 +21,16 @@ export function AnnouncementComposer({ onMutate }: AnnouncementComposerProps) {
     if (!text.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/announcements", {
+      await apiMutate("/api/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: text.trim() }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to post announcement");
-        return;
-      }
       setText("");
       setIsComposing(false);
       onMutate();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to post announcement");
     } finally {
       setLoading(false);
     }

@@ -10,6 +10,7 @@ import { VisibilityBadge } from "./visibility-badge"
 import { TagPill } from "./tag-pill"
 import type { LogEntry } from "@/types/dashboard"
 import { ReviewStatusBadge } from "./review-status-badge"
+import { CommentSection } from "./comment-section"
 
 interface LogDetailProps {
   log: LogEntry
@@ -18,9 +19,11 @@ interface LogDetailProps {
   onDelete: (id: string) => void
   isCoach?: boolean
   onMutateLogs?: () => void
+  currentUserId: string
+  groupId: string | null
 }
 
-export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLogs }: LogDetailProps) {
+export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLogs, currentUserId, groupId }: LogDetailProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [localReviewStatus, setLocalReviewStatus] = useState<"pending" | "reviewed" | "revisit">(log.reviewStatus ?? "pending")
   useEffect(() => {
@@ -36,12 +39,14 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
     ) {
       return
     }
+    const controller = new AbortController()
     const run = async () => {
       try {
         const res = await fetch(`/api/logs/${log.id}/review`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "reviewed" }),
+          signal: controller.signal,
         })
         if (res.ok) {
           setLocalReviewStatus("reviewed")
@@ -51,10 +56,12 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
           console.error("Auto-review failed:", res.status, data)
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return
         console.error("Auto-review network error:", err)
       }
     }
     run()
+    return () => controller.abort()
   }, [log.id, log.visibility, log.reviewStatus, isCoach, onMutateLogs])
   const formattedDate = format(new Date(log.timestamp), "EEEE, MMMM d, yyyy")
   const formattedTime = format(new Date(log.timestamp), "h:mm a")
@@ -151,6 +158,19 @@ export function LogDetail({ log, onClose, onEdit, onDelete, isCoach, onMutateLog
                 <TagPill key={tag} tag={tag} size="md" />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Comment / Feedback Section - only for coach-shared logs */}
+        {log.visibility === "coach" && (
+          <div className="mt-6">
+            <CommentSection
+              logId={log.id}
+              isLogOwner={log.isOwn}
+              isCoach={isCoach ?? false}
+              currentUserId={currentUserId}
+              groupId={groupId}
+            />
           </div>
         )}
       </div>

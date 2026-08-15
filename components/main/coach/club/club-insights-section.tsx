@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
+import { apiMutate } from "@/lib/query-client";
 import type { ClubGroup } from "@/types/dashboard";
 
 interface ClubInsightsSectionProps {
@@ -37,21 +38,16 @@ export function ClubInsightsSection({
 
     setPosting(true);
     try {
-      const res = await fetch("/api/announcements", {
+      await apiMutate("/api/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, scope: "club" }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to post announcement");
-        return;
-      }
       toast.success("Club-wide announcement posted");
       setAnnouncementText("");
       queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to post announcement");
     } finally {
       setPosting(false);
     }

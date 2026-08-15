@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     const athletes = await db
       .collection("users")
       .find({ _id: { $in: athleteIds.map((id) => new ObjectId(id)) } })
-      .project({ _id: 1, displayName: 1, firstName: 1, lastName: 1, email: 1, groupId: 1, groupIds: 1, trainingSlots: 1 })
+      .project({ _id: 1, displayName: 1, firstName: 1, lastName: 1, email: 1, groupId: 1, groupIds: 1, activeGroupId: 1, trainingSlots: 1 })
       .toArray()
 
     const athleteMap = new Map(

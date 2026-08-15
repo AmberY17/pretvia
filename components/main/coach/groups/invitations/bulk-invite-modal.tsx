@@ -5,6 +5,7 @@ import { Upload, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { apiMutate } from "@/lib/query-client"
 
 interface ParsedRow {
   isUnder13: boolean
@@ -110,7 +111,10 @@ export function BulkInviteModal({ open, onOpenChange, groupId, onSent }: BulkInv
     if (validRows.length === 0) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/groups/${groupId}/invites/bulk`, {
+      const data = await apiMutate<{
+        sent: string[]
+        errors: { email: string; error: string }[]
+      }>(`/api/groups/${groupId}/invites/bulk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,11 +126,6 @@ export function BulkInviteModal({ open, onOpenChange, groupId, onSent }: BulkInv
           })),
         }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error ?? "Failed to send invites")
-        return
-      }
       const resultRows: ResultRow[] = [
         ...(data.sent as string[]).map((email: string) => ({ email, ok: true })),
         ...(data.errors as { email: string; error: string }[]).map((e) => ({
@@ -145,8 +144,8 @@ export function BulkInviteModal({ open, onOpenChange, groupId, onSent }: BulkInv
         }
         onSent()
       }
-    } catch {
-      toast.error("Something went wrong")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send invites")
     } finally {
       setLoading(false)
     }

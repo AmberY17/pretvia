@@ -38,7 +38,7 @@ export async function handleCreate(
       .countDocuments({ headCoachId: session.userId })
     if (groupCount >= limits.groups) {
       return NextResponse.json(
-        { error: "Group limit reached", plan: sub.plan, limit: limits.groups },
+        { error: "Group limit reached" },
         { status: 403 },
       )
     }

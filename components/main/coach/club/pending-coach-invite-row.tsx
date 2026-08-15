@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
+import { apiMutate } from "@/lib/query-client";
 import type { PendingCoachInvite } from "@/types/dashboard";
 
 interface PendingCoachInviteRowProps {
@@ -21,19 +22,13 @@ export function PendingCoachInviteRow({ invite, groupId }: PendingCoachInviteRow
   const handleCancel = async () => {
     setCancelling(true);
     try {
-      const res = await fetch(
-        `/api/groups/${groupId}/invites?token=${invite.token}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to cancel invite");
-        return;
-      }
+      await apiMutate(`/api/groups/${groupId}/invites?token=${invite.token}`, {
+        method: "DELETE",
+      });
       toast.success("Invite cancelled");
       queryClient.invalidateQueries({ queryKey: queryKeys.club.overview });
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to cancel invite");
     } finally {
       setCancelling(false);
     }

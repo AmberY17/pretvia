@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DeleteConfirmDialog } from "@/components/main/shared";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
+import { apiMutate } from "@/lib/query-client";
 import type { CoachMember } from "@/types/dashboard";
 
 interface CoachRowProps {
@@ -30,18 +31,11 @@ export function CoachRow({ coach, groupId, otherGroups = [] }: CoachRowProps) {
   const handleRemove = async () => {
     setRemoving(true);
     try {
-      const res = await fetch(`/api/groups/${groupId}/coaches/${coach.id}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to remove coach");
-        return;
-      }
+      await apiMutate(`/api/groups/${groupId}/coaches/${coach.id}`, { method: "DELETE" });
       toast.success(`${coach.displayName} removed from group`);
       invalidate();
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to remove coach");
     } finally {
       setRemoving(false);
       setConfirmOpen(false);
@@ -54,20 +48,17 @@ export function CoachRow({ coach, groupId, otherGroups = [] }: CoachRowProps) {
     try {
       // Single request: this was a DELETE followed by a POST, so a failure on
       // the second left the coach in neither group with nothing to undo it.
-      const res = await fetch(`/api/groups/${groupId}/coaches/${coach.id}`, {
+      await apiMutate(`/api/groups/${groupId}/coaches/${coach.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetGroupId }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || `Could not move ${coach.displayName} to ${targetGroupName}`);
-        return;
-      }
       toast.success(`${coach.displayName} moved to ${targetGroupName}`);
       invalidate();
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : `Could not move ${coach.displayName} to ${targetGroupName}`,
+      );
     } finally {
       setMoving(false);
     }

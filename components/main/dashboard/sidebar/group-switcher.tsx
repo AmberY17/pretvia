@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ArrowRightLeft, Users, Check, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
+import { apiMutate } from "@/lib/query-client"
 import type { UserGroup } from "@/types/dashboard"
 
 interface GroupSwitcherProps {
@@ -23,22 +24,17 @@ export function GroupSwitcher({ userGroups, currentGroupId, onGroupChanged }: Gr
   const handleSwitch = async (groupId: string) => {
     setLoading(true)
     try {
-      const res = await fetch("/api/groups", {
+      await apiMutate("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "switch", groupId }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || "Failed to switch group")
-        return
-      }
 
       setShowSwitcher(false)
       setGroupSearch("")
       onGroupChanged(groupId)
-    } catch {
-      toast.error("Network error")
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to switch group")
     } finally {
       setLoading(false)
     }

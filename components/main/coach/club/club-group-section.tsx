@@ -6,6 +6,7 @@ import { Plus, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
+import { apiMutate } from "@/lib/query-client";
 import type { ClubGroup } from "@/types/dashboard";
 
 interface ClubGroupSectionProps {
@@ -25,16 +26,11 @@ export function ClubGroupSection({ groups }: ClubGroupSectionProps) {
 
     setCreatingGroup(true);
     try {
-      const res = await fetch("/api/groups", {
+      await apiMutate("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", name }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to create group");
-        return;
-      }
       toast.success(`Group "${name}" created`);
       setNewGroupName("");
       setShowForm(false);
@@ -42,8 +38,8 @@ export function ClubGroupSection({ groups }: ClubGroupSectionProps) {
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.coachGroups });
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.myGroups });
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create group");
     } finally {
       setCreatingGroup(false);
     }

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
+import { apiMutate } from "@/lib/query-client";
 
 interface InviteCoachModalProps {
   groupId: string;
@@ -39,22 +40,17 @@ export function InviteCoachModal({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/groups/${groupId}/invites`, {
+      await apiMutate(`/api/groups/${groupId}/invites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "coach", coachEmail: trimmed }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to send invite");
-        return;
-      }
       toast.success(`Coach invite sent to ${trimmed}`);
       setEmail("");
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: queryKeys.club.overview });
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send invite");
     } finally {
       setLoading(false);
     }

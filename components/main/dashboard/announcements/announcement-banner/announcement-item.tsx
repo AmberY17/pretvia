@@ -8,6 +8,7 @@ import { DeleteConfirmDialog } from "@/components/main/shared";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { apiMutate } from "@/lib/query-client";
 import type { Announcement } from "@/types/dashboard";
 
 interface AnnouncementItemProps {
@@ -32,21 +33,16 @@ export function AnnouncementItem({
     if (!editText.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/announcements?id=${announcement.id}`, {
+      await apiMutate(`/api/announcements?id=${announcement.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: editText.trim() }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to update announcement");
-        return;
-      }
       setIsEditing(false);
       setEditText("");
       onMutate();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update announcement");
     } finally {
       setLoading(false);
     }
@@ -55,17 +51,11 @@ export function AnnouncementItem({
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/announcements?id=${announcement.id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        toast.error("Failed to remove announcement");
-        return;
-      }
+      await apiMutate(`/api/announcements?id=${announcement.id}`, { method: "DELETE" });
       setConfirmOpen(false);
       onMutate();
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to remove announcement");
     } finally {
       setLoading(false);
     }

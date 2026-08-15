@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { apiMutate } from "@/lib/query-client";
 
 interface InviteAthleteModalProps {
   open: boolean;
@@ -38,7 +39,7 @@ export function InviteAthleteModal({
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch(`/api/groups/${groupId}/invites`, {
+      const data = await apiMutate<{ message?: string }>(`/api/groups/${groupId}/invites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -48,12 +49,6 @@ export function InviteAthleteModal({
           athleteNamePlaceholder: athleteNamePlaceholder.trim() || undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to send invite");
-        setLoading(false);
-        return;
-      }
       toast.success(data.message ?? "Invite sent");
       onOpenChange(false);
       setAthleteEmail("");
@@ -61,8 +56,8 @@ export function InviteAthleteModal({
       setAthleteNamePlaceholder("");
       setIsUnder13(false);
       onSent();
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Network error. Please try again.");
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,17 @@ export async function apiFetcher<T>(url: string): Promise<T> {
   return data as T;
 }
 
+// Same fetch/parse/throw contract as apiFetcher, for mutating requests
+// (POST/PATCH/DELETE). Callers catch the thrown Error and toast its message,
+// replacing the repeated `fetch -> res.json() -> toast.error(data.error || ...)`
+// pattern that used to be duplicated across ~25 components.
+export async function apiMutate<T = unknown>(url: string, init?: RequestInit): Promise<T> {
+  const r = await fetch(url, init);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error ?? "Request failed");
+  return data as T;
+}
+
 const LOGS_PAGE_SIZE = 20;
 
 export async function logsFetcher<T = unknown>(url: string, cursor: string | null): Promise<{ logs: T[]; nextCursor: string | null }> {

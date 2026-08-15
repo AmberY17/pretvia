@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetcher } from "@/lib/query-client";
+import { apiFetcher, apiMutate } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCheck } from "lucide-react";
@@ -48,7 +48,7 @@ export default function AttendancePage() {
       })
     : checkins;
 
-  const { data: checkinsData, isLoading: checkinsLoading } = useQuery<{
+  const { data: checkinsData, isLoading: checkinsLoading, isError: checkinsIsError } = useQuery<{
     checkins: CheckinItem[];
   }>({
     queryKey: [...queryKeys.checkins.all, "allSessions", user?.id, user?.activeGroupId],
@@ -60,11 +60,19 @@ export default function AttendancePage() {
     user && selectedCheckinId
       ? `/api/attendance?checkinId=${selectedCheckinId}`
       : null;
-  const { data: attendanceData, isLoading: attendanceLoading } = useQuery<AttendanceData>({
+  const { data: attendanceData, isLoading: attendanceLoading, isError: attendanceIsError } = useQuery<AttendanceData>({
     queryKey: [...queryKeys.attendance.byCheckin(selectedCheckinId ?? ""), user?.id, user?.activeGroupId],
     queryFn: () => apiFetcher<AttendanceData>(attendanceUrl!),
     enabled: !!attendanceUrl && !!user,
   });
+
+  useEffect(() => {
+    if (checkinsIsError) toast.error("Couldn't load check-in sessions. Try refreshing the page.");
+  }, [checkinsIsError]);
+
+  useEffect(() => {
+    if (attendanceIsError) toast.error("Couldn't load attendance. Try refreshing the page.");
+  }, [attendanceIsError]);
 
   useEffect(() => {
     const list = checkinsData?.checkins ?? [];
@@ -94,7 +102,7 @@ export default function AttendancePage() {
     if (!selectedCheckinId) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/attendance", {
+      await apiMutate("/api/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,14 +112,9 @@ export default function AttendancePage() {
             .map(([userId, status]) => ({ userId, status: status! })),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to save attendance");
-        return;
-      }
       queryClient.invalidateQueries({ queryKey: queryKeys.attendance.byCheckin(selectedCheckinId) });
-    } catch {
-      toast.error("Network error");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save attendance");
     } finally {
       setSaving(false);
     }

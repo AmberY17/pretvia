@@ -11,6 +11,7 @@ import { InviteCoachModal } from "./invite-coach-modal";
 import { AddClubCoachesModal } from "./add-club-coaches-modal";
 import { toast } from "sonner";
 import { queryKeys } from "@/lib/query-keys";
+import { apiMutate } from "@/lib/query-client";
 import type { ClubGroup, CoachMember } from "@/types/dashboard";
 
 interface ClubCoachSectionProps {
@@ -54,23 +55,18 @@ export function ClubCoachSection({ groups }: ClubCoachSectionProps) {
     }
     setRenameSaving(true);
     try {
-      const res = await fetch(`/api/groups/${groupId}`, {
+      await apiMutate(`/api/groups/${groupId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to rename group");
-        return;
-      }
       toast.success("Group renamed");
       cancelRename();
       queryClient.invalidateQueries({ queryKey: queryKeys.club.overview });
       queryClient.invalidateQueries({ queryKey: queryKeys.groups.coachGroups });
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
-    } catch {
-      toast.error("Something went wrong");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to rename group");
     } finally {
       setRenameSaving(false);
     }

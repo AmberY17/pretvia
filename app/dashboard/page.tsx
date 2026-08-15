@@ -44,6 +44,7 @@ export default function DashboardPage() {
   const {
     data: logsPagesData,
     isLoading: logsLoading,
+    isError: logsIsError,
     fetchNextPage,
     hasNextPage: hasMoreLogs,
     isFetchingNextPage: logsValidating,
@@ -57,7 +58,7 @@ export default function DashboardPage() {
 
   const logs = (logsPagesData?.pages ?? []).flatMap((p) => p.logs) as LogEntry[]
 
-  const { data: tagsData, isLoading: tagsLoading } = useQuery<{
+  const { data: tagsData, isLoading: tagsLoading, isError: tagsIsError } = useQuery<{
     tags: { id: string; name: string }[]
   }>({
     queryKey: [...queryKeys.tags.all, user?.id, user?.activeGroupId],
@@ -68,7 +69,7 @@ export default function DashboardPage() {
     enabled: !!user,
   })
 
-  const { data: membersData } = useQuery<{
+  const { data: membersData, isError: membersIsError } = useQuery<{
     members: { id: string; displayName: string; email: string; role: string }[]
     roles: { id: string; name: string }[]
     trainingScheduleTemplate?: TrainingSlot[]
@@ -82,6 +83,7 @@ export default function DashboardPage() {
     data: checkinsData,
     isLoading: checkinsLoading,
     isFetching: checkinsFetching,
+    isError: checkinsIsError,
   } = useQuery<{
     checkins: CheckinItem[]
   }>({
@@ -90,7 +92,7 @@ export default function DashboardPage() {
     enabled: !!user?.activeGroupId,
   })
 
-  const { data: allCheckinsData } = useQuery<{
+  const { data: allCheckinsData, isError: allCheckinsIsError } = useQuery<{
     checkins: CheckinItem[]
   }>({
     queryKey: [...queryKeys.checkins.all, "allSessions", user?.id, user?.activeGroupId],
@@ -103,7 +105,7 @@ export default function DashboardPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
   })()
 
-  const { data: statsData, isLoading: statsLoading } = useQuery<{
+  const { data: statsData, isLoading: statsLoading, isError: statsIsError } = useQuery<{
     totalLogs: number
     streak: number
     hasTrainingSlots: boolean
@@ -123,6 +125,7 @@ export default function DashboardPage() {
     data: announcementData,
     isLoading: announcementLoading,
     isFetching: announcementFetching,
+    isError: announcementIsError,
   } = useQuery<{
     announcements: {
       id: string
@@ -136,6 +139,24 @@ export default function DashboardPage() {
     queryFn: () => apiFetcher("/api/announcements"),
     enabled: !!user?.activeGroupId,
   })
+
+  // These queries silently rendered "empty" on failure (?? []) with no
+  // distinction from "no data" — surface a toast alongside the existing
+  // loading/empty UI rather than restructuring the render tree.
+  const erroredQueries = [
+    logsIsError && "logs",
+    tagsIsError && "tags",
+    membersIsError && "group members",
+    checkinsIsError && "check-ins",
+    allCheckinsIsError && "check-in sessions",
+    statsIsError && "stats",
+    announcementIsError && "announcements",
+  ].filter((v): v is string => Boolean(v))
+  const erroredQueriesKey = erroredQueries.join(",")
+  useEffect(() => {
+    if (!erroredQueriesKey) return
+    toast.error(`Couldn't load ${erroredQueriesKey}. Try refreshing the page.`)
+  }, [erroredQueriesKey])
 
   const handleLogout = useCallback(() => {
     loggingOutRef.current = true

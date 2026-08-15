@@ -2,6 +2,11 @@ import { NextResponse } from "next/server"
 import { deleteSession } from "@/lib/auth"
 
 export async function POST() {
-  await deleteSession()
-  return NextResponse.json({ success: true })
+  try {
+    await deleteSession()
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Logout error:", error)
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+  }
 }

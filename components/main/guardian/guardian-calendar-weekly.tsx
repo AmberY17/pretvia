@@ -97,33 +97,41 @@ export function GuardianCalendarWeekly({
                   ? "border-amber-500/60"
                   : "border-transparent";
 
-          return (
-            <div
+          const cellClassName = cn(
+            "relative flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 transition-colors sm:min-h-[44px]",
+            isActive ? "text-foreground" : "opacity-50 text-muted-foreground",
+            today && !attendance && "border-primary/30",
+            attendance && borderColor,
+            hasMultiple && "cursor-pointer",
+          );
+          const cellContent = hasEmoji ? (
+            <>
+              <span className="absolute left-1 top-1 text-[10px] font-medium">{format(day, "d")}</span>
+              <span key={emojiIndex} className="animate-emoji-pop text-2xl leading-none" role="img" aria-label="log mood">
+                {emoji}
+              </span>
+              {hasMultiple && (
+                <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">
+                  {emojiIndex + 1}/{emojis.length}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-xs font-medium">{format(day, "d")}</span>
+          );
+
+          return hasMultiple ? (
+            <button
               key={key}
-              onClick={hasMultiple ? () => cycleEmoji(key, emojis.length) : undefined}
-              className={cn(
-                "relative flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 transition-colors sm:min-h-[44px]",
-                isActive ? "text-foreground" : "opacity-50 text-muted-foreground",
-                today && !attendance && "border-primary/30",
-                attendance && borderColor,
-                hasMultiple && "cursor-pointer",
-              )}
+              type="button"
+              onClick={() => cycleEmoji(key, emojis.length)}
+              className={cellClassName}
             >
-              {hasEmoji ? (
-                <>
-                  <span className="absolute left-1 top-1 text-[10px] font-medium">{format(day, "d")}</span>
-                  <span key={emojiIndex} className="animate-emoji-pop text-2xl leading-none" role="img" aria-label="log mood">
-                    {emoji}
-                  </span>
-                  {hasMultiple && (
-                    <span className="absolute bottom-0.5 right-1 text-[9px] text-muted-foreground">
-                      {emojiIndex + 1}/{emojis.length}
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-xs font-medium">{format(day, "d")}</span>
-              )}
+              {cellContent}
+            </button>
+          ) : (
+            <div key={key} className={cellClassName}>
+              {cellContent}
             </div>
           );
         })}

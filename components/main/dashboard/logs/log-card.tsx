@@ -50,7 +50,7 @@ export function LogCard({
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       className="group cursor-pointer rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/20"
-      onMouseOver={() => setIsHovered(true)}
+      onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={(e) => {
         e.stopPropagation();
