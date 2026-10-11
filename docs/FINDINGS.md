@@ -83,6 +83,8 @@ has no real users yet.
 | INF-7 | Env policy: email vars default to `localhost` / `resend.dev` in prod | `lib/env.ts`, `lib/resend.ts` | open |
 | INF-13 | `parseTime` lets `NaN` through → Invalid Date in streak math | `lib/time-utils.ts` | open |
 | — | Account-deletion cascade (~20 writes) not in a transaction | `account/route.ts` | open |
+| — | Only the creating coach could delete a check-in (UI showed the button to all coaches; check-ins outliving a deleted coach were undeletable) | `app/api/checkins/route.ts` | fix:batch-3 (any coach of the group) |
+| — | Invite redeem re-inserts the invite on any failure, including a crash after partial writes. A retry is idempotent or hits the sign-in check. | `redeem/route.ts` | by design |
 
 ## Client / frontend
 

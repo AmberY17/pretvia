@@ -46,8 +46,12 @@ export async function DELETE() {
       await db.collection("announcements").deleteMany({ groupId })
       await db.collection("groups").deleteOne({ _id: group._id })
       // Move remaining members off the deleted group (next group if they have one, else none).
-      await db.collection("users").updateMany({ groupIds: groupId }, { $pull: { groupIds: groupId } } as never)
-      await db.collection("users").updateMany({ activeGroupId: groupId }, [
+      const groupIdMatch = { $in: [groupId, group._id] }
+      await db.collection("users").updateMany(
+        { groupIds: groupIdMatch },
+        { $pull: { groupIds: groupIdMatch } } as never,
+      )
+      await db.collection("users").updateMany({ activeGroupId: groupIdMatch }, [
         { $set: { activeGroupId: { $ifNull: [{ $arrayElemAt: ["$groupIds", 0] }, null] } } },
       ])
     }
