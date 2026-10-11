@@ -303,7 +303,7 @@ export async function handleCoachInvite(
     }
 
     const update: Record<string, unknown> = {
-      $addToSet: { groupIds: groupId, coachIds: groupId },
+      $addToSet: { groupIds: groupId },
     }
     if (!existing.activeGroupId) {
       update.$set = { activeGroupId: groupId }

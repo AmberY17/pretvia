@@ -46,6 +46,9 @@ interface DashboardFeedProps {
   onMutateCheckins: () => void
   onMutateLogs?: () => void
   isLoading?: boolean
+  /** Logs failed to load (show an error instead of the "No logs yet" empty state). */
+  loadError?: boolean
+  onRetry?: () => void
   hasMoreLogs?: boolean
   isLoadingMore?: boolean
   onLoadMore?: () => void
@@ -76,6 +79,8 @@ export function DashboardFeed({
   onMutateCheckins,
   onMutateLogs,
   isLoading = false,
+  loadError = false,
+  onRetry,
   hasMoreLogs = false,
   isLoadingMore = false,
   onLoadMore,
@@ -206,6 +211,20 @@ export function DashboardFeed({
                 {[1, 2, 3, 4].map((i) => (
                   <LogCardSkeleton key={i} />
                 ))}
+              </motion.div>
+            ) : loadError && logs.length === 0 ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16"
+              >
+                <p className="text-sm text-muted-foreground">Couldn&apos;t load logs.</p>
+                {onRetry && (
+                  <Button variant="outline" size="sm" onClick={onRetry}>
+                    Retry
+                  </Button>
+                )}
               </motion.div>
             ) : logs.length === 0 ? (
               <motion.div

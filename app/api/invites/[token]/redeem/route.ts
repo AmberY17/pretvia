@@ -50,7 +50,7 @@ export async function POST(
       }
     }
 
-    // Atomically claim — invite is consumed only after validation passes
+    // Atomically claim so two tabs can't both redeem; it's put back below if redemption fails
     const invite = await db.collection("invites").findOneAndDelete({ token })
     if (!invite) {
       // Race: claimed by a concurrent request between findOne and findOneAndDelete
@@ -66,20 +66,28 @@ export async function POST(
       return NextResponse.json({ error: "Group not found" }, { status: 404 })
     }
 
-    if (type === "under13_parent") {
-      return handleUnder13ParentInvite(db, invite, group, body, token)
+    const handlers = {
+      under13_parent: handleUnder13ParentInvite,
+      athlete: handleAthleteInvite,
+      parent: handleParentInvite,
+      coach: handleCoachInvite,
+    } as const
+    const handler = handlers[type as keyof typeof handlers]
+    // The invite was claimed above. If redemption fails (typo'd password, wrong email, email send
+    // failure, crash…), put it back so the link keeps working for a retry.
+    let res: NextResponse
+    try {
+      res = handler
+        ? await handler(db, invite, group, body, token)
+        : NextResponse.json({ error: "Unknown invite type" }, { status: 400 })
+    } catch (err) {
+      await db.collection("invites").insertOne(invite)
+      throw err
     }
-    if (type === "athlete") {
-      return handleAthleteInvite(db, invite, group, body, token)
+    if (res.status >= 400) {
+      await db.collection("invites").insertOne(invite)
     }
-    if (type === "parent") {
-      return handleParentInvite(db, invite, group, body, token)
-    }
-    if (type === "coach") {
-      return handleCoachInvite(db, invite, group, body, token)
-    }
-
-    return NextResponse.json({ error: "Unknown invite type" }, { status: 400 })
+    return res
   } catch (error) {
     console.error("Redeem invite error:", error)
     return NextResponse.json(

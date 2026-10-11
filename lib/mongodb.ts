@@ -43,7 +43,9 @@ export async function getDb(): Promise<Db> {
   // circular dependency between mongodb.ts and ensure-indexes.ts.
   if (!_indexesBootstrapped) {
     _indexesBootstrapped = true;
-    import("@/lib/ensure-indexes").then(({ ensureIndexes }) => ensureIndexes()).catch(() => {});
+    import("@/lib/ensure-indexes")
+      .then(({ ensureIndexes }) => ensureIndexes())
+      .catch((err) => console.error("ensureIndexes failed to load:", err));
   }
   return db;
 }
