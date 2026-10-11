@@ -60,8 +60,8 @@ has no real users yet.
 | API-10 | Coach-invite redeem writes a bogus `coachIds` field onto the user doc | `redeem/type-handlers.ts` | fix:batch-3 |
 | E9 | `POST /api/logs` returns 500 if post-insert skip cleanup fails, though the log was saved | `app/api/logs/route.ts` | fix:batch-3 |
 | E10 | Inbound support email forwarding failure returns 200 → Resend never retries → email lost | `app/api/email/inbound/route.ts` | fix:batch-3 |
-| E11 / INF-3 | Index bootstrap errors swallowed; the flag is set before success | `lib/mongodb.ts` | fix:batch-3 (logged; no retry machinery) |
-| API-14 / S9 / E12 | Log fields unvalidated: `visibility:"banana"`, `Invalid Date` timestamps (breaks streaks), unbounded tags | `app/api/logs/route.ts` | fix:batch-3 (visibility + timestamp; no notes cap by choice) |
+| E11 / INF-3 | Index bootstrap: `ensureIndexes()` already logs `createIndex` failures, but the lazy-import wrapper swallowed load errors, and the flag is set before success (no retry) | `lib/mongodb.ts` | fix:batch-3 (wrapper logs; no retry machinery) |
+| API-14 / S9 / E12 | Log fields unvalidated: `visibility:"banana"`, `Invalid Date` timestamps (breaks streaks), object emoji, unbounded tags | `app/api/logs/route.ts` | fix:batch-3 (visibility, emoji, timestamp; tags and notes left unbounded by choice) |
 | API-8 | Head coach can leave their group and orphan it | `app/api/groups/post-handlers.ts` | deferred: needs transfer-ownership / delete-group features first |
 | DB-3 | No unique index on `groups.code` (check-then-insert) | `lib/group-actions.ts`, `lib/ensure-indexes.ts` | open |
 | DB-4 | Attendance duplicate-doc race (non-unique `{checkinId, groupId}`) | `app/api/attendance/route.ts` | open |
@@ -89,7 +89,7 @@ has no real users yet.
 | ID | Finding | Where | Status |
 |---|---|---|---|
 | E1 / FE-5 | `logsFetcher` ignores `res.ok` → failures render as "no logs" | `lib/query-client.ts` | fix:batch-3 |
-| E2 / FE-13 | No query error states anywhere; failures look like empty data | dashboard | fix:batch-3 (feed, sidebar stats, announcements, check-ins) |
+| E2 / FE-13 | No query error states anywhere; failures look like empty data | dashboard | fix:batch-3 (a global QueryCache toast with Retry for server/network errors on any query, plus an error card in the feed; per-component error states are still open) |
 | E3 | `apiFetcher` throws `SyntaxError` on HTML error pages; 401 doesn't route to login | `lib/query-client.ts` | fix:batch-3 |
 | E4 | Invite page: login fetch has no try/catch; coach form navigates twice | `app/invite/[token]/page.tsx` | fix:batch-3 |
 | FE-1 | A transient session-fetch error logs the user out (`useRequireAuth` ignores `isError`) | `hooks/use-require-auth.ts` | open |

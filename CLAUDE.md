@@ -88,6 +88,7 @@ Open bugs, deferred decisions and audit history live in **`docs/FINDINGS.md`** (
 - Centralized query keys in `lib/query-keys.ts` — hierarchical keys enable prefix-based invalidation
 - `useQuery` for single resources, `useInfiniteQuery` for paginated feeds
 - `QueryProvider` wraps the app in `components/query-provider.tsx`
+- Failures: fetchers throw `HttpError` (status + `{ error }` message) and redirect to `/auth` on 401. The `QueryCache` in `makeQueryClient()` shows a "Couldn't load — Retry" toast for any query failing with 5xx or a network error. 4xx is treated as an expected state each page handles itself.
 
 ## Testing
 After editing or adding a feature, update or add the related E2E and/or unit tests.
