@@ -36,6 +36,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
+    // Tokens go into Mongo filters: reject non-strings so {"$ne": null} can't match someone else's invite.
+    if (
+      (waitlistToken != null && typeof waitlistToken !== "string") ||
+      (coachInviteToken != null && typeof coachInviteToken !== "string")
+    ) {
+      return NextResponse.json({ error: "Invalid invite token." }, { status: 400 })
+    }
+
     const fn = (firstName ?? "").trim()
     const ln = (lastName ?? "").trim()
     const name = displayName ?? (fn && ln ? `${fn} ${ln}` : fn || ln)

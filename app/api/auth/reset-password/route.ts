@@ -6,7 +6,8 @@ export async function POST(req: Request) {
   try {
     const { token, password } = await req.json()
 
-    if (!token || !password) {
+    // Strings only: an object like {"$ne": null} would act as a query operator and match any token.
+    if (typeof token !== "string" || typeof password !== "string" || !token || !password) {
       return NextResponse.json(
         { error: "Token and password are required" },
         { status: 400 }
@@ -21,9 +22,10 @@ export async function POST(req: Request) {
     }
 
     const db = await getDb()
+    // Claim atomically so a reset link works exactly once.
     const resetToken = await db
       .collection("password_reset_tokens")
-      .findOne({ token })
+      .findOneAndDelete({ token })
 
     if (!resetToken) {
       return NextResponse.json(
@@ -33,7 +35,6 @@ export async function POST(req: Request) {
     }
 
     if (new Date() > new Date(resetToken.expiresAt)) {
-      await db.collection("password_reset_tokens").deleteOne({ token })
       return NextResponse.json(
         { error: "This reset link has expired. Please request a new one." },
         { status: 400 }
@@ -48,8 +49,6 @@ export async function POST(req: Request) {
         { email: resetToken.email },
         { $set: { password: hashedPassword, emailVerified: true } }
       )
-
-    await db.collection("password_reset_tokens").deleteOne({ token })
 
     return NextResponse.json({ success: true })
   } catch (error) {
