@@ -198,6 +198,7 @@ export type GuardianPair = {
 export type UserGroup = {
   id: string;
   name: string;
-  code: string;
+  /** Join code — only present for groups the user coaches. */
+  code?: string;
   headCoachId: string;
 };

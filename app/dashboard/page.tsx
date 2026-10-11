@@ -201,7 +201,7 @@ export default function DashboardPage() {
     groups: {
       id: string
       name: string
-      code: string
+      code?: string
       headCoachId: string
       trainingScheduleUpdatedAt?: string | null
     }[]
