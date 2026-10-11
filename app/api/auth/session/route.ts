@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
+import { isGroupCoach } from "@/lib/api-auth"
 
 export async function GET() {
   try {
@@ -40,14 +41,15 @@ export async function GET() {
         group = {
           id: groupDoc._id.toString(),
           name: groupDoc.name,
-          code: groupDoc.code,
+          // Join codes are a coach credential ("Join Another"), so only coaches of the group get it.
+          code: isGroupCoach(groupDoc, session.userId) ? groupDoc.code : undefined,
           headCoachId: groupDoc.headCoachId,
         }
       }
     }
 
     // Fetch all groups the user is a member of
-    let groups: { id: string; name: string; code: string; headCoachId: string }[] = []
+    let groups: { id: string; name: string; code?: string; headCoachId: string }[] = []
     if (groupIds.length > 0) {
       const groupDocs = await db
         .collection("groups")
@@ -56,7 +58,7 @@ export async function GET() {
       groups = groupDocs.map((g) => ({
         id: g._id.toString(),
         name: g.name,
-        code: g.code,
+        code: isGroupCoach(g, session.userId) ? g.code : undefined,
         headCoachId: g.headCoachId,
       }))
     }

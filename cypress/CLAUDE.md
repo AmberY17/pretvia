@@ -16,24 +16,27 @@ cypress/e2e/
   athlete/
     dashboard.cy.ts          # Feed, logs, comments, filters, sign-out
     account-settings.cy.ts   # Emoji, training slots, celebration, delete account
+    daily-log-cap.cy.ts      # One shared + one private log per day (UI)
+    streak-schedule.cy.ts    # Streak under athlete schedule changes
   coach/
     dashboard.cy.ts          # Feed, announcements, check-ins, comments, filters, sign-out
     account-settings.cy.ts   # Emoji, filter order, delete account
-    manage-group.cy.ts       # Roles, training schedule, athlete management, invites, invite redemption
+    manage-group.cy.ts       # Roles, training schedule, athlete management, invites, invite pages
     attendance.cy.ts         # Attendance session selection and recording
-  guardian/
-    dashboard.cy.ts          # Calendar view, athlete selection, sign-out
-  cross-role/     # Multi-role interaction flows (coach ↔ athlete ↔ guardian)
+    club.cy.ts               # Club page upsell, group actions
+  cross-role/                # Coach ↔ athlete ↔ guardian flows (announcements, check-ins, comments,
+                             # guardian calendar, streak under coach schedule changes)
   auth/
     auth.cy.ts               # Login, signup, logout, forgot/reset password, signed-in modal
-  edge-cases/     # Error states, empty states
-  shared/         # Flows shared across roles
-  waitlist/       # Waitlist signup flow
+  shared/
+    protected-routes.cy.ts   # Unauthenticated redirects
+  waitlist/
+    waitlist.cy.ts           # Waitlist signup flow (has the only mobile-viewport context)
 ```
 
 Cross-role tests belong in `cypress/e2e/cross-role/` — not in role-specific folders.
 
-**No mobile `context()` blocks in any spec — desktop-first (1280×900).** All specs run at the default desktop viewport.
+**Desktop-first (1280×900).** Don't add new mobile `context()` blocks (the waitlist spec has the only legacy one).
 
 ## Login Commands
 
@@ -132,3 +135,14 @@ it("...", () => {
 ```
 
 Post setup data via `cy.request` (not UI) to avoid session-switching timing issues.
+
+## Known Issues
+
+The suite is a happy-path smoke test, not a strong regression net. See `docs/e2e-test-assessment.md` and the "Tooling & tests" section of `docs/FINDINGS.md`. In short:
+- Some tests can't fail.
+- Filter tests only check that the expected items appear, never that others are hidden.
+- There are no permission tests.
+- `retries: 2` hides flaky tests.
+- The flags override cookie name is wrong (`__vercel_flags_overrides` vs `vercel-flag-overrides`).
+
+When a test fails, fix the cause; don't loosen the assertion to make it pass.

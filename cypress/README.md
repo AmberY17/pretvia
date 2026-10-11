@@ -13,8 +13,9 @@ Add the following to `.env.local`:
 
 ```
 MONGODB_URI=<your MongoDB connection string>
-JWT_SECRET=<your JWT secret>
-TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com
+AUTH_SECRET=<your JWT signing secret>
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com,deletetest@test.pretvia.com,guardian@test.pretvia.com
 ```
 
 `TEST_ACCOUNT_EMAILS` is a comma-separated allow-list that restricts which accounts the seeding script may create or reset. Without it, the seed script will refuse to create test accounts (safety guard).
@@ -25,14 +26,16 @@ TEST_ACCOUNT_EMAILS=athlete@test.pretvia.com,coach@test.pretvia.com
 pnpm seed:test
 ```
 
-This creates two test accounts in your MongoDB database:
+This creates the test accounts in your MongoDB database:
 
 | Role    | Email                          | Password      |
 |---------|--------------------------------|---------------|
 | Athlete | athlete@test.pretvia.com       | TestPass123!  |
 | Coach   | coach@test.pretvia.com         | TestPass123!  |
+| Guardian | guardian@test.pretvia.com     | TestPass123!  |
+| Athlete (deleted by tests) | deletetest@test.pretvia.com | TestPass123! |
 
-It also creates a shared group and assigns both users to it.
+It also creates "E2E Test Group" (coach + athlete), a guardian link, and seeded invite tokens.
 
 ### 3. Configure Cypress credentials
 
@@ -67,18 +70,10 @@ When running tests manually (`pnpm dev` then `pnpm cy:run`), use `pnpm dev:skip-
 
 ## Test Structure
 
-- `auth/` – login, logout, signup, forgot-password, signed-in modal, reset-password
-- `athlete/` – feed, create-log, filters, edit-delete-log
-- `coach/` – feed, review-status, announcement, filters
-- `group/` – group management (coach only)
-- `attendance/` – attendance page (coach only)
-- `account/` – account settings
-- `shared/` – protected routes (unauthenticated redirect checks)
-- `mobile/` – viewport-specific behaviour
-- `edge-cases/` – misc edge cases (links, redirects)
+See the spec map in `cypress/CLAUDE.md`.
 
 ## Notes
 
 - Tests use `cy.session()` to cache login cookies between tests in the same spec — this avoids re-logging in on every `it` block.
 - A global `uncaught:exception` handler in `cypress/support/e2e.ts` suppresses React hydration warnings that Next.js emits in development mode; these are cosmetic and do not indicate real failures.
-- `retries` is set to `2` in run-mode (`cypress.config.ts`) to handle occasional cold-start compilation delays on the first visit.
+- `retries` is set to `2` in run-mode (`cypress.config.ts`). This also hides flaky tests; see `docs/e2e-test-assessment.md`.

@@ -29,6 +29,26 @@ type InviteData = {
   groupName: string | null;
 };
 
+/** Log in before redeeming an invite. Shows the error and returns false on failure (incl. network errors). */
+async function loginWithEmail(email: string, password: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || "Login failed");
+      return false;
+    }
+    return true;
+  } catch {
+    toast.error("Network error. Please try again.");
+    return false;
+  }
+}
+
 export default function InvitePage() {
   const router = useRouter();
   const params = useParams();
@@ -444,16 +464,7 @@ function InviteAthleteForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: invite.email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.error || "Login failed");
-        return;
-      }
+      if (!(await loginWithEmail(invite.email, password))) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
       await redeem({
         createAccount: false,
@@ -588,7 +599,6 @@ function InviteCoachForm({
   redeeming: boolean;
   queryClient: ReturnType<typeof useQueryClient>;
 }) {
-  const router = useRouter();
   const [isLogin, setIsLogin] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -598,32 +608,21 @@ function InviteCoachForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: invite.email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.error || "Login failed");
-        return;
-      }
+      if (!(await loginWithEmail(invite.email, password))) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
-      const result = await redeem({ createAccount: false, email: invite.email });
-      if (result?.redirect) router.push(result.redirect);
+      await redeem({ createAccount: false, email: invite.email }); // redeem() navigates on success
     } else {
       if (!agreedToTerms) {
         toast.error("Please agree to the Terms of Service and Privacy Policy");
         return;
       }
-      const result = await redeem({
+      await redeem({
         createAccount: true,
         firstName,
         lastName,
         email: invite.email,
         password,
       });
-      if (result?.redirect) router.push(result.redirect);
     }
   };
 
@@ -745,16 +744,7 @@ function InviteParentForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: invite.email, password }),
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.error || "Login failed");
-        return;
-      }
+      if (!(await loginWithEmail(invite.email, password))) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
       await redeem({ createAccount: false, email: invite.email });
     } else {

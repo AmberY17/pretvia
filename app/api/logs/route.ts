@@ -14,6 +14,25 @@ import {
 } from "@/lib/log-filters"
 import { apiRateLimiter, getIp } from "@/lib/rate-limit"
 
+/**
+ * Reject values that would silently corrupt a log: an unknown visibility hides it from everyone,
+ * an unparseable timestamp is stored as Invalid Date and breaks streaks. Returns an error or null.
+ */
+function invalidLogFields(fields: { emoji?: unknown; visibility?: unknown; timestamp?: unknown }): string | null {
+  if (fields.emoji !== undefined && typeof fields.emoji !== "string") return "Invalid emoji"
+  if (fields.visibility !== undefined && fields.visibility !== "coach" && fields.visibility !== "private") {
+    return "Invalid visibility"
+  }
+  if (
+    fields.timestamp !== undefined &&
+    (typeof fields.timestamp !== "string" && typeof fields.timestamp !== "number" ||
+      Number.isNaN(new Date(fields.timestamp).getTime()))
+  ) {
+    return "Invalid timestamp"
+  }
+  return null
+}
+
 export async function GET(req: Request) {
   try {
     if (apiRateLimiter) {
@@ -234,6 +253,10 @@ export async function POST(req: Request) {
     if (!emoji) {
       return NextResponse.json({ error: "An emoji is required" }, { status: 400 })
     }
+    const createError = invalidLogFields({ emoji, visibility, timestamp: timestamp || undefined })
+    if (createError) {
+      return NextResponse.json({ error: createError }, { status: 400 })
+    }
 
     const db = await getDb()
     const user = await db.collection("users").findOne({
@@ -305,7 +328,13 @@ export async function POST(req: Request) {
     const trainingSlots = logGroupId
       ? allTrainingSlots.filter((s) => s.sourceGroupId === logGroupId)
       : allTrainingSlots
-    await removeRedundantSkipsForLog(db, session.userId, logTimestamp, trainingSlots)
+    // Housekeeping only: the log is already saved, so a failure here must not turn into an error
+    // response (the user would retry and hit the daily-limit 409).
+    try {
+      await removeRedundantSkipsForLog(db, session.userId, logTimestamp, trainingSlots)
+    } catch (err) {
+      console.error("removeRedundantSkipsForLog failed:", err)
+    }
 
     const logTags = Array.isArray(logEntry.tags) ? logEntry.tags : []
 
@@ -354,6 +383,10 @@ export async function PUT(req: Request) {
     const logOid = safeObjectId(id)
     if (!logOid) {
       return NextResponse.json({ error: "Invalid log ID" }, { status: 400 })
+    }
+    const updateError = invalidLogFields({ emoji, visibility, timestamp })
+    if (updateError) {
+      return NextResponse.json({ error: updateError }, { status: 400 })
     }
 
     const db = await getDb()

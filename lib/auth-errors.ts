@@ -11,6 +11,7 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   token_exchange_failed: "Sign-in failed. Please try again.",
   userinfo_failed: "Could not get your profile. Please try again.",
   no_email: "Google did not provide an email. Please try another account.",
+  unverified_email: "Your Google email isn't verified. Verify it with Google or sign in with email and password.",
   already_exists: "This email is already verified. Please sign in.",
   user_creation_failed: "Account could not be created. Please try again.",
 };

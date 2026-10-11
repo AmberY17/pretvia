@@ -4,6 +4,7 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { apiRateLimiter, getIp } from "@/lib/rate-limit"
+import { canManageGroup } from "@/lib/api-auth"
 
 // GET: fetch check-ins for the user's group
 export async function GET(req: Request) {
@@ -222,18 +223,21 @@ export async function DELETE(req: Request) {
 
     const db = await getDb()
 
-    // Only the coach who created it can delete
-    const result = await db.collection("checkins").deleteOne({
-      _id: checkinOid,
-      headCoachId: session.userId,
-    })
-
-    if (result.deletedCount === 0) {
+    // The creating coach (checkins.headCoachId) or any coach of the group can delete — the UI shows
+    // the button to all coaches, and check-ins outlive a creator who deleted their account.
+    const checkin = await db.collection("checkins").findOne({ _id: checkinOid })
+    const allowed =
+      !!checkin &&
+      (checkin.headCoachId === session.userId ||
+        (!!checkin.groupId && (await canManageGroup(db, session.userId, checkin.groupId))))
+    if (!allowed) {
       return NextResponse.json(
         { error: "Check-in not found or not authorized" },
         { status: 404 }
       )
     }
+
+    await db.collection("checkins").deleteOne({ _id: checkinOid })
 
     return NextResponse.json({ success: true })
   } catch (error) {

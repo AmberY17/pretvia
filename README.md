@@ -57,15 +57,14 @@ _En garde, Pretvia, Allez!_
 | **Auth**               | JWT (jose) in httpOnly cookies, bcrypt for passwords  |
 | **Styling**            | Tailwind CSS 3.4                                     |
 | **UI Components**      | Radix UI, shadcn/ui                                  |
-| **Data Fetching**      | SWR                                                  |
-| **Forms & Validation** | React Hook Form, Zod                                 |
+| **Data Fetching**      | TanStack Query (React Query v5)                      |
 | **Animations**         | Framer Motion                                        |
-| **Charts**             | Recharts                                             |
 | **Emoji Picker**       | Emoji Mart                                           |
 | **Toasts**             | Sonner                                               |
 | **Email**              | Resend                                               |
 | **Utilities**          | date-fns, Lucide icons                               |
-| **E2E Testing**        | Cypress                                              |
+| **Testing**            | Vitest (unit), Cypress (E2E)                         |
+| **Monitoring**         | Sentry, Vercel Analytics                             |
 
 ---
 
@@ -109,6 +108,7 @@ _En garde, Pretvia, Allez!_
 | `pnpm build`     | Production build                                      |
 | `pnpm start`     | Start production server                               |
 | `pnpm lint`      | Run ESLint                                            |
+| `pnpm test`      | Run unit tests (Vitest)                               |
 | `pnpm e2e`       | Open Cypress test runner                              |
 | `pnpm e2e:ci`    | Run E2E tests headlessly (starts dev server)          |
 | `pnpm seed:test` | Seed test users for E2E testing                       |
@@ -133,12 +133,13 @@ app/
 └── invite/           # Invite redemption flow
 
 components/
-├── auth/             # Auth forms and components
-├── dashboard/        # Feature components (logs, filters, sidebar, etc.)
-│   ├── filters/      # Filter sidebar components
-│   ├── logs/         # Log creation, editing, display
-│   ├── group/        # Group management UI
-│   └── shared/       # Shared components (DeleteConfirmDialog, etc.)
+├── auth/             # Auth forms
+├── main/             # Feature components by role
+│   ├── dashboard/    # Logs, filters, sidebar, announcements, check-ins
+│   ├── coach/        # Group management, attendance, club
+│   ├── guardian/     # Guardian calendar dashboard
+│   ├── account/      # Settings/profile
+│   └── shared/       # DeleteConfirmDialog, EmptyStateCard, EmojiPicker, …
 ├── landing/          # Landing page sections
 ├── ui/               # shadcn/ui primitives (Button, Dialog, etc.)
 └── feedback/         # Feedback components
@@ -146,9 +147,16 @@ components/
 hooks/                # Custom React hooks (useAuth, useDashboardFilters, etc.)
 lib/                  # Shared utilities (auth, mongodb, streak, date/time utils)
 types/                # Shared TypeScript type definitions
-cypress/              # E2E test suite (20 spec files across 9 feature areas)
+cypress/              # E2E test suite (17 spec files)
+docs/                 # Findings tracker, audit, design docs
 scripts/              # Seed scripts
 ```
+
+---
+
+## Known Issues
+
+See [`docs/FINDINGS.md`](docs/FINDINGS.md).
 
 ---
 

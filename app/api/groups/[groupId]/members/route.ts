@@ -53,6 +53,19 @@ export async function PATCH(
       )
     }
 
+    // Any coach of the group can manage members, but nobody can remove/transfer the owner.
+    if (action === "remove" || action === "transfer") {
+      const group = await db
+        .collection("groups")
+        .findOne({ _id: new ObjectId(groupId) }, { projection: { headCoachId: 1 } })
+      if (group?.headCoachId?.toString() === userId) {
+        return NextResponse.json(
+          { error: "The head coach can't be removed from their own group" },
+          { status: 403 }
+        )
+      }
+    }
+
     if (action === "remove") {
       const updatedGroupIds = (targetUser.groupIds ?? []).filter(
         (id: string) => id !== groupId

@@ -4,6 +4,7 @@ import { getDb } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
 import { apiRateLimiter, getIp } from "@/lib/rate-limit"
+import { isVisibleToCoach } from "@/lib/log-filters"
 
 // GET: fetch comments for a specific log
 // Only the log owner and coaches in the same group can view comments
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     // Verify the log exists
     const log = await db.collection("logs").findOne(
       { _id: logOid },
-      { projection: { userId: 1, visibility: 1 } }
+      { projection: { userId: 1, visibility: 1, isGroup: 1 } }
     )
 
     if (!log) {
@@ -59,8 +60,8 @@ export async function GET(req: Request) {
     const isLogOwner = log.userId === session.userId
     const isCoach = currentUser.role === "coach"
 
-    // Only log owner or a coach in the same group can see comments
-    if (!isLogOwner && !isCoach) {
+    // Only log owner or a coach in the same group can see comments; "Only me" logs are owner-only
+    if (!isLogOwner && (!isCoach || !isVisibleToCoach(log))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -219,6 +220,10 @@ export async function POST(req: Request) {
         { error: "Only the log owner or a coach can comment" },
         { status: 403 }
       )
+    }
+
+    if (!isLogOwner && !isVisibleToCoach(log)) {
+      return NextResponse.json({ error: "This log is private" }, { status: 403 })
     }
 
     // If coach, verify they share a group with the log owner

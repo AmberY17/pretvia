@@ -1,6 +1,14 @@
-import type { Db } from "mongodb"
+import type { Db, Document } from "mongodb"
 import { ObjectId } from "mongodb"
 import { safeObjectId } from "@/lib/objectid"
+
+/**
+ * True if a log is shared with coaches ("coach" visibility). Legacy logs have no `visibility`
+ * field and used `isGroup: true` for shared. Mirrors the query condition in buildVisibilityFilter.
+ */
+export function isVisibleToCoach(log: Document): boolean {
+  return log.visibility === "coach" || (!log.visibility && log.isGroup === true)
+}
 
 /**
  * Build the base visibility filter for log queries.

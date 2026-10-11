@@ -93,6 +93,11 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${APP_URL}/auth?error=no_email`)
     }
 
+    // We link to (and mark verified) any existing account with this email, so Google must vouch for it.
+    if (userInfo.verified_email !== true) {
+      return NextResponse.redirect(`${APP_URL}/auth?error=unverified_email`)
+    }
+
     const normalizedEmail = email.toLowerCase()
     const db = await getDb()
 

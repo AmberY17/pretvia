@@ -26,13 +26,16 @@ export async function DELETE() {
     // 1. Delete user's group memberships
     await db.collection("groupMemberships").deleteMany({ userId })
 
-    // 2. If coach: delete groups they own / coach and all related data
-    const ownedGroups = await db
+    // 2. If coach: delete only the groups they OWN. Groups they merely coach (assistant, or joined
+    //    via "Join Another") survive — the user is just removed from coachIds.
+    //    Ids are stored as string or ObjectId depending on the writer, so match both.
+    const idMatch = { $in: [userId, new ObjectId(userId)] }
+    const coachedGroups = await db
       .collection("groups")
-      .find({
-        $or: [{ headCoachId: userId }, { coachIds: userId }],
-      })
+      .find({ $or: [{ headCoachId: idMatch }, { coachIds: idMatch }] })
       .toArray()
+    const ownedGroups = coachedGroups.filter((g) => g.headCoachId?.toString() === userId)
+    const assistedGroups = coachedGroups.filter((g) => g.headCoachId?.toString() !== userId)
 
     for (const group of ownedGroups) {
       const groupId = group._id.toString()
@@ -42,6 +45,22 @@ export async function DELETE() {
       await db.collection("attendance").deleteMany({ groupId })
       await db.collection("announcements").deleteMany({ groupId })
       await db.collection("groups").deleteOne({ _id: group._id })
+      // Move remaining members off the deleted group (next group if they have one, else none).
+      const groupIdMatch = { $in: [groupId, group._id] }
+      await db.collection("users").updateMany(
+        { groupIds: groupIdMatch },
+        { $pull: { groupIds: groupIdMatch } } as never,
+      )
+      await db.collection("users").updateMany({ activeGroupId: groupIdMatch }, [
+        { $set: { activeGroupId: { $ifNull: [{ $arrayElemAt: ["$groupIds", 0] }, null] } } },
+      ])
+    }
+
+    if (assistedGroups.length > 0) {
+      await db.collection("groups").updateMany(
+        { _id: { $in: assistedGroups.map((g) => g._id) } },
+        { $pull: { coachIds: idMatch } } as never,
+      )
     }
 
     // 3. Remove this user from attendance roll entries (member of groups they did not delete as coach)
@@ -68,8 +87,13 @@ export async function DELETE() {
     }
 
     // 6. Delete log_reviews (reviews by this coach, or for this user's logs)
+    // Reviews are written with coachId; older docs may still carry headCoachId.
     await db.collection("log_reviews").deleteMany({
-      $or: [{ headCoachId: userId }, ...(logIds.length > 0 ? [{ logId: { $in: logIds } }] : [])],
+      $or: [
+        { coachId: userId },
+        { headCoachId: userId },
+        ...(logIds.length > 0 ? [{ logId: { $in: logIds } }] : []),
+      ],
     })
 
     // 7. Delete comment_reads: on this user's logs (all readers) and this user's reads elsewhere
@@ -84,8 +108,8 @@ export async function DELETE() {
     // 8. Delete user's logs
     await db.collection("logs").deleteMany({ userId })
 
-    // 9. Delete checkins created by this coach (for groups they don't own — e.g. if they left)
-    await db.collection("checkins").deleteMany({ headCoachId: userId })
+    // 9. Check-ins this coach created in groups that survive are kept (owned groups' check-ins were
+    //    removed with the group above); deleting them would orphan the group's attendance history.
 
     // 10. Streak / schedule skips
     await db.collection("skippedDays").deleteMany({ userId })

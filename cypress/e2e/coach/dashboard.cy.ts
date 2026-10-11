@@ -30,6 +30,10 @@ describe("Coach Dashboard", () => {
     let logId: string
 
     before(() => {
+      // cleanupTestData (global before) deletes "E2E Test Group" but leaves users pointing at it.
+      // The athlete filter lists the group's roster, which only exists for a real group — re-seed it.
+      cy.exec("pnpm seed:test", { timeout: 30000 })
+      cy.then(() => Cypress.session.clearAllSavedSessions())
       cy.loginAsAthlete()
       cy.request("/api/logs/today").then((res) => {
         if (res.body.sharedLogId) cy.deleteLog(res.body.sharedLogId)

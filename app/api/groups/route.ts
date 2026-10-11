@@ -10,6 +10,7 @@ import {
   handleLeave,
 } from "./post-handlers"
 import type { TrainingSlot } from "@/types/dashboard"
+import { isGroupCoach } from "@/lib/api-auth"
 
 // POST: create a group (coach only), join a group, switch group, or leave a group
 export async function POST(req: Request) {
@@ -99,7 +100,8 @@ export async function GET(req: Request) {
         groups: groups.map((g) => ({
           id: g._id.toString(),
           name: g.name,
-          code: g.code,
+          // Join codes only go to the group's coaches.
+          code: isGroupCoach(g, session.userId) ? g.code : undefined,
           headCoachId: g.headCoachId,
           trainingScheduleUpdatedAt: g.trainingScheduleUpdatedAt ?? null,
         })),
@@ -121,13 +123,17 @@ export async function GET(req: Request) {
     const user = await db.collection("users").findOne({
       _id: new ObjectId(session.userId),
     })
+    // The roster includes emails and dates of birth (minors), so only coaches of this group get it.
+    // The groupIds clause is the legacy membership fallback canManageGroup also uses (until migration M2).
     const isCoachOfGroup =
-      user?.role === "coach" &&
-      group &&
-      ((Array.isArray(group.coachIds) &&
-        group.coachIds.includes(session.userId)) ||
-        group.headCoachId === session.userId ||
-        (Array.isArray(user?.groupIds) && user.groupIds.includes(groupId)))
+      !!group &&
+      (isGroupCoach(group, session.userId) ||
+        (user?.role === "coach" && Array.isArray(user?.groupIds) && user.groupIds.includes(groupId)))
+
+    if (!isCoachOfGroup) {
+      // Empty list, not 403: athlete pages also query this in the background.
+      return NextResponse.json({ members: [], roles: [] })
+    }
 
     const members = await db
       .collection("users")

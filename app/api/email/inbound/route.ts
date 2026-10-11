@@ -59,9 +59,12 @@ export async function POST(req: Request) {
     })
     if (error) {
       console.error("Failed to forward inbound email:", error)
+      // Non-2xx makes Resend (Svix) redeliver the webhook instead of dropping the email.
+      return NextResponse.json({ error: "Forward failed" }, { status: 500 })
     }
   } catch (err) {
     console.error("Error forwarding inbound email:", err)
+    return NextResponse.json({ error: "Forward failed" }, { status: 500 })
   }
 
   return NextResponse.json({})

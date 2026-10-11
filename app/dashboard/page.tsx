@@ -44,6 +44,8 @@ export default function DashboardPage() {
   const {
     data: logsPagesData,
     isLoading: logsLoading,
+    isError: logsError,
+    refetch: refetchLogs,
     fetchNextPage,
     hasNextPage: hasMoreLogs,
     isFetchingNextPage: logsValidating,
@@ -201,7 +203,7 @@ export default function DashboardPage() {
     groups: {
       id: string
       name: string
-      code: string
+      code?: string
       headCoachId: string
       trainingScheduleUpdatedAt?: string | null
     }[]
@@ -321,6 +323,8 @@ export default function DashboardPage() {
           }}
           trainingScheduleTemplate={membersData?.trainingScheduleTemplate}
           isLoading={logsLoading}
+          loadError={logsError}
+          onRetry={() => refetchLogs()}
           hasMoreLogs={hasMoreLogs ?? false}
           isLoadingMore={logsValidating}
           onLoadMore={() => fetchNextPage()}
