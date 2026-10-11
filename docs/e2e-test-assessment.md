@@ -95,7 +95,10 @@ in a smoke suite, but they don't test behavior.
    `"hydration"` or `"Minified React error"`, which can hide real React crashes.
 6. **One athlete in the fixtures.** This is why filters can't be tested properly; there is nothing to
    filter *out*.
-7. **Runs against `next dev`,** not a production build: slower, and not what users get.
+7. **The beta-flag override never applies.** `support/e2e.ts` sets `__vercel_flags_overrides`, but
+   `flags@4` reads `vercel-flag-overrides`. "beta=true" in tests comes from the live Vercel FLAGS config,
+   so results depend on dashboard settings and break without the CI secrets.
+8. **Runs against `next dev`,** not a production build: slower, and not what users get.
 
 ## 6. Recommendation
 

@@ -36,6 +36,17 @@ if (!oid) return NextResponse.json({ error: "Invalid ID" }, { status: 400 })
 
 Never construct `new ObjectId(id)` directly from user input — use `safeObjectId` first.
 
+## Request Body Values in Queries
+
+JSON bodies can contain objects, so a body field used in a Mongo filter can become an operator (`{"$ne": null}` matches everything). Type-check before querying:
+
+```typescript
+const { token } = await req.json()
+if (typeof token !== "string") return NextResponse.json({ error: "Invalid token" }, { status: 400 })
+```
+
+Query params (`searchParams.get`) and route params are always strings, so they're safe.
+
 ## Error Shape
 
 Always return `{ error: string }` — never a bare string or nested object.
@@ -50,14 +61,14 @@ return NextResponse.json("not found", { status: 404 })
 
 ## Dual Fields Gotcha
 
-See "Key Gotcha: Dual/Overlapping Fields" and "DB Audit Findings" in the root `CLAUDE.md`. Short version:
+See "Key Gotcha: Dual/Overlapping Fields" in the root `CLAUDE.md`. Short version:
 - **users:** `groupIds` + `activeGroupId`; legacy singular `groupId` is read-only compat in one spot (pending migration M1)
 - **groups:** `headCoachId` (owner) + `coachIds` (coaches) — head coach not guaranteed to be in `coachIds`; check both, compare via `.toString()` (types vary)
 - Membership lives in BOTH `users.groupIds` and `groupMemberships` — keep in sync
 
 `canManageGroup()` already handles this for coach checks.
 
-See "API Audit Findings (2026-07-07)" in the root `CLAUDE.md` for known open route-layer issues (authz gaps, visibility-model leaks, membership desync, input validation).
+Known open route-layer issues (authz gaps, membership desync, input validation) are tracked in `docs/FINDINGS.md`.
 
 ## DB Collections
 

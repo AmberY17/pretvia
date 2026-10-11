@@ -1,6 +1,6 @@
 # Postgres Migration — Design Doc
 
-Status: **draft for decision** · Date: 2026-10-11 · Related: `AUDIT-2026-10.md` (§3 security, §4 architecture)
+Status: **draft for decision** · Date: 2026-10-11 · Related: `docs/audit-2026-10.md` (§3 security, §4 architecture), `docs/FINDINGS.md`
 
 ## 1. Summary
 
